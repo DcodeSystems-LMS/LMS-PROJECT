@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Audio Playback Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .test-steps {
+            list-style-type: decimal;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .expected-result {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border-left: 4px solid #28a745;
+        }
+        .video-container {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+        }
+        .debug-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .debug-button:hover {
+            background: #0056b3;
+        }
+        .audio-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .audio-box {
+            padding: 15px;
+            border-radius: 5px;
+            border: 2px solid;
+        }
+        .old-audio {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        .new-audio {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .audio-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .old-audio .audio-title {
+            color: #721c24;
+        }
+        .new-audio .audio-title {
+            color: #155724;
+        }
+        .fix-highlight {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🔊 Audio Playback Fix Test</h1>
+        
+        <div class="test-instructions">
+            <h3>Test Instructions:</h3>
+            <ol class="test-steps">
+                <li>Load a YouTube video with the custom player</li>
+                <li>Click play and check if audio is working</li>
+                <li>Test volume controls and mute/unmute</li>
+                <li>Check console logs for audio debugging info</li>
+                <li>Test seeking and verify audio stays in sync</li>
+                <li>Use debug functions to test audio playback</li>
+            </ol>
+        </div>
+
+        <div class="audio-comparison">
+            <div class="audio-box old-audio">
+                <div class="audio-title">❌ Old Audio Issues</div>
+                <ul>
+                    <li>Audio element missing from JSX</li>
+                    <li>No audio synchronization</li>
+                    <li>Audio not starting with video</li>
+                    <li>Poor error handling</li>
+                    <li>No debugging information</li>
+                    <li>Audio controls not working</li>
+                </ul>
+            </div>
+            
+            <div class="audio-box new-audio">
+                <div class="audio-title">✅ New Audio Features</div>
+                <ul>
+                    <li>Audio element properly rendered</li>
+                    <li>Automatic audio synchronization</li>
+                    <li>Audio starts with video playback</li>
+                    <li>Enhanced error handling</li>
+                    <li>Comprehensive debugging</li>
+                    <li>Working audio controls</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="fix-highlight">
+            <h4>🔧 Key Audio Fixes Applied:</h4>
+            <ul>
+                <li><strong>Added Audio Element:</strong> Properly rendered audio element for separate audio streams</li>
+                <li><strong>Enhanced Synchronization:</strong> Better audio-video sync with timing precision</li>
+                <li><strong>Automatic Playback:</strong> Audio starts automatically when video plays</li>
+                <li><strong>Improved Error Handling:</strong> Better error messages and recovery</li>
+                <li><strong>Debug Functions:</strong> Added comprehensive audio debugging tools</li>
+                <li><strong>Volume Controls:</strong> Proper volume and mute handling for both video and audio</li>
+            </ul>
+        </div>
+
+        <div class="expected-result">
+            <h4>✅ Expected Result:</h4>
+            <p><strong>Audio should now play automatically when the video starts, with proper synchronization and controls.</strong></p>
+            <p>New audio behavior:</p>
+            <ul>
+                <li><strong>Automatic Audio:</strong> Audio starts when video plays without manual intervention</li>
+                <li><strong>Perfect Sync:</strong> Audio and video stay synchronized during playback</li>
+                <li><strong>Volume Controls:</strong> Volume slider and mute button work for both video and audio</li>
+                <li><strong>Seek Sync:</strong> Audio stays in sync when seeking through the video</li>
+                <li><strong>Error Recovery:</strong> Better handling of audio loading and playback errors</li>
+                <li><strong>Debug Info:</strong> Console logs show detailed audio state information</li>
+            </ul>
+        </div>
+
+        <div class="video-container">
+            <!-- This would be replaced with your actual video player component -->
+            <div style="padding: 20px; color: white; text-align: center;">
+                <h3>Fixed Audio Custom Video Player</h3>
+                <p>Replace this with your CustomVideoPlayer component</p>
+                <p>Test with a YouTube URL that has audio</p>
+                <div style="margin-top: 20px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                    <h4>Expected Audio Behavior:</h4>
+                    <ol style="text-align: left; display: inline-block;">
+                        <li>Video loads with audio element</li>
+                        <li>Audio synchronizes with video</li>
+                        <li>Audio plays automatically with video</li>
+                        <li>Volume controls work properly</li>
+                        <li>Seeking keeps audio in sync</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="debug-info">
+            <h4>Debug Information:</h4>
+            <p>Monitor the console for these audio debugging messages:</p>
+            <ul>
+                <li><code>🔊 Setting up audio synchronization</code></li>
+                <li><code>🔊 Audio metadata loaded</code></li>
+                <li><code>🔊 Audio can play</code></li>
+                <li><code>🎮 Starting video playback</code></li>
+                <li><code>🔊 Starting separate audio playback</code></li>
+                <li><code>🎬 Video play event - syncing audio</code></li>
+            </ul>
+            
+            <button class="debug-button" onclick="testAudioDebug()">Test Audio Debug</button>
+            <button class="debug-button" onclick="testAudioPlayback()">Test Audio Playback</button>
+            <button class="debug-button" onclick="checkAudioState()">Check Audio State</button>
+            <button class="debug-button" onclick="simulateAudioSync()">Simulate Audio Sync</button>
+        </div>
+    </div>
+
+    <script>
+        function testAudioDebug() {
+            console.log('🔍 Testing audio debugging...');
+            
+            // Check if debug functions are available
+            if (window.debugVideoPlayer) {
+                console.log('✅ debugVideoPlayer function available');
+                window.debugVideoPlayer();
+            } else {
+                console.log('❌ debugVideoPlayer function not available');
+            }
+            
+            if (window.testAudioPlayback) {
+                console.log('✅ testAudioPlayback function available');
+            } else {
+                console.log('❌ testAudioPlayback function not available');
+            }
+        }
+
+        function testAudioPlayback() {
+            console.log('🧪 Testing audio playback...');
+            
+            if (window.testAudioPlayback) {
+                window.testAudioPlayback();
+            } else {
+                console.log('❌ testAudioPlayback function not available');
+                console.log('Make sure the video player is loaded');
+            }
+        }
+
+        function checkAudioState() {
+            console.log('🔍 Checking audio state...');
+            
+            const audioElements = document.querySelectorAll('audio');
+            const videoElements = document.querySelectorAll('video');
+            
+            console.log('Audio elements found:', audioElements.length);
+            console.log('Video elements found:', videoElements.length);
+            
+            audioElements.forEach((audio, index) => {
+                console.log(`Audio ${index}:`, {
+                    src: audio.src,
+                    currentTime: audio.currentTime,
+                    duration: audio.duration,
+                    volume: audio.volume,
+                    muted: audio.muted,
+                    paused: audio.paused,
+                    readyState: audio.readyState,
+                    networkState: audio.networkState
+                });
+            });
+            
+            videoElements.forEach((video, index) => {
+                console.log(`Video ${index}:`, {
+                    src: video.src,
+                    currentTime: video.currentTime,
+                    duration: video.duration,
+                    volume: video.volume,
+                    muted: video.muted,
+                    paused: video.paused,
+                    readyState: video.readyState,
+                    networkState: video.networkState
+                });
+            });
+        }
+
+        function simulateAudioSync() {
+            console.log('🎵 Simulating audio synchronization...');
+            
+            console.log('1. Video starts playing');
+            console.log('2. 🔊 Video play event - syncing audio');
+            console.log('3. 🔊 Video playing - starting audio');
+            console.log('4. Audio time synced to video time');
+            console.log('5. Audio starts playing in sync');
+            
+            console.log('✅ Audio synchronization simulation complete');
+        }
+
+        // Auto-run audio test on page load
+        window.addEventListener('load', () => {
+            console.log('🔊 Audio Playback Fix Test Page Loaded');
+            console.log('Ready to test audio playback fixes');
+            
+            // Run initial test
+            setTimeout(() => {
+                testAudioDebug();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Extraction Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Video Extraction Test</h1>
+    
+    <div class="test-section info">
+        <h3>Backend Connection Test</h3>
+        <button onclick="testBackendHealth()">Test Backend Health</button>
+        <div id="health-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Video Extraction Test</h3>
+        <input type="text" id="video-url" placeholder="Enter YouTube URL" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+        <button onclick="testVideoExtraction()">Extract Video</button>
+        <div id="extraction-result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>Video Player Test</h3>
+        <button onclick="testVideoPlayer()">Test Custom Player</button>
+        <div id="player-result"></div>
+        <video id="test-video" controls style="width: 100%; max-width: 600px; margin-top: 10px;" style="display: none;">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:3001';
+        
+        async function testBackendHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '<p>Testing backend health...</p>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Backend is healthy!</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Backend health check failed</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Connection failed</h4>
+                        <p>Error: ${error.message}</p>
+                        <p>Make sure the backend server is running on ${BACKEND_URL}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testVideoExtraction() {
+            const resultDiv = document.getElementById('extraction-result');
+            const videoUrl = document.getElementById('video-url').value;
+            
+            if (!videoUrl) {
+                resultDiv.innerHTML = '<div class="error"><p>Please enter a YouTube URL</p></div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Extracting video...</p>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/extract-video`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: videoUrl }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Video extraction successful!</h4>
+                            <p><strong>Title:</strong> ${data.title}</p>
+                            <p><strong>Video ID:</strong> ${data.id}</p>
+                            <p><strong>Available Qualities:</strong> ${data.availableQualities ? data.availableQualities.join(', ') : 'Unknown'}</p>
+                            <p><strong>Streams Found:</strong> ${data.streams ? data.streams.length : 0}</p>
+                            <details>
+                                <summary>Full Response</summary>
+                                <pre>${JSON.stringify(data, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Video extraction failed</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Extraction request failed</h4>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testVideoPlayer() {
+            const resultDiv = document.getElementById('player-result');
+            const videoElement = document.getElementById('test-video');
+            const videoUrl = document.getElementById('video-url').value;
+            
+            if (!videoUrl) {
+                resultDiv.innerHTML = '<div class="error"><p>Please enter a YouTube URL first</p></div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Testing video player...</p>';
+            
+            try {
+                // First extract the video
+                const response = await fetch(`${BACKEND_URL}/api/extract-video`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: videoUrl }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.streams && data.streams.length > 0) {
+                    // Use the first available stream
+                    const stream = data.streams[0];
+                    videoElement.src = stream.url;
+                    videoElement.style.display = 'block';
+                    
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Video player test successful!</h4>
+                            <p><strong>Playing:</strong> ${data.title}</p>
+                            <p><strong>Quality:</strong> ${stream.quality}</p>
+                            <p><strong>Format:</strong> ${stream.format}</p>
+                            <p><strong>Type:</strong> ${stream.type}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ No video streams available</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Video player test failed</h4>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Auto-test backend health on page load
+        window.onload = function() {
+            testBackendHealth();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quality Button Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .warning { border-left: 4px solid #ffc107; }
+        .info { border-left: 4px solid #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 Quality Button Test Page</h1>
+        
+        <div class="test-section">
+            <h2>Backend Test</h2>
+            <button class="test-button" onclick="testBackend()">Test Backend Video Extraction</button>
+            <div id="backend-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Video Player Test</h2>
+            <p>This will test the quality button functionality in your custom video player.</p>
+            <button class="test-button" onclick="testVideoPlayer()">Test Video Player Quality Button</button>
+            <div id="player-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Manual Tests</h2>
+            <p>Use these buttons to manually test quality button functionality:</p>
+            <button class="test-button" onclick="checkQualityButton()">Check Quality Button State</button>
+            <button class="test-button" onclick="simulateQualityClick()">Simulate Quality Button Click</button>
+            <button class="test-button" onclick="checkAvailableStreams()">Check Available Streams</button>
+            <div id="manual-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Console Output</h2>
+            <p>Check the browser console (F12) for detailed debug information.</p>
+            <button class="test-button" onclick="enableConsoleLogging()">Enable Console Logging</button>
+            <div id="console-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let consoleOutput = '';
+
+        // Override console.log to capture output
+        const originalLog = console.log;
+        console.log = function(...args) {
+            consoleOutput += args.join(' ') + '\n';
+            originalLog.apply(console, args);
+        };
+
+        function logResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+
+        async function testBackend() {
+            logResult('backend-result', 'Testing backend...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:5173/api/extract-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const result = `✅ Backend Test Successful!
+Title: ${data.title}
+Available Qualities: ${data.availableQualities.join(', ')}
+Total Streams: ${data.streams.length}
+
+Stream Details:
+${data.streams.map(s => `- ${s.quality}: ${s.type} (Audio: ${s.acodec !== 'none' ? 'Yes' : 'No'})`).join('\n')}`;
+                    
+                    logResult('backend-result', result, 'success');
+                } else {
+                    const error = await response.json();
+                    logResult('backend-result', `❌ Backend Error: ${error.error}`, 'error');
+                }
+            } catch (err) {
+                logResult('backend-result', `❌ Connection Error: ${err.message}`, 'error');
+            }
+        }
+
+        function testVideoPlayer() {
+            logResult('player-result', 'Testing video player...', 'info');
+            
+            // Check if video player is loaded
+            const videoPlayer = document.querySelector('video');
+            const qualityButton = document.querySelector('.quality-button');
+            const qualityMenu = document.querySelector('.quality-menu');
+            
+            if (!videoPlayer) {
+                logResult('player-result', '❌ No video player found on this page. Please load your video player first.', 'error');
+                return;
+            }
+
+            let result = '🎯 Video Player Test Results:\n\n';
+            
+            // Check video element
+            result += `Video Element: ✅ Found\n`;
+            result += `- Source: ${videoPlayer.src || 'Not set'}\n`;
+            result += `- Current Time: ${videoPlayer.currentTime.toFixed(2)}s\n`;
+            result += `- Duration: ${videoPlayer.duration.toFixed(2)}s\n`;
+            result += `- Ready State: ${videoPlayer.readyState}\n\n`;
+            
+            // Check quality button
+            if (qualityButton) {
+                result += `Quality Button: ✅ Found\n`;
+                result += `- Text: ${qualityButton.textContent.trim()}\n`;
+                result += `- Disabled: ${qualityButton.disabled}\n`;
+                result += `- Visible: ${qualityButton.offsetParent !== null}\n\n`;
+            } else {
+                result += `Quality Button: ❌ Not found\n\n`;
+            }
+            
+            // Check quality menu
+            if (qualityMenu) {
+                result += `Quality Menu: ✅ Found\n`;
+                result += `- Visible: ${qualityMenu.offsetParent !== null}\n`;
+                result += `- Options: ${qualityMenu.querySelectorAll('button').length}\n\n`;
+            } else {
+                result += `Quality Menu: ❌ Not found\n\n`;
+            }
+            
+            // Check for debug functions
+            if (typeof window.debugQualityButton === 'function') {
+                result += `Debug Functions: ✅ Available\n`;
+                result += `- debugQualityButton(): Available\n`;
+                result += `- debugVideoPlayer(): ${typeof window.debugVideoPlayer === 'function' ? 'Available' : 'Not available'}\n\n`;
+            } else {
+                result += `Debug Functions: ❌ Not available\n\n`;
+            }
+            
+            logResult('player-result', result, 'success');
+        }
+
+        function checkQualityButton() {
+            const qualityButton = document.querySelector('.quality-button');
+            const qualityMenu = document.querySelector('.quality-menu');
+            
+            if (!qualityButton) {
+                logResult('manual-result', '❌ Quality button not found. Make sure your video player is loaded.', 'error');
+                return;
+            }
+            
+            const result = `🎯 Quality Button State:
+- Element: ${qualityButton.tagName}
+- Text: "${qualityButton.textContent.trim()}"
+- Disabled: ${qualityButton.disabled}
+- Visible: ${qualityButton.offsetParent !== null}
+- Clickable: ${!qualityButton.disabled && qualityButton.offsetParent !== null}
+- Menu Visible: ${qualityMenu && qualityMenu.offsetParent !== null}`;
+            
+            logResult('manual-result', result, 'info');
+        }
+
+        function simulateQualityClick() {
+            const qualityButton = document.querySelector('.quality-button');
+            
+            if (!qualityButton) {
+                logResult('manual-result', '❌ Quality button not found.', 'error');
+                return;
+            }
+            
+            if (qualityButton.disabled) {
+                logResult('manual-result', '❌ Quality button is disabled.', 'warning');
+                return;
+            }
+            
+            logResult('manual-result', '🖱️ Simulating quality button click...', 'info');
+            qualityButton.click();
+            
+            setTimeout(() => {
+                const qualityMenu = document.querySelector('.quality-menu');
+                const menuVisible = qualityMenu && qualityMenu.offsetParent !== null;
+                logResult('manual-result', `✅ Click simulated. Menu visible: ${menuVisible}`, menuVisible ? 'success' : 'warning');
+            }, 100);
+        }
+
+        function checkAvailableStreams() {
+            if (typeof window.debugQualityButton === 'function') {
+                window.debugQualityButton();
+                logResult('manual-result', '✅ Stream information logged to console. Check browser console (F12) for details.', 'success');
+            } else {
+                logResult('manual-result', '❌ Debug function not available. Make sure your video player is loaded.', 'error');
+            }
+        }
+
+        function enableConsoleLogging() {
+            logResult('console-result', 'Console logging enabled. Check browser console (F12) for detailed output.', 'info');
+            
+            // Enable all debug functions if available
+            if (typeof window.debugQualityButton === 'function') {
+                window.debugQualityButton();
+            }
+            if (typeof window.debugVideoPlayer === 'function') {
+                window.debugVideoPlayer();
+            }
+        }
+
+        // Auto-run backend test on page load
+        window.addEventListener('load', () => {
+            testBackend();
+        });
+    </script>
+</body>
+</html>

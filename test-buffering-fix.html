@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Buffering Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: black;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        video {
+            width: 100%;
+            height: auto;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .play-btn { background: #4CAF50; color: white; }
+        .pause-btn { background: #f44336; color: white; }
+        .quality-btn { background: #2196F3; color: white; }
+        .log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .buffering {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .paused {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .resumed {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.buffering { background: #fff3cd; color: #856404; }
+        .status.playing { background: #d4edda; color: #155724; }
+        .status.paused { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Video Buffering Fix Test</h1>
+        <p>This test demonstrates the fixed buffering behavior where video and audio pause completely during buffering and only resume after buffering is finished.</p>
+        
+        <div class="video-container">
+            <video id="testVideo" controls>
+                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="loading-overlay" id="loadingOverlay">
+                <div>
+                    <div class="spinner"></div>
+                    <h3>Buffering</h3>
+                    <p>Loading video data...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status" id="status">Ready</div>
+        
+        <div class="controls">
+            <button class="play-btn" onclick="playVideo()">Play</button>
+            <button class="pause-btn" onclick="pauseVideo()">Pause</button>
+            <button class="quality-btn" onclick="simulateQualityChange()">Simulate Quality Change</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="log" id="log">
+            <div>Video buffering fix test initialized...</div>
+            <div>This test simulates the behavior when switching to 2160p quality</div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('testVideo');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+        
+        let isBuffering = false;
+        let wasPlaying = false;
+        let currentTime = 0;
+        let currentVolume = 1;
+        let wasMuted = false;
+        
+        function logMessage(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${message}`;
+            
+            if (type === 'buffering') {
+                logEntry.classList.add('buffering');
+            } else if (type === 'paused') {
+                logEntry.classList.add('paused');
+            } else if (type === 'resumed') {
+                logEntry.classList.add('resumed');
+            }
+            
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateStatus(statusText, className) {
+            status.textContent = statusText;
+            status.className = `status ${className}`;
+        }
+        
+        function showLoadingOverlay() {
+            isBuffering = true;
+            loadingOverlay.style.display = 'flex';
+            updateStatus('Buffering...', 'buffering');
+            logMessage('🔄 Buffering detected, pausing video and audio', 'buffering');
+        }
+        
+        function hideLoadingOverlay() {
+            isBuffering = false;
+            loadingOverlay.style.display = 'none';
+        }
+        
+        async function simulateQualityChange() {
+            if (video.paused) {
+                logMessage('❌ Cannot simulate quality change - video is paused');
+                return;
+            }
+            
+            // Store current state
+            wasPlaying = !video.paused;
+            currentTime = video.currentTime;
+            currentVolume = video.volume;
+            wasMuted = video.muted;
+            
+            logMessage(`🎯 Simulating quality change from current position: ${currentTime.toFixed(1)}s`);
+            
+            // Immediately pause video and audio
+            logMessage('🛑 Quality switching - immediately pausing video and audio', 'paused');
+            video.pause();
+            updateStatus('Paused for Quality Change', 'paused');
+            
+            // Show loading overlay
+            showLoadingOverlay();
+            
+            // Simulate quality switching delay (2-4 seconds)
+            const switchingTime = 2000 + Math.random() * 2000;
+            logMessage(`⏳ Simulating quality switching for ${switchingTime.toFixed(0)}ms...`);
+            
+            await new Promise(resolve => setTimeout(resolve, switchingTime));
+            
+            logMessage('✅ Quality switching complete, resuming playback', 'resumed');
+            hideLoadingOverlay();
+            
+            // Resume playback if it was playing before
+            if (wasPlaying) {
+                try {
+                    // Restore volume settings
+                    video.volume = wasMuted ? 0 : currentVolume;
+                    video.muted = wasMuted;
+                    
+                    await video.play();
+                    updateStatus('Playing', 'playing');
+                    logMessage('▶️ Video playback resumed successfully', 'resumed');
+                    
+                } catch (err) {
+                    logMessage('❌ Failed to resume playback: ' + err.message);
+                    updateStatus('Resume Failed', 'paused');
+                }
+            } else {
+                updateStatus('Paused', 'paused');
+            }
+        }
+        
+        // Enhanced buffering detection
+        video.addEventListener('waiting', () => {
+            if (!isBuffering) {
+                logMessage('⏳ Video waiting for data - buffering detected', 'buffering');
+                showLoadingOverlay();
+            }
+        });
+        
+        video.addEventListener('canplay', () => {
+            if (isBuffering) {
+                logMessage('📺 Video can play - buffering complete', 'resumed');
+                hideLoadingOverlay();
+                
+                // Resume if it was playing before buffering
+                if (wasPlaying && video.paused) {
+                    video.play().then(() => {
+                        updateStatus('Playing', 'playing');
+                        logMessage('▶️ Video resumed after buffering', 'resumed');
+                    }).catch(err => {
+                        logMessage('❌ Failed to resume after buffering: ' + err.message);
+                    });
+                }
+            }
+        });
+        
+        video.addEventListener('stalled', () => {
+            logMessage('⚠️ Video stalled - buffering detected', 'buffering');
+            showLoadingOverlay();
+        });
+        
+        video.addEventListener('loadstart', () => {
+            logMessage('📺 Video load started');
+        });
+        
+        video.addEventListener('loadedmetadata', () => {
+            logMessage(`📺 Video loaded: ${video.duration.toFixed(1)}s duration`);
+        });
+        
+        video.addEventListener('play', () => {
+            updateStatus('Playing', 'playing');
+            logMessage('▶️ Video started playing');
+        });
+        
+        video.addEventListener('pause', () => {
+            if (!isBuffering) {
+                updateStatus('Paused', 'paused');
+                logMessage('⏸️ Video paused');
+            }
+        });
+        
+        video.addEventListener('timeupdate', () => {
+            // Log progress every 10 seconds
+            if (Math.floor(video.currentTime) % 10 === 0 && Math.floor(video.currentTime) !== Math.floor(video.currentTime - 0.1)) {
+                logMessage(`Video progress: ${video.currentTime.toFixed(1)}/${video.duration.toFixed(1)}`);
+            }
+        });
+        
+        function playVideo() {
+            video.play();
+        }
+        
+        function pauseVideo() {
+            video.pause();
+        }
+        
+        function clearLog() {
+            log.innerHTML = '<div>Log cleared...</div>';
+        }
+        
+        // Initialize
+        logMessage('🎬 Video buffering fix test ready');
+        logMessage('💡 Try playing the video and then click "Simulate Quality Change" to test the fix');
+    </script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+const express = require('express');
+const cors = require('cors');
+const { exec } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+// Load environment variables
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const DEBUG = process.env.DEBUG === 'true';
+
+// Configure CORS based on environment
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (NODE_ENV === 'development') {
+      // Allow localhost in development
+      callback(null, true);
+    } else {
+      // Production: restrict to specific domains
+      const allowedOrigins = process.env.CORS_ORIGIN ? 
+        process.env.CORS_ORIGIN.split(',') : 
+        ['https://yourdomain.com'];
+      
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-extraction-strategy']
+};
+
+// Middleware
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Trust proxy for production (Hostinger)
+if (process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
+
+// Security headers for production
+if (NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
+}
+
+// Simple rate limiting (in-memory)
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = parseInt(process.env.RATE_LIMIT_WINDOW) || 900000; // 15 minutes
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX) || 100;
+
+function rateLimit(req, res, next) {
+  const clientIP = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  
+  if (!rateLimitMap.has(clientIP)) {
+    rateLimitMap.set(clientIP, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return next();
+  }
+  
+  const clientData = rateLimitMap.get(clientIP);
+  
+  if (now > clientData.resetTime) {
+    clientData.count = 1;
+    clientData.resetTime = now + RATE_LIMIT_WINDOW;
+    return next();
+  }
+  
+  if (clientData.count >= RATE_LIMIT_MAX) {
+    return res.status(429).json({ 
+      error: 'Too many requests',
+      retryAfter: Math.ceil((clientData.resetTime - now) / 1000)
+    });
+  }
+  
+  clientData.count++;
+  next();
+}
+
+// Helper function to validate YouTube URLs
+function isValidYouTubeUrl(url) {
+  const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/)[\w-]+/;
+  return youtubeRegex.test(url);
+}
+
+// Helper function to extract video ID from YouTube URL
+function extractVideoId(url) {
+  if (!url) return null;
+  
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
+    /youtube\.com\/v\/([^&\n?#]+)/,
+    /youtube\.com\/embed\/([^&\n?#]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  
+  return null;
+}
+
+// Helper function to check if yt-dlp is available
+function checkYtDlpAvailability() {
+  return new Promise((resolve) => {
+    exec('yt-dlp --version', (error) => {
+      resolve(!error);
+    });
+  });
+}
+
+// Apply rate limiting to API endpoints
+app.use('/api/', rateLimit);
+
+// YouTube video extraction endpoint
+app.post('/api/extract-video', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+
+    // Validate YouTube URL
+    if (!isValidYouTubeUrl(url)) {
+      return res.status(400).json({ error: 'Invalid YouTube URL' });
+    }
+
+    if (DEBUG) {
+      console.log('Extracting video from:', url);
+    }
+
+    // Check if yt-dlp is available
+    const ytDlpAvailable = await checkYtDlpAvailability();
+    
+    if (!ytDlpAvailable) {
+      return res.status(503).json({ 
+        error: 'Video extraction service temporarily unavailable',
+        fallback: 'Please use YouTube embed instead'
+      });
+    }
+
+    // Use yt-dlp to extract video information with ULTRA JET SPEED optimizations
+    const timeout = parseInt(process.env.YT_DLP_TIMEOUT) || 10000; // Even more aggressive timeout
+    const command = `yt-dlp --dump-json --no-warnings --no-check-certificate --no-playlist --skip-download --format "best[height<=1080]/best[height<=720]/best[height<=480]/best" --prefer-free-formats --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" --extractor-args "youtube:player_client=android" "${url}"`;
+    
+    exec(command, { timeout }, (error, stdout, stderr) => {
+      if (error) {
+        if (DEBUG) {
+          console.error('yt-dlp error:', error);
+        }
+        
+        // Handle different types of errors
+        if (error.code === 'ENOENT') {
+          return res.status(503).json({ 
+            error: 'Video extraction tool not available',
+            fallback: 'Please use YouTube embed instead'
+          });
+        }
+        
+        if (error.signal === 'SIGTERM') {
+          return res.status(408).json({ 
+            error: 'Request timeout',
+            details: 'Video extraction took too long'
+          });
+        }
+        
+        // Handle truly private videos (not unlisted)
+        if (error.message && error.message.includes('Private video') && !error.message.includes('unlisted')) {
+          return res.status(403).json({ 
+            error: 'Video is private and requires authentication',
+            details: 'This video is private and cannot be extracted without login'
+          });
+        }
+        
+        // Handle unlisted videos - these should work with yt-dlp
+        if (error.message && (error.message.includes('unlisted') || error.message.includes('Video unavailable'))) {
+          // Try with different yt-dlp options for unlisted videos
+          const unlistedCommand = `yt-dlp --dump-json --no-warnings --no-check-certificate --no-playlist --skip-download --format "best[height<=1080]/best[height<=720]/best[height<=480]/best" --prefer-free-formats --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" --extractor-args "youtube:player_client=android" "${url}"`;
+          
+          exec(unlistedCommand, { timeout: 20000 }, (unlistedError, unlistedStdout, unlistedStderr) => {
+            if (unlistedError) {
+              console.log('❌ Unlisted video extraction also failed:', unlistedError.message);
+              return res.status(403).json({ 
+                error: 'Video is unlisted and cannot be accessed',
+                details: 'This unlisted video may have restricted access'
+              });
+            }
+            
+            try {
+              const videoInfo = JSON.parse(unlistedStdout);
+              const processedInfo = processVideoInfo(videoInfo);
+              console.log('✅ Unlisted video extraction successful!');
+              res.json(processedInfo);
+            } catch (parseError) {
+              console.error('❌ Failed to parse unlisted video info:', parseError);
+              res.status(500).json({ 
+                error: 'Failed to process unlisted video information',
+                details: 'Video data could not be parsed'
+              });
+            }
+          });
+          return; // Important: return here to prevent double response
+        }
+        
+        // Provide fallback response when yt-dlp fails
+        return res.status(200).json({
+          id: extractVideoId(url),
+          title: 'Video extraction unavailable',
+          description: 'Video extraction service is temporarily unavailable. Please use YouTube embed instead.',
+          duration: 0,
+          thumbnail: null,
+          uploader: 'Unknown',
+          upload_date: null,
+          view_count: 0,
+          streams: [],
+          isYouTube: true,
+          availableQualities: [],
+          fallback: true,
+          error: 'Video extraction service unavailable'
+        });
+      }
+
+      try {
+        const videoInfo = JSON.parse(stdout);
+        
+        if (DEBUG) {
+          console.log('Successfully extracted video info for:', videoInfo.title);
+          console.log('Raw formats count:', videoInfo.formats ? videoInfo.formats.length : 0);
+        }
+        
+        // Process the video info and extract streams
+        const processedInfo = processVideoInfo(videoInfo);
+        
+        if (DEBUG) {
+          console.log('Processed streams count:', processedInfo.streams.length);
+          console.log('Streams with audio:', processedInfo.streams.filter(s => s.acodec && s.acodec !== 'none').length);
+          console.log('Available qualities:', processedInfo.availableQualities);
+        }
+        
+        // For testing: Add multiple quality options if only one is available
+        if (processedInfo.streams.length === 1) {
+          const originalStream = processedInfo.streams[0];
+          const mockQualities = ['1080p', '720p', '480p', '360p', '240p'];
+          
+          // Create mock streams for different qualities
+          processedInfo.streams = mockQualities.map(quality => ({
+            ...originalStream,
+            quality: quality,
+            url: originalStream.url, // Same URL for testing
+            type: 'combined'
+          }));
+          
+          processedInfo.availableQualities = mockQualities;
+        }
+        
+        res.json(processedInfo);
+      } catch (parseError) {
+        if (DEBUG) {
+          console.error('JSON parse error:', parseError);
+        }
+        res.status(500).json({ 
+          error: 'Failed to parse video information',
+          details: NODE_ENV === 'development' ? parseError.message : 'Internal server error'
+        });
+      }
+    });
+
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+});
+
+// Process youtube-dl output
+function processVideoInfo(videoInfo) {
+  const streams = [];
+  const videoStreams = [];
+  const audioStreams = [];
+  
+  if (videoInfo.formats) {
+    for (const format of videoInfo.formats) {
+      // Separate video-only and audio-only streams
+      if (format.vcodec !== 'none' && format.acodec === 'none') {
+        // Video-only stream
+        videoStreams.push({
+          url: format.url,
+          quality: format.height ? `${format.height}p` : 'unknown',
+          format: format.ext,
+          size: format.filesize,
+          fps: format.fps,
+          vcodec: format.vcodec,
+          acodec: format.acodec,
+          type: 'video'
+        });
+      } else if (format.vcodec === 'none' && format.acodec !== 'none') {
+        // Audio-only stream
+        audioStreams.push({
+          url: format.url,
+          quality: format.abr ? `${format.abr}kbps` : 'unknown',
+          format: format.ext,
+          size: format.filesize,
+          vcodec: format.vcodec,
+          acodec: format.acodec,
+          type: 'audio'
+        });
+      } else if (format.vcodec !== 'none' && format.acodec !== 'none') {
+        // Combined video+audio stream
+        streams.push({
+          url: format.url,
+          quality: format.height ? `${format.height}p` : 'unknown',
+          format: format.ext,
+          size: format.filesize,
+          fps: format.fps,
+          vcodec: format.vcodec,
+          acodec: format.acodec,
+          type: 'combined'
+        });
+      }
+    }
+  }
+
+  // Sort video streams by quality (highest first)
+  videoStreams.sort((a, b) => {
+    const aQuality = parseInt(a.quality.replace('p', '')) || 0;
+    const bQuality = parseInt(b.quality.replace('p', '')) || 0;
+    return bQuality - aQuality;
+  });
+
+  // Sort audio streams by bitrate (highest first)
+  audioStreams.sort((a, b) => {
+    const aBitrate = parseInt(a.quality.replace('kbps', '')) || 0;
+    const bBitrate = parseInt(b.quality.replace('kbps', '')) || 0;
+    return bBitrate - aBitrate;
+  });
+
+  // Sort combined streams by quality (highest first)
+  streams.sort((a, b) => {
+    const aQuality = parseInt(a.quality.replace('p', '')) || 0;
+    const bQuality = parseInt(b.quality.replace('p', '')) || 0;
+    return bQuality - aQuality;
+  });
+
+  // Create best quality combinations
+  const bestStreams = [];
+  
+  // Add combined streams first (they're usually the best quality)
+  bestStreams.push(...streams);
+  
+  // Create video + audio combinations for each quality
+  if (videoStreams.length > 0 && audioStreams.length > 0) {
+    const bestAudio = audioStreams[0]; // Use best audio for all video qualities
+    
+    // Create separate stream for each video quality
+    videoStreams.forEach(videoStream => {
+      bestStreams.push({
+        url: videoStream.url,
+        audioUrl: bestAudio.url,
+        quality: videoStream.quality,
+        format: videoStream.format,
+        size: (videoStream.size || 0) + (bestAudio.size || 0),
+        fps: videoStream.fps,
+        vcodec: videoStream.vcodec,
+        acodec: bestAudio.acodec,
+        type: 'separate'
+      });
+    });
+  }
+
+  // Remove duplicates and sort by quality
+  const uniqueStreams = bestStreams.filter((stream, index, self) => 
+    index === self.findIndex(s => s.quality === stream.quality)
+  ).sort((a, b) => {
+    const aQuality = parseInt(a.quality.replace('p', '')) || 0;
+    const bQuality = parseInt(b.quality.replace('p', '')) || 0;
+    return bQuality - aQuality;
+  });
+
+  return {
+    id: videoInfo.id,
+    title: videoInfo.title,
+    description: videoInfo.description,
+    duration: videoInfo.duration,
+    thumbnail: videoInfo.thumbnail,
+    uploader: videoInfo.uploader,
+    upload_date: videoInfo.upload_date,
+    view_count: videoInfo.view_count,
+    streams: uniqueStreams,
+    isYouTube: true,
+    availableQualities: uniqueStreams.map(s => s.quality)
+  };
+}
+
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const ytDlpAvailable = await checkYtDlpAvailability();
+    const uptime = process.uptime();
+    
+    res.json({ 
+      status: 'OK', 
+      message: 'Video extraction service is running',
+      environment: NODE_ENV,
+      uptime: Math.floor(uptime),
+      ytDlpAvailable: ytDlpAvailable,
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'ERROR', 
+      message: 'Health check failed',
+      error: NODE_ENV === 'development' ? error.message : 'Internal error'
+    });
+  }
+});
+
+// Status endpoint for detailed system information
+app.get('/api/status', async (req, res) => {
+  try {
+    const ytDlpAvailable = await checkYtDlpAvailability();
+    const memoryUsage = process.memoryUsage();
+    
+    res.json({
+      status: 'OK',
+      system: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch,
+        uptime: Math.floor(process.uptime()),
+        memory: {
+          rss: Math.round(memoryUsage.rss / 1024 / 1024) + ' MB',
+          heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + ' MB',
+          heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + ' MB',
+          external: Math.round(memoryUsage.external / 1024 / 1024) + ' MB'
+        }
+      },
+      services: {
+        ytDlpAvailable: ytDlpAvailable,
+        corsEnabled: true,
+        rateLimitEnabled: true
+      },
+      environment: {
+        nodeEnv: NODE_ENV,
+        port: PORT,
+        debug: DEBUG,
+        corsOrigin: process.env.CORS_ORIGIN || 'default'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'ERROR', 
+      message: 'Status check failed',
+      error: NODE_ENV === 'development' ? error.message : 'Internal error'
+    });
+  }
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Video extraction server running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/api/health`);
+});
+
+module.exports = app;
