@@ -8,9 +8,13 @@ export default function Footer() {
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="inline-block mb-4">
-              <span className="text-3xl font-bold text-white" style={{ fontFamily: 'Pacifico, serif' }}>
-                DCODE
-              </span>
+              <div className="flex items-center">
+                <img 
+                  src="/DCODE LOGO.png" 
+                  alt="DCODE Systems" 
+                  className="h-16 w-auto"
+                />
+              </div>
             </Link>
             <p className="text-gray-300 text-lg leading-relaxed max-w-md">
               Empowering the next generation of developers with AI-powered learning, 

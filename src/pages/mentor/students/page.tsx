@@ -106,68 +106,68 @@ const MentorStudents: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Students</h1>
-        <p className="text-gray-600 mt-2">Manage and track your students' progress</p>
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Students</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-2">Manage and track your students' progress</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="w-12 h-12 flex items-center justify-center mx-auto mb-3 bg-blue-100 rounded-full">
-            <i className="ri-group-line text-2xl text-blue-600"></i>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 text-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-2 sm:mb-3 bg-blue-100 rounded-full">
+            <i className="ri-group-line text-lg sm:text-2xl text-blue-600"></i>
           </div>
-          <div className="text-2xl font-bold text-gray-900">{students.length}</div>
-          <div className="text-sm text-gray-600">Total Students</div>
+          <div className="text-lg sm:text-2xl font-bold text-gray-900">{students.length}</div>
+          <div className="text-xs sm:text-sm text-gray-600">Total Students</div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="w-12 h-12 flex items-center justify-center mx-auto mb-3 bg-green-100 rounded-full">
-            <i className="ri-user-check-line text-2xl text-green-600"></i>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 text-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-2 sm:mb-3 bg-green-100 rounded-full">
+            <i className="ri-user-check-line text-lg sm:text-2xl text-green-600"></i>
           </div>
-          <div className="text-2xl font-bold text-gray-900">{students.filter(s => s.status === 'active').length}</div>
-          <div className="text-sm text-gray-600">Active Students</div>
+          <div className="text-lg sm:text-2xl font-bold text-gray-900">{students.filter(s => s.status === 'active').length}</div>
+          <div className="text-xs sm:text-sm text-gray-600">Active Students</div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="w-12 h-12 flex items-center justify-center mx-auto mb-3 bg-purple-100 rounded-full">
-            <i className="ri-trophy-line text-2xl text-purple-600"></i>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 text-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-2 sm:mb-3 bg-purple-100 rounded-full">
+            <i className="ri-trophy-line text-lg sm:text-2xl text-purple-600"></i>
           </div>
-          <div className="text-2xl font-bold text-gray-900">82%</div>
-          <div className="text-sm text-gray-600">Avg Progress</div>
+          <div className="text-lg sm:text-2xl font-bold text-gray-900">82%</div>
+          <div className="text-xs sm:text-sm text-gray-600">Avg Progress</div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="w-12 h-12 flex items-center justify-center mx-auto mb-3 bg-orange-100 rounded-full">
-            <i className="ri-calendar-check-line text-2xl text-orange-600"></i>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 text-center">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-2 sm:mb-3 bg-orange-100 rounded-full">
+            <i className="ri-calendar-check-line text-lg sm:text-2xl text-orange-600"></i>
           </div>
-          <div className="text-2xl font-bold text-gray-900">60</div>
-          <div className="text-sm text-gray-600">Total Sessions</div>
+          <div className="text-lg sm:text-2xl font-bold text-gray-900">60</div>
+          <div className="text-xs sm:text-sm text-gray-600">Total Sessions</div>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
               <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
               <input
                 type="text"
                 placeholder="Search students by name or course..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full pl-10 pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <div className="relative">
-              <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm cursor-pointer whitespace-nowrap">
+              <button className="flex items-center justify-center px-4 py-2 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm cursor-pointer whitespace-nowrap w-full sm:w-auto">
                 <i className="ri-filter-line mr-2"></i>
                 Filter: {filterStatus === 'all' ? 'All' : filterStatus === 'active' ? 'Active' : 'Inactive'}
                 <i className="ri-arrow-down-s-line ml-2"></i>
               </button>
             </div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm whitespace-nowrap cursor-pointer">
+            <button className="bg-blue-600 text-white px-4 py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors text-sm whitespace-nowrap cursor-pointer w-full sm:w-auto">
               Export List
             </button>
           </div>
@@ -176,28 +176,49 @@ const MentorStudents: React.FC = () => {
 
       {/* Students List */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6">
-          <div className="space-y-4">
+        <div className="p-4 sm:p-6">
+          <div className="space-y-4 sm:space-y-6">
             {filteredStudents.map((student) => (
-              <div key={student.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 font-medium text-sm">{student.avatar}</span>
+              <div key={student.id} className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-blue-600 font-medium text-xs sm:text-sm">{student.avatar}</span>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{student.name}</h3>
-                      <p className="text-sm text-gray-600">{student.email}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
-                        <span>{student.course}</span>
-                        <span>•</span>
-                        <span>Joined {student.joinDate}</span>
-                        <span>•</span>
-                        <span>{student.totalSessions} sessions</span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">{student.name}</h3>
+                      <p className="text-xs sm:text-sm text-gray-600 truncate">{student.email}</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-500 mt-1">
+                        <span className="truncate">{student.course}</span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="truncate">Joined {student.joinDate}</span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="truncate">{student.totalSessions} sessions</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  
+                  {/* Mobile: Progress and Status */}
+                  <div className="flex flex-col sm:hidden space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">Progress:</span>
+                      <span className="text-xs font-medium text-gray-900">{student.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${getProgressColor(student.progress)}`}
+                        style={{ width: `${student.progress}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-end">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(student.status)}`}>
+                        {student.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Desktop: Progress and Actions */}
+                  <div className="hidden sm:flex items-center space-x-4">
                     <div className="text-right">
                       <div className="flex items-center mb-2">
                         <span className="text-sm text-gray-600 mr-2">Progress:</span>
@@ -219,18 +240,21 @@ const MentorStudents: React.FC = () => {
                       <button 
                         onClick={() => openModal('sendMessage', student)}
                         className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        title="Send Message"
                       >
                         <i className="ri-message-line"></i>
                       </button>
                       <button 
                         onClick={() => openModal('scheduleSession', student)}
                         className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
+                        title="Schedule Session"
                       >
                         <i className="ri-calendar-line"></i>
                       </button>
                       <button 
                         onClick={() => openModal('viewProgress', student)}
                         className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
+                        title="View Progress"
                       >
                         <i className="ri-bar-chart-line"></i>
                       </button>
@@ -240,26 +264,26 @@ const MentorStudents: React.FC = () => {
                 
                 {/* Quick Actions */}
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="text-xs sm:text-sm text-gray-600">
                       Last session: {student.lastSession}
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                       <button 
                         onClick={() => openModal('scheduleSession', student)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition-colors whitespace-nowrap cursor-pointer"
+                        className="bg-blue-600 text-white px-3 py-2 rounded text-xs hover:bg-blue-700 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
                       >
                         Schedule Session
                       </button>
                       <button 
                         onClick={() => openModal('viewProgress', student)}
-                        className="border border-gray-300 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-50 transition-colors whitespace-nowrap cursor-pointer"
+                        className="border border-gray-300 text-gray-700 px-3 py-2 rounded text-xs hover:bg-gray-50 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
                       >
                         View Progress
                       </button>
                       <button 
                         onClick={() => openModal('sendMessage', student)}
-                        className="border border-gray-300 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-50 transition-colors whitespace-nowrap cursor-pointer"
+                        className="border border-gray-300 text-gray-700 px-3 py-2 rounded text-xs hover:bg-gray-50 transition-colors whitespace-nowrap cursor-pointer w-full sm:w-auto"
                       >
                         Send Message
                       </button>
@@ -271,12 +295,12 @@ const MentorStudents: React.FC = () => {
           </div>
 
           {filteredStudents.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="ri-user-line text-2xl text-gray-400"></i>
+            <div className="text-center py-8 sm:py-12">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="ri-user-line text-xl sm:text-2xl text-gray-400"></i>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Students Found</h3>
-              <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Students Found</h3>
+              <p className="text-sm sm:text-base text-gray-600">Try adjusting your search or filter criteria.</p>
             </div>
           )}
         </div>

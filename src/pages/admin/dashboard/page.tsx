@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '@/components/base/Button';
 import Card from '@/components/base/Card';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 import DataService from '@/services/dataService';
 
 const AdminDashboard: React.FC = () => {
@@ -188,7 +189,7 @@ const AdminDashboard: React.FC = () => {
           <div className="space-y-6">
             {loading ? (
               <div className="text-center py-8">
-                <i className="ri-loader-4-line text-2xl text-gray-400 animate-spin"></i>
+                <SimpleDCODESpinner size="sm" className="mx-auto mb-4" />
                 <p className="text-gray-500 mt-2">Loading activity...</p>
               </div>
             ) : recentActivity.length > 0 ? (

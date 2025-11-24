@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import SimpleDCODESpinner from '../base/SimpleDCODESpinner';
 
 interface VideoUploadDropzoneProps {
   lessonId: number;
@@ -47,12 +48,13 @@ const VideoUploadDropzone: React.FC<VideoUploadDropzoneProps> = ({
 
       console.log('📤 Uploading video to Supabase storage:', filePath);
 
-      // Upload file to Supabase storage
+      // Upload file to Supabase storage with optimized cache settings for faster loading
       const { data, error } = await supabase.storage
         .from('course-videos')
         .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
+          cacheControl: '31536000', // 1 year cache for better performance
+          upsert: false,
+          contentType: file.type || 'video/mp4' // Explicit content type for better handling
         });
 
       if (error) {
@@ -188,7 +190,7 @@ const VideoUploadDropzone: React.FC<VideoUploadDropzoneProps> = ({
       {isUploading ? (
         <div className="space-y-4">
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <SimpleDCODESpinner size="md" />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-700 dark:text-gray-300">

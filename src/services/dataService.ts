@@ -1506,7 +1506,7 @@ export class DataService {
         .from('course_materials')
         .insert({
           course_id: courseId,
-          lesson_id: materialData.lessonId,
+          lesson_id: materialData.lessonId ? parseInt(materialData.lessonId.toString()) : null,
           title: materialData.title,
           description: materialData.description,
           file_name: file.name,
@@ -1515,6 +1515,7 @@ export class DataService {
           file_type: file.type,
           file_extension: fileExtension,
           category: materialData.category || 'general',
+          is_public: true, // Explicitly set to true so materials show up
           uploaded_by: user.id
         })
         .select(`

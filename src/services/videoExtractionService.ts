@@ -12,6 +12,42 @@ export interface VideoStream {
 }
 
 class VideoExtractionService {
+  // Get backend URL from environment or use default
+  private getBackendUrl(): string {
+    return import.meta.env.VITE_BACKEND_URL || 'http://49.204.168.41:3001';
+  }
+
+  // Check backend health status
+  async checkHealth(): Promise<{
+    status: string;
+    message: string;
+    environment?: string;
+    uptime?: number;
+    ytDlpAvailable?: boolean;
+    timestamp?: string;
+    version?: string;
+  }> {
+    try {
+      const backendUrl = this.getBackendUrl();
+      const response = await fetch(`${backendUrl}/api/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Health check failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error checking backend health:', error);
+      throw error;
+    }
+  }
+
   // Extract YouTube video ID from various URL formats
   private extractYouTubeVideoId(url: string): string | null {
     if (!url) return null;
@@ -75,7 +111,7 @@ class VideoExtractionService {
 
     try {
       // JET SPEED: Call the backend API with ultra-fast settings
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl = this.getBackendUrl();
       console.log('🚀 JET SPEED: Starting ultra-fast extraction...');
       
       // JET SPEED: Use AbortController for timeout control
@@ -156,7 +192,7 @@ class VideoExtractionService {
 
     try {
       // Call the backend API to get video information
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl = this.getBackendUrl();
       const response = await fetch(`${backendUrl}/api/extract-video`, {
         method: 'POST',
         headers: {

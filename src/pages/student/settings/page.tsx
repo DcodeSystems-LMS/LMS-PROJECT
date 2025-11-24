@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Card from '@/components/base/Card';
 import Button from '@/components/base/Button';
 import DarkModeToggle from '@/components/feature/DarkModeToggle';
+import SidebarSettingsDropdown from '@/components/feature/SidebarSettingsDropdown';
 import { authService } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
@@ -370,6 +371,7 @@ const StudentSettings: React.FC = () => {
         <div className="flex space-x-1 bg-theme-hover-bg p-1 rounded-lg w-fit">
           {[
             { key: 'profile', label: 'Profile', icon: 'ri-user-line' },
+            { key: 'features', label: 'Features', icon: 'ri-magic-line' },
             { key: 'notifications', label: 'Notifications', icon: 'ri-notification-line' },
             { key: 'appearance', label: 'Appearance', icon: 'ri-palette-line' },
             { key: 'privacy', label: 'Privacy', icon: 'ri-shield-line' },
@@ -485,6 +487,29 @@ const StudentSettings: React.FC = () => {
               </Card>
             </div>
           </div>
+        )}
+
+        {/* Features Tab */}
+        {activeTab === 'features' && (
+          <Card className="glass-dark">
+            <h2 className="text-lg font-semibold text-theme-text-primary mb-4">Features</h2>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-md font-medium text-theme-text-primary mb-4">Side Navigation Bar</h3>
+                <p className="text-theme-text-secondary mb-6">Configure how the sidebar navigation behaves in your dashboard.</p>
+                
+                <div className="bg-theme-hover-bg rounded-lg p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-md font-medium text-theme-text-primary mb-2">Sidebar Toggle Mode</h4>
+                      <p className="text-sm text-theme-text-secondary">Choose how the sidebar opens and closes</p>
+                    </div>
+                    <SidebarSettingsDropdown />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
         )}
 
         {/* Notifications Tab */}

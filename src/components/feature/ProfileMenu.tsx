@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { authService } from '@/lib/auth';
 import { useUserTheme } from '@/contexts/UserThemeContext';
 
@@ -15,6 +16,11 @@ interface ProfileMenuProps {
 export default function ProfileMenu({ user }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartY, setDragStartY] = useState(0);
+  const [dragCurrentY, setDragCurrentY] = useState(0);
+  const [dragVelocity, setDragVelocity] = useState(0);
+  const [isClosing, setIsClosing] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { theme, setTheme } = useUserTheme();
@@ -22,13 +28,87 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const isMobileView = window.innerWidth < 768;
+      setIsMobile(isMobileView);
+      console.log('📱 Mobile check:', isMobileView, 'Width:', window.innerWidth);
     };
     
+    // Initial check
     checkMobile();
+    
+    // Add resize listener
     window.addEventListener('resize', checkMobile);
+    
+    // Also check on mount
+    setTimeout(checkMobile, 100);
+    
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobile && isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+      document.body.classList.add('mobile-menu-open');
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.style.position = 'unset';
+      document.body.style.width = 'unset';
+      document.body.style.height = 'unset';
+      document.body.classList.remove('mobile-menu-open');
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.style.position = 'unset';
+      document.body.style.width = 'unset';
+      document.body.style.height = 'unset';
+      document.body.classList.remove('mobile-menu-open');
+    };
+  }, [isMobile, isOpen]);
+
+  // Debug mobile state
+  useEffect(() => {
+    console.log('📱 Mobile state changed:', { isMobile, isOpen });
+  }, [isMobile, isOpen]);
+
+  // Prevent background scrolling and pull-to-refresh when mobile menu is open
+  useEffect(() => {
+    const preventScroll = (e: TouchEvent) => {
+      if (isMobile && isOpen) {
+        // Don't prevent if touching menu items or their children
+        const target = e.target as HTMLElement;
+        if (target.closest('.profile-menu-mobile-item') || 
+            target.closest('.profile-menu-mobile') ||
+            target.closest('a') ||
+            target.closest('button')) {
+          console.log('🔍 Allowing touch on menu item:', target);
+          return;
+        }
+        
+        console.log('🔍 Preventing touch on:', target);
+        // Prevent pull-to-refresh
+        if (e.touches[0].clientY > 0) {
+          e.preventDefault();
+        }
+        // Prevent all scrolling
+        e.preventDefault();
+      }
+    };
+
+    if (isMobile && isOpen) {
+      document.addEventListener('touchmove', preventScroll, { passive: false });
+      document.addEventListener('touchstart', preventScroll, { passive: false });
+    }
+
+    return () => {
+      document.removeEventListener('touchmove', preventScroll);
+      document.removeEventListener('touchstart', preventScroll);
+    };
+  }, [isMobile, isOpen]);
 
   // Force light mode for mentors
   useEffect(() => {
@@ -78,6 +158,85 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
       navigate('/auth/signin');
     } catch (error) {
       console.error('Logout failed:', error);
+    }
+  };
+
+  // Touch event handlers for drag gesture
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    
+    // Don't start dragging if touching menu items or their children
+    const target = e.target as HTMLElement;
+    if (target.closest('.profile-menu-mobile-item') || 
+        target.closest('a') || 
+        target.closest('button') ||
+        target.closest('.profile-menu-icon')) {
+      console.log('🔍 Not starting drag on menu item:', target);
+      return;
+    }
+    
+    console.log('🔍 Starting drag on:', target);
+    setIsDragging(true);
+    setDragStartY(e.touches[0].clientY);
+    setDragCurrentY(e.touches[0].clientY);
+    
+    // Prevent background scrolling and pull-to-refresh
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent Chrome's pull-to-refresh
+    if (e.touches[0].clientY > 0) {
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile || !isDragging) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - dragStartY;
+    const velocity = deltaY - (dragCurrentY - dragStartY);
+    
+    // Always prevent default to stop background scrolling
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only allow downward drag
+    if (deltaY > 0) {
+      setDragCurrentY(currentY);
+      setDragVelocity(velocity);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isMobile || !isDragging) return;
+    
+    const deltaY = dragCurrentY - dragStartY;
+    const screenHeight = window.innerHeight;
+    const threshold = Math.min(150, screenHeight * 0.2); // 20% of screen height or 150px max
+    const velocityThreshold = 60; // Higher velocity threshold for quick swipe
+    
+    // Close if dragged far enough or with enough velocity
+    if (deltaY > threshold || Math.abs(dragVelocity) > velocityThreshold) {
+      // Close the menu immediately with slide-down animation
+      setIsClosing(true);
+      setIsDragging(false);
+      setDragStartY(0);
+      setDragCurrentY(0);
+      setDragVelocity(0);
+      
+      // Close with requestAnimationFrame for smoother performance
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          setIsOpen(false);
+          setIsClosing(false);
+        }, 250); // Match the fade animation duration
+      });
+    } else {
+      // Snap back to original position with smooth animation
+      setIsDragging(false);
+      setDragStartY(0);
+      setDragCurrentY(0);
+      setDragVelocity(0);
     }
   };
 
@@ -146,7 +305,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
     {
       label: 'Notifications',
       icon: 'ri-notification-line',
-      path: '#',
+      path: '/admin/notifications',
     },
   ];
 
@@ -155,11 +314,14 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
       <div className="relative" ref={menuRef}>
         {/* Avatar Button */}
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => {
+            console.log('🔍 Profile button clicked:', { isMobile, isOpen });
+            setIsOpen(!isOpen);
+          }}
           className="profile-avatar"
           aria-label="Open profile menu"
         >
-          {user.avatar ? (
+          {typeof user.avatar === 'string' && user.avatar ? (
             <img
               src={user.avatar}
               alt={user.name}
@@ -212,26 +374,75 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
         )}
       </div>
 
-      {/* Mobile Menu */}
-      {isMobile && (
+      {/* Mobile Menu - Rendered as Portal */}
+      {console.log('🔍 Mobile menu render check:', { isMobile, isOpen })}
+      {isMobile && isOpen && createPortal(
         <>
           {/* Backdrop */}
-          {isOpen && (
-            <div
-              className="fixed inset-0 bg-black/50 z-40"
-              onClick={() => setIsOpen(false)}
-            />
-          )}
+          <div
+            className="fixed inset-0 bg-black/50 z-[9998]"
+            style={{
+              animation: isClosing ? 'fadeOut 0.2s ease-out' : 'fadeIn 0.3s ease-out',
+              opacity: isClosing ? 0 : 1,
+              transition: 'opacity 0.2s ease-out'
+            }}
+            onClick={() => setIsOpen(false)}
+            onTouchMove={(e) => e.preventDefault()}
+            onTouchStart={(e) => e.preventDefault()}
+          />
 
-          {/* Mobile Menu */}
-          <div className={`profile-menu-mobile ${isOpen ? 'open' : ''}`}>
-            {/* Handle */}
-            <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+          {/* Mobile Menu - Fixed positioning with animation and drag support */}
+          <div 
+            className={`profile-menu-mobile open ${isClosing ? 'closing' : ''}`}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 9999,
+              background: 'white',
+              borderTop: '1px solid #e5e7eb',
+              borderRadius: '1rem 1rem 0 0',
+              boxShadow: '0 -8px 25px rgba(43, 38, 126, 0.12)',
+              padding: '1.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom))',
+              transform: isDragging 
+                ? `translateY(${Math.max(0, Math.min(dragCurrentY - dragStartY, 200))}px)` 
+                : isClosing 
+                  ? 'translateY(100%)' 
+                  : 'translateY(0)',
+              opacity: isClosing ? 0 : isDragging && (dragCurrentY - dragStartY) > 80 ? 0.7 : 1,
+              transition: isDragging 
+                ? 'none' 
+                : isClosing
+                  ? 'transform 0.25s cubic-bezier(0.55, 0.06, 0.68, 0.19), opacity 0.2s ease-out'
+                  : 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease-in',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              animation: isClosing ? 'none' : 'slideUpIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+            }}
+          >
+            {/* Handle - Draggable indicator */}
+            <div 
+              className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4 cursor-grab active:cursor-grabbing"
+              style={{
+                backgroundColor: isDragging 
+                  ? (dragCurrentY - dragStartY) > 80 
+                    ? '#ef4444' // Red when close to closing
+                    : '#9ca3af' // Gray when dragging
+                  : '#d1d5db', // Light gray when not dragging
+                transition: 'background-color 0.2s ease',
+                transform: isDragging && (dragCurrentY - dragStartY) > 80 ? 'scaleX(1.2)' : 'scaleX(1)',
+                transition: 'background-color 0.2s ease, transform 0.2s ease'
+              }}
+            ></div>
 
             {/* User Info Header */}
             <div className="text-center mb-6">
               <div className="profile-avatar mx-auto mb-3">
-                {user.avatar ? (
+                {typeof user.avatar === 'string' && user.avatar ? (
                   <img
                     src={user.avatar}
                     alt={user.name}
@@ -241,8 +452,8 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
                   getInitials(user.name)
                 )}
               </div>
-              <p className="text-lg font-medium text-gray-900">{user.name}</p>
-              <p className="text-sm text-gray-500">{user.email}</p>
+              <p className="text-lg font-medium text-gray-900 dark:text-white">{user.name}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
               <span className="inline-block px-3 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-orange-500 rounded-full mt-2 capitalize">
                 {user.role}
               </span>
@@ -255,7 +466,23 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
                   key={index}
                   to={item.path}
                   className="profile-menu-mobile-item"
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => {
+                    console.log('🔍 Menu item clicked:', item.label, item.path);
+                    e.stopPropagation();
+                    setIsOpen(false);
+                  }}
+                  onMouseDown={(e) => {
+                    console.log('🔍 Menu item mouse down:', item.label);
+                    e.stopPropagation();
+                  }}
+                  onTouchStart={(e) => {
+                    console.log('🔍 Menu item touch start:', item.label);
+                    e.stopPropagation();
+                  }}
+                  onTouchEnd={(e) => {
+                    console.log('🔍 Menu item touch end:', item.label);
+                    e.stopPropagation();
+                  }}
                 >
                   <div className="profile-menu-icon">
                     <i className={item.icon}></i>
@@ -265,7 +492,13 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
               ))}
               
               <button
-                onClick={handleLogout}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLogout();
+                  setIsOpen(false);
+                }}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
                 className="profile-menu-mobile-item"
               >
                 <div className="profile-menu-icon">
@@ -275,7 +508,8 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
               </button>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </>
   );

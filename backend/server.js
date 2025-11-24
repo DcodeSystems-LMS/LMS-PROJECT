@@ -158,8 +158,14 @@ app.post('/api/extract-video', async (req, res) => {
     }
 
     // Use yt-dlp to extract video information with ULTRA JET SPEED optimizations
-    const timeout = parseInt(process.env.YT_DLP_TIMEOUT) || 10000; // Even more aggressive timeout
-    const command = `yt-dlp --dump-json --no-warnings --no-check-certificate --no-playlist --skip-download --format "best[height<=1080]/best[height<=720]/best[height<=480]/best" --prefer-free-formats --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" --extractor-args "youtube:player_client=android" "${url}"`;
+    // Format selector: Get ALL available formats (including 2160p, 1440p, etc.) without filtering
+    // Remove --format to get all formats, or use a format that includes all video qualities
+    // Using format selector that gets all video+audio combinations for all qualities
+    const timeout = parseInt(process.env.YT_DLP_TIMEOUT) || 15000; // Increased timeout for 4K videos
+    // Get all formats by not specifying format, or use format selector for all video qualities
+    // Format: bestvideo[height<=2160]+bestaudio/bestvideo[height<=1440]+bestaudio/.../best
+    // But to get ALL qualities, we'll let yt-dlp return all formats without filtering
+    const command = `yt-dlp --dump-json --no-warnings --no-check-certificate --no-playlist --skip-download --prefer-free-formats --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" --extractor-args "youtube:player_client=android" "${url}"`;
     
     exec(command, { timeout }, (error, stdout, stderr) => {
       if (error) {
@@ -193,7 +199,7 @@ app.post('/api/extract-video', async (req, res) => {
         // Handle unlisted videos - these should work with yt-dlp
         if (error.message && (error.message.includes('unlisted') || error.message.includes('Video unavailable'))) {
           // Try with different yt-dlp options for unlisted videos
-          const unlistedCommand = `yt-dlp --dump-json --no-warnings --no-check-certificate --no-playlist --skip-download --format "best[height<=1080]/best[height<=720]/best[height<=480]/best" --prefer-free-formats --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" --extractor-args "youtube:player_client=android" "${url}"`;
+          const unlistedCommand = `yt-dlp --dump-json --no-warnings --no-check-certificate --no-playlist --skip-download --prefer-free-formats --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" --extractor-args "youtube:player_client=android" "${url}"`;
           
           exec(unlistedCommand, { timeout: 20000 }, (unlistedError, unlistedStdout, unlistedStderr) => {
             if (unlistedError) {
@@ -250,15 +256,22 @@ app.post('/api/extract-video', async (req, res) => {
         const processedInfo = processVideoInfo(videoInfo);
         
         if (DEBUG) {
+          console.log('Raw formats count:', videoInfo.formats ? videoInfo.formats.length : 0);
           console.log('Processed streams count:', processedInfo.streams.length);
           console.log('Streams with audio:', processedInfo.streams.filter(s => s.acodec && s.acodec !== 'none').length);
           console.log('Available qualities:', processedInfo.availableQualities);
+          
+          // Log all available qualities with their resolutions
+          console.log('All available qualities with resolutions:');
+          processedInfo.streams.forEach(stream => {
+            console.log(`  - ${stream.quality}: ${stream.width}x${stream.height} (${stream.type})`);
+          });
         }
         
         // For testing: Add multiple quality options if only one is available
         if (processedInfo.streams.length === 1) {
           const originalStream = processedInfo.streams[0];
-          const mockQualities = ['1080p', '720p', '480p', '360p', '240p'];
+          const mockQualities = ['2160p', '1440p', '1080p', '720p', '480p', '360p', '240p'];
           
           // Create mock streams for different qualities
           processedInfo.streams = mockQualities.map(quality => ({
@@ -309,6 +322,8 @@ function processVideoInfo(videoInfo) {
           format: format.ext,
           size: format.filesize,
           fps: format.fps,
+          width: format.width,
+          height: format.height,
           vcodec: format.vcodec,
           acodec: format.acodec,
           type: 'video'
@@ -332,6 +347,8 @@ function processVideoInfo(videoInfo) {
           format: format.ext,
           size: format.filesize,
           fps: format.fps,
+          width: format.width,
+          height: format.height,
           vcodec: format.vcodec,
           acodec: format.acodec,
           type: 'combined'
@@ -367,25 +384,27 @@ function processVideoInfo(videoInfo) {
   // Add combined streams first (they're usually the best quality)
   bestStreams.push(...streams);
   
-  // Create video + audio combinations for each quality
-  if (videoStreams.length > 0 && audioStreams.length > 0) {
-    const bestAudio = audioStreams[0]; // Use best audio for all video qualities
-    
-    // Create separate stream for each video quality
-    videoStreams.forEach(videoStream => {
-      bestStreams.push({
-        url: videoStream.url,
-        audioUrl: bestAudio.url,
-        quality: videoStream.quality,
-        format: videoStream.format,
-        size: (videoStream.size || 0) + (bestAudio.size || 0),
-        fps: videoStream.fps,
-        vcodec: videoStream.vcodec,
-        acodec: bestAudio.acodec,
-        type: 'separate'
+    // Create video + audio combinations for each quality
+    if (videoStreams.length > 0 && audioStreams.length > 0) {
+      const bestAudio = audioStreams[0]; // Use best audio for all video qualities
+      
+      // Create separate stream for each video quality
+      videoStreams.forEach(videoStream => {
+        bestStreams.push({
+          url: videoStream.url,
+          audioUrl: bestAudio.url,
+          quality: videoStream.quality,
+          format: videoStream.format,
+          size: (videoStream.size || 0) + (bestAudio.size || 0),
+          fps: videoStream.fps,
+          width: videoStream.width,
+          height: videoStream.height,
+          vcodec: videoStream.vcodec,
+          acodec: bestAudio.acodec,
+          type: 'separate'
+        });
       });
-    });
-  }
+    }
 
   // Remove duplicates and sort by quality
   const uniqueStreams = bestStreams.filter((stream, index, self) => 

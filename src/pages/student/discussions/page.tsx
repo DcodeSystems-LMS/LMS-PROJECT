@@ -287,20 +287,20 @@ const StudentDiscussions: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Discussions</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">My Discussions</h1>
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1">
             Track all your questions and discussions across courses
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-8"
+            className="w-full sm:w-auto px-3 py-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-8"
           >
             <option value="latest">Latest Activity</option>
             <option value="oldest">Oldest First</option>
@@ -308,20 +308,20 @@ const StudentDiscussions: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-gray-200">
+      {/* Filter Tabs - Mobile Optimized */}
+      <div className="flex overflow-x-auto gap-2 border-b border-gray-200 pb-2">
         {filterOptions.map((option) => (
           <button
             key={option.key}
             onClick={() => setActiveFilter(option.key)}
-            className={`flex items-center px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`flex items-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${
               activeFilter === option.key
                 ? 'border-blue-500 text-blue-600 bg-blue-50'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             {option.label}
-            <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+            <span className={`ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs rounded-full ${
               activeFilter === option.key
                 ? 'bg-blue-100 text-blue-600'
                 : 'bg-gray-100 text-gray-600'
@@ -332,17 +332,17 @@ const StudentDiscussions: React.FC = () => {
         ))}
       </div>
 
-      {/* Discussions List */}
+      {/* Discussions List - Mobile Optimized */}
       {sortedDiscussions.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {sortedDiscussions.map((discussion) => (
-            <Card key={discussion.id} className="hover:shadow-md transition-shadow cursor-pointer"
+            <Card key={discussion.id} className="hover:shadow-md transition-shadow cursor-pointer p-3 sm:p-6"
                   onClick={() => openDiscussionDetail(discussion)}>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full border ${getCategoryColor(discussion.category)}`}>
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border ${getCategoryColor(discussion.category)}`}>
                         {discussion.category}
                       </span>
                       {getStatusBadge(discussion.status)}
@@ -353,21 +353,21 @@ const StudentDiscussions: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
                       {discussion.question}
                     </h3>
-                    <div className="text-sm text-gray-600 space-y-1">
+                    <div className="text-xs sm:text-sm text-gray-600 space-y-1">
                       <p className="flex items-center">
                         <i className="ri-book-line mr-2 text-blue-600"></i>
-                        <span className="font-medium">{discussion.courseTitle}</span>
+                        <span className="font-medium truncate">{discussion.courseTitle}</span>
                       </p>
                       <p className="flex items-center">
                         <i className="ri-play-circle-line mr-2 text-green-600"></i>
-                        <span>{discussion.lessonTitle}</span>
+                        <span className="truncate">{discussion.lessonTitle}</span>
                       </p>
                     </div>
                     <div 
-                      className="flex items-center justify-between mt-3 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded px-2 py-1 transition-colors cursor-pointer"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-3 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded px-2 py-1 transition-colors cursor-pointer space-y-1 sm:space-y-0"
                       onClick={(e) => openActivityDetail(discussion, e)}
                       title="Click to view activity timeline"
                     >
@@ -383,21 +383,22 @@ const StudentDiscussions: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-3 border-t border-gray-100 space-y-2 sm:space-y-0">
                   <div className="flex space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
+                      className="w-full sm:w-auto text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigateToCourse(discussion.courseId, discussion.lessonTitle);
                       }}
                     >
-                      <i className="ri-external-link-line mr-2"></i>
+                      <i className="ri-external-link-line mr-1 sm:mr-2"></i>
                       View in Course
                     </Button>
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-gray-400 text-center sm:text-right">
                     Click to view full discussion
                   </div>
                 </div>
@@ -406,21 +407,21 @@ const StudentDiscussions: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="ri-chat-3-line text-2xl text-gray-400"></i>
+        <div className="text-center py-8 sm:py-12">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="ri-chat-3-line text-xl sm:text-2xl text-gray-400"></i>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
             {activeFilter === 'all' ? 'No discussions yet' : `No ${activeFilter} discussions`}
           </h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-sm sm:text-base text-gray-600 mb-4 px-4">
             {activeFilter === 'all' 
               ? 'Ask questions during your lessons to start discussions with mentors'
               : `You don't have any ${activeFilter} discussions at the moment`
             }
           </p>
           <Link to="/student/my-courses">
-            <Button>
+            <Button className="w-full sm:w-auto">
               <i className="ri-book-line mr-2"></i>
               Browse Courses
             </Button>
@@ -428,75 +429,76 @@ const StudentDiscussions: React.FC = () => {
         </div>
       )}
 
-      {/* Discussion Detail Modal */}
+      {/* Discussion Detail Modal - Mobile Optimized */}
       <Modal 
         isOpen={showDetailModal} 
         onClose={() => setShowDetailModal(false)}
         className="max-w-4xl"
       >
         {selectedDiscussion && (
-          <div className="p-6">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-6">
+          <div className="p-3 sm:p-6">
+            {/* Header - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
               <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-3">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full border ${getCategoryColor(selectedDiscussion.category)}`}>
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border ${getCategoryColor(selectedDiscussion.category)}`}>
                     {selectedDiscussion.category}
                   </span>
                   {getStatusBadge(selectedDiscussion.status)}
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
                   {selectedDiscussion.question}
                 </h2>
-                <div className="text-sm text-gray-600 space-y-1">
+                <div className="text-xs sm:text-sm text-gray-600 space-y-1">
                   <p className="flex items-center">
                     <i className="ri-book-line mr-2 text-blue-600"></i>
-                    <span className="font-medium">{selectedDiscussion.courseTitle}</span>
+                    <span className="font-medium truncate">{selectedDiscussion.courseTitle}</span>
                   </p>
                   <p className="flex items-center">
                     <i className="ri-play-circle-line mr-2 text-green-600"></i>
-                    <span>{selectedDiscussion.lessonTitle}</span>
+                    <span className="truncate">{selectedDiscussion.lessonTitle}</span>
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
                     Asked on {formatDate(selectedDiscussion.submittedAt)}
                   </p>
                 </div>
               </div>
-              <div className="flex space-x-2 ml-4">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 sm:ml-4">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto text-xs"
                   onClick={() => navigateToCourse(selectedDiscussion.courseId, selectedDiscussion.lessonTitle)}
                 >
-                  <i className="ri-external-link-line mr-2"></i>
+                  <i className="ri-external-link-line mr-1 sm:mr-2"></i>
                   Go to Lesson
                 </Button>
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 w-full sm:w-auto"
                 >
                   <i className="ri-close-line text-lg"></i>
                 </button>
               </div>
             </div>
 
-            {/* Replies */}
-            <div className="space-y-4 mb-6">
+            {/* Replies - Mobile Optimized */}
+            <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
               {selectedDiscussion.replies.length > 0 ? (
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-900 flex items-center">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 flex items-center">
                     <i className="ri-message-line mr-2"></i>
                     Replies ({selectedDiscussion.replies.length})
                   </h3>
                   {selectedDiscussion.replies.map((reply) => (
-                    <div key={reply.id} className="flex space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white ${
+                    <div key={reply.id} className="flex space-x-2 sm:space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-white text-xs sm:text-sm ${
                         reply.role === 'mentor' ? 'bg-blue-600' : 'bg-purple-600'
                       }`}>
                         {reply.author.split(' ').map(n => n[0]).join('').toUpperCase()}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mb-1">
                           <span className="font-medium text-gray-900">{reply.author}</span>
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                             reply.role === 'mentor' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
@@ -507,7 +509,7 @@ const StudentDiscussions: React.FC = () => {
                             {formatDate(reply.timestamp)}
                           </span>
                         </div>
-                        <p className="text-gray-700 text-sm leading-relaxed">
+                        <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">
                           {reply.content}
                         </p>
                       </div>
@@ -515,44 +517,46 @@ const StudentDiscussions: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 bg-gray-50 rounded-lg">
-                  <i className="ri-message-line text-2xl text-gray-400 mb-2"></i>
-                  <p className="text-gray-600">No replies yet. Be the first to continue the discussion!</p>
+                <div className="text-center py-6 sm:py-8 bg-gray-50 rounded-lg">
+                  <i className="ri-message-line text-xl sm:text-2xl text-gray-400 mb-2"></i>
+                  <p className="text-sm sm:text-base text-gray-600">No replies yet. Be the first to continue the discussion!</p>
                 </div>
               )}
             </div>
 
-            {/* Reply Form */}
+            {/* Reply Form - Mobile Optimized */}
             {selectedDiscussion.status !== 'closed' && (
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Add a Reply</h3>
+              <div className="border-t border-gray-200 pt-4 sm:pt-6">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3">Add a Reply</h3>
                 <div className="space-y-3">
                   <textarea
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="Continue the discussion..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-xs sm:text-sm"
+                    rows={3}
                     maxLength={1000}
                   />
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                     <div className="text-xs text-gray-500">
                       {replyText.length}/1000 characters
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
+                        className="w-full sm:w-auto text-xs"
                         onClick={() => setReplyText('')}
                       >
                         Clear
                       </Button>
                       <Button
                         size="sm"
+                        className="w-full sm:w-auto text-xs"
                         onClick={handleReply}
                         disabled={!replyText.trim()}
                       >
-                        <i className="ri-send-plane-line mr-2"></i>
+                        <i className="ri-send-plane-line mr-1 sm:mr-2"></i>
                         Reply
                       </Button>
                     </div>
@@ -564,62 +568,62 @@ const StudentDiscussions: React.FC = () => {
         )}
       </Modal>
 
-      {/* Activity Timeline Modal */}
+      {/* Activity Timeline Modal - Mobile Optimized */}
       <Modal 
         isOpen={showActivityModal} 
         onClose={() => setShowActivityModal(false)}
         className="max-w-2xl"
       >
         {selectedActivity && (
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <div className="p-3 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
+              <div className="flex-1">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
                   Activity Timeline
                 </h2>
-                <p className="text-sm text-gray-600 line-clamp-2">
+                <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
                   {selectedActivity.question}
                 </p>
               </div>
               <button
                 onClick={() => setShowActivityModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 w-full sm:w-auto"
               >
                 <i className="ri-close-line text-lg"></i>
               </button>
             </div>
 
-            {/* Course Info */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <i className="ri-book-line text-xl text-blue-600"></i>
+            {/* Course Info - Mobile Optimized */}
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <i className="ri-book-line text-lg sm:text-xl text-blue-600"></i>
                 </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">{selectedActivity.courseTitle}</h3>
-                  <p className="text-sm text-gray-600">{selectedActivity.lessonTitle}</p>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">{selectedActivity.courseTitle}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">{selectedActivity.lessonTitle}</p>
                 </div>
               </div>
             </div>
 
-            {/* Timeline */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900 mb-4">Discussion Activity</h3>
+            {/* Timeline - Mobile Optimized */}
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">Discussion Activity</h3>
               <div className="relative">
                 {/* Timeline line */}
-                <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                <div className="absolute left-4 sm:left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                 
                 {getActivityTimeline(selectedActivity).map((activity, index) => (
-                  <div key={index} className="relative flex items-start space-x-4 pb-6 last:pb-0">
+                  <div key={index} className="relative flex items-start space-x-3 sm:space-x-4 pb-4 sm:pb-6 last:pb-0">
                     {/* Timeline dot */}
-                    <div className={`relative z-10 w-12 h-12 rounded-full border-4 border-white shadow-md flex items-center justify-center ${activity.color}`}>
-                      <i className={`${activity.icon} text-lg`}></i>
+                    <div className={`relative z-10 w-8 h-8 sm:w-12 sm:h-12 rounded-full border-2 sm:border-4 border-white shadow-md flex items-center justify-center ${activity.color}`}>
+                      <i className={`${activity.icon} text-sm sm:text-lg`}></i>
                     </div>
                     
                     {/* Content */}
-                    <div className="flex-1 min-w-0 pt-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900">
+                    <div className="flex-1 min-w-0 pt-1 sm:pt-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0">
+                        <p className="text-xs sm:text-sm font-medium text-gray-900">
                           {activity.description}
                         </p>
                         <span className="text-xs text-gray-500">
@@ -628,13 +632,13 @@ const StudentDiscussions: React.FC = () => {
                       </div>
                       
                       {activity.type === 'question' && (
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
                           Question was submitted for review
                         </p>
                       )}
                       
                       {activity.type === 'reply' && (
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
                           New response added to discussion
                         </p>
                       )}
@@ -644,23 +648,23 @@ const StudentDiscussions: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="border-t border-gray-200 pt-4 mt-6">
-              <div className="grid grid-cols-3 gap-4 text-center">
+            {/* Quick Stats - Mobile Optimized */}
+            <div className="border-t border-gray-200 pt-3 sm:pt-4 mt-4 sm:mt-6">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
                 <div>
-                  <div className="text-lg font-semibold text-gray-900">
+                  <div className="text-base sm:text-lg font-semibold text-gray-900">
                     {selectedActivity.replies.length}
                   </div>
                   <div className="text-xs text-gray-500">Total Replies</div>
                 </div>
                 <div>
-                  <div className="text-lg font-semibold text-gray-900">
+                  <div className="text-base sm:text-lg font-semibold text-gray-900">
                     {Math.ceil((new Date(selectedActivity.lastActivity).getTime() - new Date(selectedActivity.submittedAt).getTime()) / (1000 * 60 * 60 * 24))}
                   </div>
                   <div className="text-xs text-gray-500">Days Active</div>
                 </div>
                 <div>
-                  <div className="text-lg font-semibold text-gray-900 capitalize">
+                  <div className="text-base sm:text-lg font-semibold text-gray-900 capitalize">
                     {selectedActivity.status}
                   </div>
                   <div className="text-xs text-gray-500">Current Status</div>
@@ -668,25 +672,27 @@ const StudentDiscussions: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-between items-center pt-4 mt-6 border-t border-gray-200">
+            {/* Action Buttons - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-3 sm:pt-4 mt-4 sm:mt-6 border-t border-gray-200 space-y-2 sm:space-y-0">
               <Button
                 variant="outline"
                 size="sm"
+                className="w-full sm:w-auto text-xs"
                 onClick={() => {
                   setShowActivityModal(false);
                   openDiscussionDetail(selectedActivity);
                 }}
               >
-                <i className="ri-message-line mr-2"></i>
+                <i className="ri-message-line mr-1 sm:mr-2"></i>
                 View Full Discussion
               </Button>
               <Button
                 variant="outline"
                 size="sm"
+                className="w-full sm:w-auto text-xs"
                 onClick={() => navigateToCourse(selectedActivity.courseId, selectedActivity.lessonTitle)}
               >
-                <i className="ri-external-link-line mr-2"></i>
+                <i className="ri-external-link-line mr-1 sm:mr-2"></i>
                 Go to Lesson
               </Button>
             </div>

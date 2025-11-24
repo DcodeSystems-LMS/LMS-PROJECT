@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Hls from 'hls.js';
 import { videoExtractionService, VideoStream } from '../../services/videoExtractionService';
 import { instantPreloadService, predictivePreload, instantLoad } from '../../services/instantPreloadService';
+import SimpleDCODESpinner from '../base/SimpleDCODESpinner';
 
 interface HLSQuality {
   height: number;
@@ -144,8 +145,9 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
     const detectNetworkSpeed = async () => {
       try {
         // Use the backend server for network speed detection instead of external resources
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://49.204.168.41:3001';
         const startTime = performance.now();
-        const response = await fetch('http://localhost:3001/api/health', { 
+        const response = await fetch(`${backendUrl}/api/health`, { 
           method: 'GET',
           cache: 'no-cache'
         });
@@ -220,6 +222,47 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       console.log(`🔊 Video element: volume=${volume}, muted=${isMuted}`);
     }
   }, [volume, isMuted]);
+
+  // Handle video URL changes - ensure video element is properly reloaded when quality changes
+  // This ensures the video element always uses the selected quality URL
+  useEffect(() => {
+    if (videoRef.current && directVideoUrl) {
+      const currentSrc = videoRef.current.src || '';
+      const newSrc = directVideoUrl;
+      
+      // Only reload if the URL actually changed (avoid unnecessary reloads)
+      if (currentSrc !== newSrc) {
+        console.log(`🔄 Video URL changed - Updating video element to use selected quality`);
+        console.log(`   Selected Quality: ${currentQuality}`);
+        console.log(`   Old URL: ${currentSrc.substring(0, 80)}...`);
+        console.log(`   New URL: ${newSrc.substring(0, 80)}...`);
+        
+        // Store playback state
+        const wasPlaying = !videoRef.current.paused;
+        const currentTime = videoRef.current.currentTime;
+        
+        // Update video source to use selected quality
+        videoRef.current.pause();
+        videoRef.current.src = newSrc;
+        videoRef.current.load();
+        
+        // Restore playback position and state after load
+        const handleCanPlay = () => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = currentTime;
+            if (wasPlaying) {
+              videoRef.current.play().catch(err => {
+                console.warn('Failed to auto-play after quality change:', err);
+              });
+            }
+            videoRef.current.removeEventListener('canplay', handleCanPlay);
+          }
+        };
+        
+        videoRef.current.addEventListener('canplay', handleCanPlay, { once: true });
+      }
+    }
+  }, [directVideoUrl, currentQuality]);
 
   // Handle audio URL changes - ensure audio element is properly updated
   useEffect(() => {
@@ -921,7 +964,9 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         '360p': 45,
         '480p': 35,
         '720p': 25,
-        '1080p': 15
+        '1080p': 15,
+        '1440p': 12,
+        '2160p': 10
       };
       
       const bufferSize = qualityBuffers[quality as keyof typeof qualityBuffers] || 30;
@@ -932,7 +977,9 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         '360p': 'conservative', // Lower quality, less aggressive preloading
         '480p': 'balanced',
         '720p': 'aggressive',
-        '1080p': 'aggressive'
+        '1080p': 'aggressive',
+        '1440p': 'aggressive',
+        '2160p': 'aggressive'
       };
       
       const preloadStrategy = preloadStrategies[quality as keyof typeof preloadStrategies] || 'balanced';
@@ -943,7 +990,9 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         '360p': 'quality', // Lower quality, focus on quality over speed
         '480p': 'balanced',
         '720p': 'fast',
-        '1080p': 'fast'
+        '1080p': 'fast',
+        '1440p': 'fast',
+        '2160p': 'fast'
       };
       
       const extractionSpeed = extractionSpeeds[quality as keyof typeof extractionSpeeds] || 'balanced';
@@ -963,7 +1012,9 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       '360p': 45,
       '480p': 35,
       '720p': 25,
-      '1080p': 15
+      '1080p': 15,
+      '1440p': 12,
+      '2160p': 10
     };
 
     const networkMultiplier = {
@@ -1007,7 +1058,21 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         priority: 'speed',
         format: 'mp4',
         quality: 'best',
-        bufferSize: 8192, // Largest buffer for fastest extraction
+        bufferSize: 8192, // Large buffer for fast extraction
+        concurrent: true
+      },
+      '1440p': {
+        priority: 'speed',
+        format: 'mp4',
+        quality: 'best',
+        bufferSize: 10240, // Larger buffer for 1440p
+        concurrent: true
+      },
+      '2160p': {
+        priority: 'speed',
+        format: 'mp4',
+        quality: 'best',
+        bufferSize: 12288, // Largest buffer for 4K extraction
         concurrent: true
       }
     };
@@ -1165,9 +1230,70 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       
       // Check if this is a direct video file (Supabase storage, MP4, etc.)
       if (isDirectVideoUrl(videoUrl)) {
-        console.log('🎬 Direct video file detected, loading directly...');
+        console.log('🎬 Direct video file detected (Supabase/Storage), optimizing for fast loading...');
         setIsLoading(true);
         setIsHLSStream(false);
+        
+        // Check if it's a Supabase URL for special optimization
+        const isSupabaseUrl = videoUrl.includes('supabase') || videoUrl.includes('storage.googleapis.com');
+        
+        if (isSupabaseUrl) {
+          console.log('⚡ Supabase video detected - Applying fast loading optimizations...');
+          
+          // Preload video metadata immediately for faster start
+          const preloadVideo = async () => {
+            try {
+              // Create a hidden video element to preload metadata
+              const preloadVideoEl = document.createElement('video');
+              preloadVideoEl.preload = 'metadata';
+              preloadVideoEl.crossOrigin = 'anonymous';
+              preloadVideoEl.style.display = 'none';
+              
+              // Set up event handlers
+              preloadVideoEl.addEventListener('loadedmetadata', () => {
+                console.log('✅ Supabase video metadata preloaded - Ready for instant playback');
+                document.body.removeChild(preloadVideoEl);
+                setIsLoading(false);
+              });
+              
+              preloadVideoEl.addEventListener('error', (e) => {
+                console.warn('⚠️ Supabase video metadata preload error:', e);
+                if (document.body.contains(preloadVideoEl)) {
+                  document.body.removeChild(preloadVideoEl);
+                }
+                setIsLoading(false);
+              });
+              
+              // Start loading metadata immediately
+              preloadVideoEl.src = videoUrl;
+              document.body.appendChild(preloadVideoEl);
+              preloadVideoEl.load();
+              
+              // Also fetch the first chunk to start buffering
+              try {
+                const response = await fetch(videoUrl, {
+                  method: 'HEAD', // Just get headers to check if range requests are supported
+                  headers: {
+                    'Range': 'bytes=0-1048576' // Request first 1MB
+                  }
+                });
+                
+                if (response.status === 206) {
+                  console.log('✅ Range requests supported - Fast loading enabled');
+                }
+              } catch (fetchErr) {
+                // Ignore fetch errors, video will still load normally
+                console.log('ℹ️ Range request check failed, using standard loading');
+              }
+            } catch (err) {
+              console.warn('⚠️ Preload error:', err);
+              setIsLoading(false);
+            }
+          };
+          
+          // Start preloading immediately
+          preloadVideo();
+        }
         
         // Create a simple video stream object for direct videos
         const directStream: VideoStream = {
@@ -1181,8 +1307,12 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         setCurrentQuality('auto');
         setCurrentStreamType('combined');
         setInitialized(true);
-        setIsLoading(false);
-        console.log('✅ Direct video loaded successfully');
+        
+        // For Supabase videos, keep loading state until metadata is ready
+        if (!isSupabaseUrl) {
+          setIsLoading(false);
+          console.log('✅ Direct video loaded successfully');
+        }
         return;
       }
       
@@ -1398,33 +1528,92 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       audioRef.current.pause();
     }
     
-    // Set new video URL
+    // Set new video URL and force reload
+    console.log(`📹 Setting video URL for ${quality}:`, targetStream.url.substring(0, 100) + '...');
+    console.log(`📊 Stream details:`, {
+      quality: targetStream.quality,
+      type: targetStream.type,
+      width: targetStream.width,
+      height: targetStream.height,
+      url: targetStream.url.substring(0, 80) + '...'
+    });
+    
     setDirectVideoUrl(targetStream.url);
     setCurrentQuality(quality);
     setCurrentStreamType(targetStream.type);
     
     // Set audio URL if separate
     if (targetStream.type === 'separate' && targetStream.audioUrl) {
+      console.log(`🔊 Setting audio URL:`, targetStream.audioUrl.substring(0, 100) + '...');
       setDirectAudioUrl(targetStream.audioUrl);
-              } else {
-                setDirectAudioUrl(null);
-              }
-              
-    // Resume playback if it was playing
-    setTimeout(() => {
-      if (videoRef.current) {
-        videoRef.current.currentTime = currentTime;
-        if (audioRef.current) {
-          audioRef.current.currentTime = currentTime;
-        }
-        if (wasPlaying) {
-          videoRef.current.play();
-          if (audioRef.current) {
-            audioRef.current.play();
+    } else {
+      setDirectAudioUrl(null);
+    }
+    
+    // Force video element to reload with new source - ensure it uses the selected quality
+    if (videoRef.current) {
+      // Pause and update source to selected quality URL
+      videoRef.current.pause();
+      
+      // Ensure we're using the exact URL from the selected quality stream
+      const qualityUrl = targetStream.url;
+      console.log(`🔄 Reloading video element with ${quality} quality URL`);
+      
+      // Update source directly
+      videoRef.current.src = qualityUrl;
+      videoRef.current.load(); // Force reload with new quality
+      
+      // Wait for metadata to load before seeking and playing
+      const handleLoadedMetadata = () => {
+        if (videoRef.current && videoRef.current.src === qualityUrl) {
+          const actualWidth = videoRef.current.videoWidth;
+          const actualHeight = videoRef.current.videoHeight;
+          console.log(`✅ Video loaded for ${quality}`);
+          console.log(`   Expected: ${targetStream.width}x${targetStream.height}`);
+          console.log(`   Actual: ${actualWidth}x${actualHeight}`);
+          console.log(`   URL: ${qualityUrl.substring(0, 100)}...`);
+          
+          // Restore playback position
+          videoRef.current.currentTime = currentTime;
+          
+          if (audioRef.current && targetStream.type === 'separate' && targetStream.audioUrl) {
+            audioRef.current.currentTime = currentTime;
           }
+          
+          // Resume playback if it was playing
+          if (wasPlaying) {
+            const playPromise = videoRef.current.play();
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
+                console.log(`▶️ Video resumed at ${quality} quality`);
+              }).catch(err => {
+                console.warn('Failed to play after quality switch:', err);
+              });
+            }
+            
+            if (audioRef.current && targetStream.type === 'separate' && targetStream.audioUrl) {
+              audioRef.current.play().catch(err => {
+                console.warn('Failed to play audio after quality switch:', err);
+              });
+            }
+          }
+          
+          // Remove the event listener after use
+          videoRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
         }
-      }
-            }, 100);
+      };
+      
+      videoRef.current.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+      
+      // Also handle canplay event as backup
+      const handleCanPlay = () => {
+        if (videoRef.current && videoRef.current.src === qualityUrl && wasPlaying) {
+          videoRef.current.play().catch(() => {});
+          videoRef.current.removeEventListener('canplay', handleCanPlay);
+        }
+      };
+      videoRef.current.addEventListener('canplay', handleCanPlay, { once: true });
+    }
   };
 
   // Buffering handlers
@@ -1486,16 +1675,20 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
     
     switch (networkSpeed) {
       case 'fast':
-        // Fast network: Use highest available quality
-        targetQuality = availableStreams.reduce((highest, current) => {
-          const currentNum = parseInt(current.quality.replace('p', ''));
-          const highestNum = parseInt(highest.quality.replace('p', ''));
-          return currentNum > highestNum ? current : highest;
-        }).quality;
+        // Fast network: Use highest available quality (prioritize 2160p, 1440p, then 1080p)
+        targetQuality = availableStreams.find(s => s.quality === '2160p')?.quality ||
+                      availableStreams.find(s => s.quality === '1440p')?.quality ||
+                      availableStreams.find(s => s.quality === '1080p')?.quality ||
+                      availableStreams.reduce((highest, current) => {
+                        const currentNum = parseInt(current.quality.replace('p', ''));
+                        const highestNum = parseInt(highest.quality.replace('p', ''));
+                        return currentNum > highestNum ? current : highest;
+                      }).quality;
         break;
       case 'medium':
-        // Medium network: Use 1080p or highest available below 1440p
-        targetQuality = availableStreams.find(s => s.quality === '1080p')?.quality ||
+        // Medium network: Use 1080p, 1440p, or highest available below 2160p
+        targetQuality = availableStreams.find(s => s.quality === '1440p')?.quality ||
+                      availableStreams.find(s => s.quality === '1080p')?.quality ||
                       availableStreams.find(s => s.quality === '720p')?.quality ||
                       availableStreams[0].quality;
         break;
@@ -2080,12 +2273,53 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       <video
         ref={videoRef}
              src={directVideoUrl}
+             key={`video-${currentQuality}-${directVideoUrl.substring(0, 50)}`}
         className="w-full h-full object-contain cursor-pointer"
-             preload="auto"
+             preload={directVideoUrl.includes('supabase') ? 'auto' : 'auto'}
              playsInline
              controls={false}
              muted={isMuted}
+             crossOrigin="anonymous"
              onDoubleClick={handleDoubleTap}
+             onLoadStart={() => {
+               if (directVideoUrl.includes('supabase')) {
+                 console.log('🚀 Supabase video load started - Optimizing for fast playback...');
+                 // Ensure aggressive preloading for Supabase videos
+                 if (videoRef.current) {
+                   videoRef.current.preload = 'auto';
+                   // Start buffering immediately
+                   videoRef.current.load();
+                 }
+               }
+             }}
+            onLoadedMetadata={() => {
+              if (videoRef.current) {
+                const actualWidth = videoRef.current.videoWidth;
+                const actualHeight = videoRef.current.videoHeight;
+                const isSupabaseVideo = directVideoUrl?.includes('supabase') || false;
+                
+                console.log(`📐 Video metadata loaded - Actual resolution: ${actualWidth}x${actualHeight}, Selected quality: ${currentQuality}`);
+                
+                if (isSupabaseVideo) {
+                  console.log('⚡ Supabase video metadata loaded - Starting aggressive buffering...');
+                  // For Supabase videos, start buffering immediately
+                  if (videoRef.current.readyState >= 2) {
+                    // Video has enough data to start playing
+                    console.log('✅ Supabase video ready for playback');
+                    setIsLoading(false);
+                  }
+                }
+                
+                // Verify the resolution matches the selected quality
+                const expectedHeight = parseInt(currentQuality.replace('p', '')) || 0;
+                if (expectedHeight > 0 && Math.abs(actualHeight - expectedHeight) > 50) {
+                  console.warn(`⚠️ Resolution mismatch! Expected ~${expectedHeight}p but got ${actualHeight}p`);
+                  console.warn(`   Current URL: ${directVideoUrl?.substring(0, 100)}...`);
+                } else if (expectedHeight > 0) {
+                  console.log(`✅ Resolution matches selected quality: ${currentQuality} (${actualHeight}p)`);
+                }
+              }
+            }}
             onTimeUpdate={() => {
           if (videoRef.current) {
                 setCurrentTime(videoRef.current.currentTime);
@@ -2336,11 +2570,8 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="flex flex-col items-center space-y-3">
-              {/* Animated Spinner */}
-              <div className="relative">
-                <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-                <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-r-blue-400 rounded-full animate-spin" style={{animationDirection: 'reverse', animationDuration: '0.8s'}}></div>
-              </div>
+              {/* DCODE Spinner */}
+              <SimpleDCODESpinner size="lg" className="text-white" />
               <div className="text-white text-sm font-medium">Loading video...</div>
             </div>
               </div>
@@ -2378,7 +2609,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
         {isBuffering && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="flex items-center space-x-2 bg-black/70 rounded-lg px-4 py-2">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <SimpleDCODESpinner size="sm" />
               <span className="text-white text-sm font-medium">Buffering...</span>
             </div>
           </div>
@@ -2818,7 +3049,8 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
                           <button
                             key={index}
                             onClick={() => {
-                              switchToQuality(stream.quality);
+                              console.log(`🎯 User selected quality: ${stream.quality}`);
+                              switchToQuality(stream.quality, true); // isManual = true to lock quality
                               setShowQualityMenu(false);
                             }}
                             className={`w-full text-left px-4 py-2 text-sm hover:bg-white/20 transition-colors flex items-center justify-between ${
@@ -2938,7 +3170,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
                               onChange={(e) => setPreloadStrategy(e.target.value as any)}
                               className="w-full text-xs bg-gray-700 text-white rounded px-2 py-1"
                             >
-                              <option value="aggressive">Aggressive (720p/1080p)</option>
+                              <option value="aggressive">Aggressive (720p/1080p/1440p/2160p)</option>
                               <option value="balanced">Balanced (480p)</option>
                               <option value="conservative">Conservative (360p)</option>
                             </select>
@@ -2950,7 +3182,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
                               onChange={(e) => setExtractionSpeed(e.target.value as any)}
                               className="w-full text-xs bg-gray-700 text-white rounded px-2 py-1"
                             >
-                              <option value="fast">Fast (720p/1080p)</option>
+                              <option value="fast">Fast (720p/1080p/1440p/2160p)</option>
                               <option value="balanced">Balanced (480p)</option>
                               <option value="quality">Quality (360p)</option>
                             </select>

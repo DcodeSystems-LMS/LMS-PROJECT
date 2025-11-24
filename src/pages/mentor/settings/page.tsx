@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import SidebarSettingsDropdown from '@/components/feature/SidebarSettingsDropdown';
 
 const MentorSettings: React.FC = () => {
   const [activeSection, setActiveSection] = useState('profile');
@@ -15,6 +16,7 @@ const MentorSettings: React.FC = () => {
 
   const sections = [
     { id: 'profile', label: 'Profile', icon: 'ri-user-line' },
+    { id: 'features', label: 'Features', icon: 'ri-magic-line' },
     { id: 'availability', label: 'Availability', icon: 'ri-calendar-line' },
     { id: 'courses', label: 'Teaching Areas', icon: 'ri-book-line' },
     { id: 'notifications', label: 'Notifications', icon: 'ri-notification-line' },
@@ -147,6 +149,29 @@ const MentorSettings: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     defaultValue="Experienced software engineer and educator with 8+ years in the industry. Passionate about teaching modern web development technologies and helping students achieve their career goals."
                   />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'features' && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Features</h2>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-md font-medium text-gray-900 mb-4">Side Navigation Bar</h3>
+                  <p className="text-gray-600 mb-6">Configure how the sidebar navigation behaves in your dashboard.</p>
+                  
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-md font-medium text-gray-900 mb-2">Sidebar Toggle Mode</h4>
+                        <p className="text-sm text-gray-600">Choose how the sidebar opens and closes</p>
+                      </div>
+                      <SidebarSettingsDropdown />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

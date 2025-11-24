@@ -358,50 +358,65 @@ const MentorDiscussions: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+      {/* Header - Mobile Optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Student Discussions</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Student Discussions</h1>
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1">
             Manage and respond to student questions from all courses
           </p>
         </div>
-        <Button onClick={() => window.location.reload()}>
-          <i className="ri-refresh-line mr-2"></i>
-          Refresh
-        </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Clean Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {stats.map((stat, index) => (
-          <Card key={index} className="text-center hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => {
-                  if (stat.label === 'Pending Replies') setFilter('pending');
-                  else if (stat.label === 'Unread Questions') setFilter('unread');
-                  else if (stat.label === 'High Priority') setFilter('high-priority');
-                  else setFilter('all');
-                }}>
-            <div className={`w-12 h-12 mx-auto mb-4 rounded-full bg-${stat.color}-100 flex items-center justify-center`}>
-              <i className={`${stat.icon} text-2xl text-${stat.color}-600`}></i>
+          <div 
+            key={index} 
+            className="group cursor-pointer transition-all duration-300 hover:scale-105"
+            onClick={() => {
+              if (stat.label === 'Pending Replies') setFilter('pending');
+              else if (stat.label === 'Unread Questions') setFilter('unread');
+              else if (stat.label === 'High Priority') setFilter('high-priority');
+              else setFilter('all');
+            }}
+          >
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
+              {/* Icon */}
+              <div className="flex items-center justify-between mb-4">
+                <div className={`w-10 h-10 rounded-lg bg-${stat.color}-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                  <i className={`${stat.icon} text-${stat.color}-600 text-lg`}></i>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gray-900 group-hover:text-gray-700 transition-colors">
+                    {stat.value}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Label */}
+              <div className="text-sm font-medium text-gray-600 group-hover:text-gray-800 transition-colors">
+                {stat.label}
+              </div>
+              
+              {/* Subtle accent line */}
+              <div className={`mt-3 h-1 w-8 bg-${stat.color}-200 rounded-full group-hover:bg-${stat.color}-300 transition-colors`}></div>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
-            <div className="text-sm text-gray-600">{stat.label}</div>
-          </Card>
+          </div>
         ))}
       </div>
 
-      {/* Search and Filters */}
+      {/* Search and Filters - Mobile Optimized */}
       <Card className="bg-gray-50/50">
-        <div className="space-y-4">
-          <div className="flex flex-col lg:flex-row gap-4">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex-1">
               <div className="relative">
                 <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                 <input
                   type="text"
-                  placeholder="Search discussions by question, student, course, or lesson..."
+                  placeholder="Search discussions..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -410,9 +425,9 @@ const MentorDiscussions: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-48">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Course</label>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div className="flex-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Filter by Course</label>
               <select 
                 value={courseFilter} 
                 onChange={(e) => setCourseFilter(e.target.value)}
@@ -426,8 +441,8 @@ const MentorDiscussions: React.FC = () => {
             </div>
 
             <div className="flex items-end">
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                <i className="ri-refresh-line mr-2"></i>
+              <Button variant="outline" size="sm" onClick={clearFilters} className="w-full sm:w-auto text-sm">
+                <i className="ri-refresh-line mr-1 sm:mr-2"></i>
                 Clear Filters
               </Button>
             </div>
@@ -435,10 +450,10 @@ const MentorDiscussions: React.FC = () => {
         </div>
       </Card>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2 bg-white p-1 rounded-lg border border-gray-200">
+      {/* Filter Tabs - Mobile Optimized */}
+      <div className="flex overflow-x-auto gap-2 bg-white p-1 rounded-lg border border-gray-200">
         {[
-          { key: 'all', label: 'All Discussions' },
+          { key: 'all', label: 'All' },
           { key: 'pending', label: 'Pending' },
           { key: 'unanswered', label: 'Unanswered' },
           { key: 'answered', label: 'Answered' },
@@ -449,7 +464,7 @@ const MentorDiscussions: React.FC = () => {
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap relative ${
+            className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap relative flex-shrink-0 ${
               filter === tab.key
                 ? 'bg-blue-100 text-blue-700 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -457,7 +472,7 @@ const MentorDiscussions: React.FC = () => {
           >
             {tab.label}
             {tab.key === 'unread' && discussions.filter(d => d.isUnread).length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                 {discussions.filter(d => d.isUnread).length}
               </span>
             )}
@@ -465,31 +480,33 @@ const MentorDiscussions: React.FC = () => {
         ))}
       </div>
 
-      {/* Discussions List */}
-      <div className="space-y-4">
+      {/* Discussions List - Mobile Optimized */}
+      <div className="space-y-3 sm:space-y-4">
         {filteredDiscussions.map((discussion) => (
           <Card key={discussion.id} 
                 className={`hover:shadow-lg transition-all cursor-pointer ${
                   discussion.isUnread ? 'border-l-4 border-l-blue-500 bg-blue-50/30' : ''
                 }`}
                 onClick={() => markAsRead(discussion.id)}>
-            <div className="space-y-4">
-              {/* Header */}
-              <div className="flex items-start justify-between">
+            <div className="space-y-3 sm:space-y-4">
+              {/* Header - Mobile Optimized */}
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
                 <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-orange-500 rounded-full flex items-center justify-center text-white font-semibold text-sm relative">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-orange-500 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm relative flex-shrink-0">
                     {discussion.studentAvatar}
                     {discussion.isUnread && (
-                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></span>
+                      <span className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-medium text-gray-900">{discussion.studentName}</h3>
-                      <span className="text-gray-500">•</span>
-                      <span className="text-sm text-gray-500">{getTimeAgo(discussion.submittedAt)}</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                      <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate">{discussion.studentName}</h3>
+                      <div className="flex items-center space-x-1 sm:space-x-2">
+                        <span className="text-gray-500 hidden sm:inline">•</span>
+                        <span className="text-xs sm:text-sm text-gray-500">{getTimeAgo(discussion.submittedAt)}</span>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-2">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(discussion.category)}`}>
                         {discussion.category}
                       </span>
@@ -497,38 +514,38 @@ const MentorDiscussions: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2 flex-shrink-0">
                   {getStatusBadge(discussion.status, discussion.isNew, discussion.isUnread)}
                 </div>
               </div>
 
-              {/* Course and Lesson Info - Now Clickable */}
+              {/* Course and Lesson Info - Mobile Optimized */}
               <div 
-                className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                className="bg-gray-50 rounded-lg p-2 sm:p-3 hover:bg-gray-100 transition-colors cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCourseClick(discussion.courseTitle);
                 }}
               >
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p>
+                <div className="text-xs sm:text-sm text-gray-600 space-y-1">
+                  <p className="truncate">
                     <span className="font-medium">Course:</span> 
                     <span className="text-blue-600 hover:text-blue-700 ml-1 font-medium">
                       {discussion.courseTitle}
                     </span>
                   </p>
-                  <p><span className="font-medium">Lesson:</span> {discussion.lessonTitle}</p>
+                  <p className="truncate"><span className="font-medium">Lesson:</span> {discussion.lessonTitle}</p>
                 </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-500">Click to filter by this course</span>
+                <div className="flex items-center justify-between mt-1 sm:mt-2">
+                  <span className="text-xs text-gray-500 hidden sm:inline">Click to filter by this course</span>
                   <i className="ri-arrow-right-line text-gray-400"></i>
                 </div>
               </div>
 
-              {/* Question */}
+              {/* Question - Mobile Optimized */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Question:</h4>
-                <p className="text-gray-700 leading-relaxed">{discussion.question}</p>
+                <h4 className="font-medium text-gray-900 mb-1 sm:mb-2 text-sm sm:text-base">Question:</h4>
+                <p className="text-gray-700 leading-relaxed text-sm sm:text-base line-clamp-3">{discussion.question}</p>
               </div>
 
               {/* Replies */}
@@ -576,47 +593,49 @@ const MentorDiscussions: React.FC = () => {
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+              {/* Actions - Mobile Optimized */}
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-3 border-t border-gray-100 space-y-2 sm:space-y-0">
                 <div className="text-xs text-gray-500">
                   Submitted on {formatDateTime(discussion.submittedAt)}
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2">
                   <Button 
                     variant="outline" 
                     size="sm"
+                    className="text-xs sm:text-sm flex-1 sm:flex-none"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedDiscussion(discussion);
                       setShowReplyModal(true);
                     }}
                   >
-                    <i className="ri-reply-line mr-2"></i>
+                    <i className="ri-reply-line mr-1 sm:mr-2"></i>
                     Reply
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
+                    className="text-xs sm:text-sm flex-1 sm:flex-none"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleViewThread(discussion);
                     }}
                   >
-                    <i className="ri-eye-line mr-2"></i>
-                    View Full Thread
+                    <i className="ri-eye-line mr-1 sm:mr-2"></i>
+                    View Thread
                   </Button>
                   {discussion.status === 'pending' && (
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-green-600 hover:bg-green-50"
+                      className="text-xs sm:text-sm flex-1 sm:flex-none text-green-600 hover:bg-green-50"
                       onClick={(e) => {
                         e.stopPropagation();
                         markAsResolved(discussion.id);
                       }}
                     >
-                      <i className="ri-check-line mr-2"></i>
-                      Mark Resolved
+                      <i className="ri-check-line mr-1 sm:mr-2"></i>
+                      Resolve
                     </Button>
                   )}
                 </div>
@@ -719,3 +738,10 @@ const MentorDiscussions: React.FC = () => {
 };
 
 export default MentorDiscussions;
+
+
+
+
+
+
+

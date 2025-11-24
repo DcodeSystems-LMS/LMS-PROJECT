@@ -165,7 +165,7 @@ const CourseLearningPage: React.FC = () => {
     }
   ];
 
-  const currentLesson = lessons.find((lesson: any, index: number) => index + 1 === activeLesson) || lessons[0];
+  const currentLesson = lessons.find((lesson: any, index: number) => index + 1 === activeLesson) || lessons[0] || null;
 
   if (loading) {
     return (
@@ -222,7 +222,7 @@ const CourseLearningPage: React.FC = () => {
         const newBookmark = bookmarkService.addBookmark({
           courseId: courseData.id,
           courseTitle: courseData.title,
-          lessonTitle: currentLesson.title,
+          lessonTitle: String(currentLesson.title || 'Untitled Lesson'),
           lessonId: lessonIdStr,
           instructor: courseData.instructor?.name || 'Unknown Instructor',
           progress: 0, // Default progress
@@ -246,7 +246,7 @@ const CourseLearningPage: React.FC = () => {
         id: Date.now(),
         courseId: courseId || '1',
         courseTitle: courseData.title,
-        lessonTitle: currentLesson.title,
+        lessonTitle: currentLesson?.title ? String(currentLesson.title) : 'Current Lesson',
         question: questionText.trim(),
         category: questionCategory,
         submittedAt: new Date().toISOString(),
@@ -488,18 +488,20 @@ const CourseLearningPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">{currentLesson.title}</h2>
+              <h2 className="text-xl font-semibold text-gray-900">{currentLesson?.title ? String(currentLesson.title) : 'Lesson'}</h2>
               <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handleBookmark(currentLesson.id)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    bookmarkedLessons.includes(currentLesson.id)
-                      ? 'bg-yellow-100 text-yellow-600'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  <i className={bookmarkedLessons.includes(currentLesson.id) ? 'ri-bookmark-fill' : 'ri-bookmark-line'}></i>
-                </button>
+                {currentLesson && (
+                  <button
+                    onClick={() => handleBookmark(currentLesson.id)}
+                    className={`p-2 rounded-lg transition-colors ${
+                      bookmarkedLessons.includes(currentLesson.id)
+                        ? 'bg-yellow-100 text-yellow-600'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    <i className={bookmarkedLessons.includes(currentLesson.id) ? 'ri-bookmark-fill' : 'ri-bookmark-line'}></i>
+                  </button>
+                )}
                 <button
                   onClick={() => setShowQuestionModal(true)}
                   className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
@@ -512,10 +514,10 @@ const CourseLearningPage: React.FC = () => {
 
             {currentLesson && (
               <div className="space-y-4">
-                {currentLesson.videoUrl ? (
+                {currentLesson?.videoUrl ? (
                   <CustomVideoPlayer
                     videoUrl={currentLesson.videoUrl}
-                    title={currentLesson.title}
+                    title={currentLesson?.title ? String(currentLesson.title) : 'Lesson Video'}
                     forceCustomPlayer={true}
                     progressCheckpoints={[10, 30, 60, 120, 300]} // Example checkpoints at 10s, 30s, 1min, 2min, 5min
                     onProgressCheckpoint={async (currentTime, checkpoint) => {
@@ -544,7 +546,7 @@ const CourseLearningPage: React.FC = () => {
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Language: {currentLesson.language || 'English'}</span>
+                  <span className="text-sm text-gray-600">Language: {currentLesson?.language || 'English'}</span>
                   {!completedLessons.includes(activeLesson) && (
                     <Button size="sm" onClick={() => markLessonComplete(activeLesson)}>
                       <i className="ri-check-line mr-2"></i>
@@ -556,7 +558,7 @@ const CourseLearningPage: React.FC = () => {
                 {/* Collapsible Sections */}
                 <div className="mt-6 bg-white border border-gray-200 rounded-lg overflow-hidden">
                   {/* Description Section */}
-                  {currentLesson.description && (
+                  {currentLesson?.description && (
                     <CollapsibleSection
                       title="Description"
                       icon="ri-file-text-line"
@@ -622,7 +624,7 @@ const CourseLearningPage: React.FC = () => {
               </div>
             )}
 
-            {currentLesson.type === 'quiz' && (
+            {currentLesson?.type === 'quiz' && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <i className="ri-question-line text-2xl text-orange-600"></i>
@@ -633,7 +635,7 @@ const CourseLearningPage: React.FC = () => {
               </div>
             )}
 
-            {currentLesson.type === 'project' && (
+            {currentLesson?.type === 'project' && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <i className="ri-code-line text-2xl text-purple-600"></i>
@@ -641,6 +643,16 @@ const CourseLearningPage: React.FC = () => {
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Hands-on Project</h3>
                 <p className="text-gray-600 mb-4">Apply what you've learned in this practical project</p>
                 <Button>Start Project</Button>
+              </div>
+            )}
+
+            {!currentLesson && (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="ri-error-warning-line text-2xl text-gray-400"></i>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Lesson Available</h3>
+                <p className="text-gray-600 mb-4">There are no lessons available for this course yet.</p>
               </div>
             )}
           </Card>
@@ -670,44 +682,47 @@ const CourseLearningPage: React.FC = () => {
           <Card>
             <h3 className="font-semibold text-gray-900 mb-4">Course Content</h3>
             <div className="space-y-2">
-              {lessons.map((lesson: any, index: number) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveLesson(index + 1)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    activeLesson === index + 1
-                      ? 'bg-blue-50 border border-blue-200'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                        completedLessons.includes(index + 1)
-                          ? 'bg-green-100 text-green-600'
-                          : activeLesson === index + 1
-                          ? 'bg-blue-100 text-blue-600'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        <i className={
+              {lessons.map((lesson: any, index: number) => {
+                if (!lesson) return null;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setActiveLesson(index + 1)}
+                    className={`w-full text-left p-3 rounded-lg transition-colors ${
+                      activeLesson === index + 1
+                        ? 'bg-blue-50 border border-blue-200'
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
                           completedLessons.includes(index + 1)
-                            ? 'ri-check-line'
+                            ? 'bg-green-100 text-green-600'
                             : activeLesson === index + 1
-                            ? 'ri-play-line'
-                            : 'ri-play-circle-line'
-                        }></i>
+                            ? 'bg-blue-100 text-blue-600'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          <i className={
+                            completedLessons.includes(index + 1)
+                              ? 'ri-check-line'
+                              : activeLesson === index + 1
+                              ? 'ri-play-line'
+                              : 'ri-play-circle-line'
+                          }></i>
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">{String(lesson.title || 'Untitled Lesson')}</div>
+                          <div className="text-xs text-gray-500">{String(lesson.language || 'English')}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-sm">{lesson.title}</div>
-                        <div className="text-xs text-gray-500">{lesson.language || 'English'}</div>
-                      </div>
+                      {bookmarkedLessons.includes(index + 1) && (
+                        <i className="ri-bookmark-fill text-yellow-500"></i>
+                      )}
                     </div>
-                    {bookmarkedLessons.includes(index + 1) && (
-                      <i className="ri-bookmark-fill text-yellow-500"></i>
-                    )}
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </Card>
 
@@ -754,28 +769,32 @@ const CourseLearningPage: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          {lessons.map((lesson: any, index: number) => (
-            <div key={index} className="flex flex-col items-center">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-                completedLessons.includes(index + 1)
-                  ? 'bg-green-100 text-green-600'
-                  : activeLesson === index + 1
-                  ? 'bg-blue-100 text-blue-600'
-                  : 'bg-gray-100 text-gray-400'
-              }`}>
-                <i className={
+          {lessons.map((lesson: any, index: number) => {
+            if (!lesson) return null;
+            const lessonTitle = String(lesson.title || 'Untitled Lesson');
+            return (
+              <div key={index} className="flex flex-col items-center">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
                   completedLessons.includes(index + 1)
-                    ? 'ri-check-line'
+                    ? 'bg-green-100 text-green-600'
                     : activeLesson === index + 1
-                    ? 'ri-play-line'
-                    : 'ri-lock-line'
-                }></i>
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'bg-gray-100 text-gray-400'
+                }`}>
+                  <i className={
+                    completedLessons.includes(index + 1)
+                      ? 'ri-check-line'
+                      : activeLesson === index + 1
+                      ? 'ri-play-line'
+                      : 'ri-lock-line'
+                  }></i>
+                </div>
+                <span className="text-xs text-gray-600 text-center max-w-16">
+                  {lessonTitle.length > 12 ? lessonTitle.substring(0, 12) + '...' : lessonTitle}
+                </span>
               </div>
-              <span className="text-xs text-gray-600 text-center max-w-16">
-                {lesson.title.length > 12 ? lesson.title.substring(0, 12) + '...' : lesson.title}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
 
@@ -788,7 +807,7 @@ const CourseLearningPage: React.FC = () => {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Ask a Question</h3>
-              <p className="text-sm text-gray-600">About: {currentLesson.title}</p>
+              <p className="text-sm text-gray-600">About: {currentLesson?.title ? String(currentLesson.title) : 'Current Lesson'}</p>
             </div>
           </div>
 

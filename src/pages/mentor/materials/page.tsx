@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Card from '@/components/base/Card';
 import Button from '@/components/base/Button';
 import Modal from '@/components/base/Modal';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 import DataService from '@/services/dataService';
 import { authService } from '@/lib/auth';
 import type { ExtendedCourse, ExtendedCourseMaterial } from '@/services/dataService';
@@ -145,7 +146,7 @@ const MentorMaterials: React.FC = () => {
         title: newMaterial.title,
         description: newMaterial.description,
         category: newMaterial.category,
-        lessonId: newMaterial.lessonId
+        lessonId: newMaterial.lessonId ? parseInt(newMaterial.lessonId.toString()) : undefined
       });
 
       if (result.error) {
@@ -252,7 +253,7 @@ const MentorMaterials: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <i className="ri-loader-4-line text-4xl text-blue-600 animate-spin mb-4"></i>
+          <SimpleDCODESpinner size="lg" className="mb-4" />
           <p className="text-gray-600">Loading materials...</p>
         </div>
       </div>

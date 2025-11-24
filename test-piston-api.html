@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Piston API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #fff;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            margin: 10px 5px;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #result {
+            background: #2d2d2d;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>Piston API Test</h1>
+    <p>Testing: <code>http://49.204.168.41:2000/api/v2</code></p>
+    
+    <button onclick="testHealth()">1. Test Health</button>
+    <button onclick="testRuntimes()">2. Test Runtimes</button>
+    <button onclick="testExecute()">3. Test Execute (C Code)</button>
+    
+    <div id="result"></div>
+
+    <script>
+        const baseUrl = 'http://49.204.168.41:2000/api/v2';
+        const resultDiv = document.getElementById('result');
+
+        function log(message, isError = false) {
+            const className = isError ? 'error' : 'success';
+            resultDiv.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+
+        async function testHealth() {
+            resultDiv.innerHTML = '<div>Testing health endpoint...</div>';
+            try {
+                const response = await fetch('http://49.204.168.41:2000/');
+                const data = await response.json();
+                log(`✅ Health check: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`❌ Health check failed: ${error.message}`, true);
+            }
+        }
+
+        async function testRuntimes() {
+            resultDiv.innerHTML = '<div>Testing runtimes endpoint...</div>';
+            try {
+                const response = await fetch(`${baseUrl}/runtimes`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+                const data = await response.json();
+                log(`✅ Runtimes (showing first 5):`);
+                log(JSON.stringify(data.slice(0, 5), null, 2));
+                
+                // Find C language
+                const cLang = data.find(r => r.language === 'c');
+                if (cLang) {
+                    log(`\n✅ Found C language: ${JSON.stringify(cLang, null, 2)}`);
+                } else {
+                    log(`\n⚠️ C language not found in runtimes`, true);
+                }
+            } catch (error) {
+                log(`❌ Runtimes failed: ${error.message}`, true);
+            }
+        }
+
+        async function testExecute() {
+            resultDiv.innerHTML = '<div>Testing execute endpoint...</div>';
+            try {
+                const requestBody = {
+                    language: 'c',
+                    version: '11.2.0',
+                    files: [{
+                        content: '#include <stdio.h>\n\nint main() {\n    printf("Hello from Piston!\\n");\n    return 0;\n}'
+                    }],
+                    stdin: '',
+                    args: []
+                };
+
+                log(`📤 Sending request to ${baseUrl}/execute`);
+                log(`Request body: ${JSON.stringify(requestBody, null, 2)}`);
+
+                const response = await fetch(`${baseUrl}/execute`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const responseText = await response.text();
+                
+                if (!response.ok) {
+                    log(`❌ Execute failed (${response.status}): ${responseText}`, true);
+                } else {
+                    const data = JSON.parse(responseText);
+                    log(`✅ Execute successful!`);
+                    log(JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                log(`❌ Execute error: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>
+

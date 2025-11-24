@@ -17,27 +17,18 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-purple-900/80 to-slate-900/90"></div>
       
       {/* Animated Background Elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute inset-0 hidden sm:block">
+        <div className="absolute top-20 left-10 md:left-20 w-48 md:w-72 h-48 md:h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 md:right-20 w-60 md:w-96 h-60 md:h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-56 md:w-80 h-56 md:h-80 bg-orange-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <img 
-              src="https://static.readdy.ai/image/9a8f01f834659f0ab66072bb9b6ee657/94d4f47a77f88d2925bb5eae1005561d.png" 
-              alt="DCODE Systems" 
-              className="h-20 w-auto"
-              style={{ filter: 'brightness(0) invert(1)' }}
-            />
-          </div>
 
           {/* Main Heading */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-tight">
             <span className="block bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
               Master the Art of
             </span>
@@ -47,13 +38,13 @@ export default function Hero() {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl sm:text-2xl md:text-3xl text-gray-200 mb-8 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-2xl md:text-3xl text-gray-200 mb-6 sm:mb-8 max-w-3xl sm:max-w-4xl mx-auto leading-relaxed px-2">
             Join thousands of students learning cutting-edge programming skills from industry experts. 
             Build real projects, get personalized mentorship, and land your dream tech job.
           </p>
 
           {/* Feature Highlights */}
-          <div className="flex flex-wrap justify-center gap-6 mb-12 text-sm sm:text-base">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-8 sm:mb-12 text-xs sm:text-base px-2">
             <div className="flex items-center text-blue-200">
               <i className="ri-code-line mr-2 text-lg"></i>
               <span>Live Coding Sessions</span>
@@ -73,11 +64,11 @@ export default function Hero() {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-12 sm:mb-16 px-4">
             <Link to="/auth/signin">
               <Button 
                 size="lg" 
-                className="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-2xl"
+                className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-300 shadow-2xl w-full sm:w-auto"
               >
                 <i className="ri-rocket-line mr-2"></i>
                 Start Learning Now
@@ -87,7 +78,7 @@ export default function Hero() {
               <Button 
                 variant="secondary" 
                 size="lg"
-                className="px-8 py-4 text-lg font-semibold border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm transform hover:scale-105 transition-all duration-300"
+                className="px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm transform hover:scale-105 transition-all duration-300 w-full sm:w-auto"
               >
                 <i className="ri-play-circle-line mr-2"></i>
                 Explore Courses
@@ -96,29 +87,29 @@ export default function Hero() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 max-w-3xl sm:max-w-4xl mx-auto px-2">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">10K+</div>
-              <div className="text-gray-300 text-sm md:text-base">Active Students</div>
+              <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">10K+</div>
+              <div className="text-gray-300 text-xs sm:text-base">Active Students</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">500+</div>
-              <div className="text-gray-300 text-sm md:text-base">Expert Mentors</div>
+              <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">500+</div>
+              <div className="text-gray-300 text-xs sm:text-base">Expert Mentors</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">95%</div>
-              <div className="text-gray-300 text-sm md:text-base">Job Success Rate</div>
+              <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">95%</div>
+              <div className="text-gray-300 text-xs sm:text-base">Job Success Rate</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">24/7</div>
-              <div className="text-gray-300 text-sm md:text-base">Learning Support</div>
+              <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">24/7</div>
+              <div className="text-gray-300 text-xs sm:text-base">Learning Support</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/60 animate-bounce">
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/60 animate-bounce hidden sm:block">
         <i className="ri-arrow-down-line text-2xl"></i>
       </div>
     </section>

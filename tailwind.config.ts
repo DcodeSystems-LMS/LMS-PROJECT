@@ -35,6 +35,7 @@ const config: Config = {
         'inter': ['Inter', 'sans-serif'],
       },
       animation: {
+        'spin': 'spin 1s linear infinite',
         'gradient-wave': 'gradientWave 15s ease infinite',
         'float': 'float 8s ease-in-out infinite',
         'float-slow': 'floatSlow 8s ease-in-out infinite',
@@ -45,6 +46,52 @@ const config: Config = {
         'fade-in-scale': 'fadeInScale 0.5s ease-out both',
         'slide-in-right': 'slideInRight 0.4s ease-out both',
         'slide-down': 'slideDown 0.2s ease-out',
+      },
+      keyframes: {
+        spin: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        gradientWave: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+        floatSlow: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        brandGlow: {
+          '0%': { boxShadow: '0 0 5px rgba(139, 92, 246, 0.5)' },
+          '100%': { boxShadow: '0 0 20px rgba(139, 92, 246, 0.8)' },
+        },
+        neonGlow: {
+          '0%': { boxShadow: '0 0 5px rgba(249, 115, 22, 0.5)' },
+          '100%': { boxShadow: '0 0 20px rgba(249, 115, 22, 0.8)' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(30px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeInScale: {
+          '0%': { opacity: '0', transform: 'scale(0.9)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        slideInRight: {
+          '0%': { opacity: '0', transform: 'translateX(30px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
+        slideDown: {
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       backdropBlur: {
         '24': '24px',

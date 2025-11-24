@@ -3,6 +3,7 @@ import Modal from '@/components/base/Modal';
 import DataService from '@/services/dataService';
 import type { ExtendedCourse } from '@/services/dataService';
 import { supabase } from '@/lib/supabase';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 
 const AdminCourses: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -509,7 +510,7 @@ const AdminCourses: React.FC = () => {
       <div className="p-6">
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center">
-            <i className="ri-loader-4-line text-4xl text-blue-600 animate-spin mb-4"></i>
+            <SimpleDCODESpinner size="md" className="mb-4" />
             <p className="text-gray-600">Loading courses...</p>
           </div>
         </div>

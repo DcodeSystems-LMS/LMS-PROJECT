@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DataService from '@/services/dataService';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 
 const AdminAnalytics: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
@@ -120,7 +121,7 @@ const AdminAnalytics: React.FC = () => {
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <i className="ri-loader-4-line text-4xl text-gray-400 animate-spin mb-4"></i>
+            <SimpleDCODESpinner size="md" className="mb-4" />
             <p className="text-gray-500">Loading analytics...</p>
           </div>
         </div>

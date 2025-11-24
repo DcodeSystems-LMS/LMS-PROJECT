@@ -47,8 +47,8 @@ export const supabase = (() => {
       }
     } catch (error) {
       console.error('❌ Failed to create Supabase client:', error);
-      // Don't throw error, create a mock client instead
-      console.warn('⚠️ Creating fallback Supabase client');
+      // Don't throw error, create a fallback client for offline scenarios
+      console.warn('⚠️ Creating fallback Supabase client for offline mode');
       supabaseInstance = createClient('https://fallback.supabase.co', 'fallback-key', {
         auth: { persistSession: false }
       });

@@ -6,6 +6,7 @@ import MobileDrawer from '@/components/base/MobileDrawer';
 import ProfileMenu from '@/components/feature/ProfileMenu';
 import NotificationDropdown from '@/components/feature/NotificationDropdown';
 import Tooltip from '@/components/base/Tooltip';
+import LoadingSpinner from '@/components/base/LoadingSpinner';
 import { useSidebar } from '@/hooks/useSidebar';
 
 const navigation = [
@@ -50,7 +51,7 @@ export default function AdminLayout() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <i className="ri-loader-4-line text-4xl text-brand-primary animate-spin mb-4"></i>
+          <LoadingSpinner size="xl" color="primary" className="mb-4" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -157,7 +158,7 @@ export default function AdminLayout() {
           <div className="mb-8">
             <Link to="/" className="flex items-center justify-center">
               <img 
-                src="https://static.readdy.ai/image/9a8f01f834659f0ab66072bb9b6ee657/94d4f47a77f88d2925bb5eae1005561d.png" 
+                src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
                 className="h-10 w-auto"
               />
@@ -227,7 +228,7 @@ export default function AdminLayout() {
           <div className="flex-1 flex justify-center lg:hidden">
             <Link to="/" className="flex items-center">
               <img 
-                src="https://static.readdy.ai/image/9a8f01f834659f0ab66072bb9b6ee657/94d4f47a77f88d2925bb5eae1005561d.png" 
+                src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
                 className="h-8 w-auto"
               />
@@ -241,7 +242,7 @@ export default function AdminLayout() {
           <div className="hidden lg:flex items-center absolute left-0 top-0 h-16 px-4 z-50">
             <Link to="/" className="flex items-center">
               <img 
-                src="https://static.readdy.ai/image/9a8f01f834659f0ab66072bb9b6ee657/94d4f47a77f88d2925bb5eae1005561d.png" 
+                src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
                 className="h-10 w-auto"
               />

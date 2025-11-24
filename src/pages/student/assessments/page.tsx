@@ -249,44 +249,71 @@ const StudentAssessments: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+      {/* Header - Mobile Optimized */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Assessments</h1>
-        <p className="text-gray-600 mt-1">Practice tests, quizzes, and track your progress</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Assessments</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">Practice tests, quizzes, and track your progress</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="text-center">
-            <div className={`w-12 h-12 mx-auto mb-4 rounded-full bg-${stat.color}-100 flex items-center justify-center`}>
-              <i className={`${stat.icon} text-2xl text-${stat.color}-600`}></i>
+      {/* Clean Stats Section - Modern Design */}
+      <div className="mb-4 sm:mb-6 lg:mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Your Assessment Progress</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="text-center group hover:scale-105 transition-transform duration-200">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-3 group-hover:shadow-lg group-hover:shadow-blue-200 transition-shadow">
+                <i className="ri-file-list-line text-white text-lg sm:text-xl"></i>
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">0</div>
+              <div className="text-xs sm:text-sm text-gray-600">Total Assessments</div>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
-            <div className="text-sm text-gray-600">{stat.label}</div>
-          </Card>
-        ))}
+
+            <div className="text-center group hover:scale-105 transition-transform duration-200">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl mb-3 group-hover:shadow-lg group-hover:shadow-green-200 transition-shadow">
+                <i className="ri-checkbox-circle-line text-white text-lg sm:text-xl"></i>
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">0</div>
+              <div className="text-xs sm:text-sm text-gray-600">Completed</div>
+            </div>
+
+            <div className="text-center group hover:scale-105 transition-transform duration-200">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl mb-3 group-hover:shadow-lg group-hover:shadow-orange-200 transition-shadow">
+                <i className="ri-play-circle-line text-white text-lg sm:text-xl"></i>
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">0</div>
+              <div className="text-xs sm:text-sm text-gray-600">In Progress</div>
+            </div>
+
+            <div className="text-center group hover:scale-105 transition-transform duration-200">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl mb-3 group-hover:shadow-lg group-hover:shadow-purple-200 transition-shadow">
+                <i className="ri-star-line text-white text-lg sm:text-xl"></i>
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">89%</div>
+              <div className="text-xs sm:text-sm text-gray-600">Average Score</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Course Filter */}
+      {/* Course Filter - Mobile Optimized */}
       {courses.length > 1 && (
-        <Card>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Course</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <Card className="p-3 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Select Course</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
             {courses.map((course) => (
               <button
                 key={course.id}
                 onClick={() => setSelectedCourse(course.id)}
-                className={`p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
+                className={`p-3 sm:p-4 rounded-lg border-2 transition-all cursor-pointer text-left ${
                   selectedCourse === course.id
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <h4 className="font-medium text-gray-900">{course.title}</h4>
+                <h4 className="font-medium text-gray-900 text-sm sm:text-base">{course.title}</h4>
                 {course.id !== 'all' && (
-                  <p className="text-sm text-gray-600 mt-1">{course.assessmentCount} assessments</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">{course.assessmentCount} assessments</p>
                 )}
               </button>
             ))}
@@ -294,8 +321,8 @@ const StudentAssessments: React.FC = () => {
         </Card>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+      {/* Filter Tabs - Mobile Optimized */}
+      <div className="flex overflow-x-auto space-x-1 bg-gray-100 p-1 rounded-lg">
         {[
           { key: 'all', label: 'All' },
           { key: 'upcoming', label: 'Upcoming' },
@@ -305,7 +332,7 @@ const StudentAssessments: React.FC = () => {
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+            className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap flex-shrink-0 ${
               filter === tab.key
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
@@ -316,16 +343,16 @@ const StudentAssessments: React.FC = () => {
         ))}
       </div>
 
-      {/* Assessments List */}
-      <div className="space-y-4">
+      {/* Assessments List - Mobile Optimized */}
+      <div className="space-y-3 sm:space-y-4">
         {filteredAssessments.map((assessment) => (
-          <Card key={assessment.id} className="hover:shadow-lg transition-shadow">
-            <div className="flex items-start justify-between">
+          <Card key={assessment.id} className="hover:shadow-lg transition-shadow p-3 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
               <div className="flex-1">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{assessment.title}</h3>
-                    <p className="text-gray-600 mb-2">{assessment.course}</p>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 gap-2 sm:gap-0">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 truncate">{assessment.title}</h3>
+                    <p className="text-sm sm:text-base text-gray-600 mb-2 truncate">{assessment.course}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(assessment.type)}`}>
@@ -337,7 +364,7 @@ const StudentAssessments: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm text-gray-600">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm text-gray-600">
                   <div className="flex items-center">
                     <i className="ri-time-line mr-2 text-gray-400"></i>
                     {assessment.duration}
@@ -353,18 +380,18 @@ const StudentAssessments: React.FC = () => {
                   {assessment.dueDate && (
                     <div className="flex items-center">
                       <i className="ri-calendar-line mr-2 text-gray-400"></i>
-                      Due: {assessment.dueDate}
+                      <span className="truncate">Due: {assessment.dueDate}</span>
                     </div>
                   )}
                 </div>
 
                 {assessment.topics.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Topics covered:</p>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="mb-3 sm:mb-4">
+                    <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2">Topics covered:</p>
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
                       {assessment.topics.map((topic, index) => (
                         <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md">
-                          {topic}
+                          {String(topic || '')}
                         </span>
                       ))}
                     </div>
@@ -372,40 +399,40 @@ const StudentAssessments: React.FC = () => {
                 )}
 
                 {assessment.status === 'completed' && assessment.score && (
-                  <div className="bg-green-50 rounded-lg p-3 mb-4">
+                  <div className="bg-green-50 rounded-lg p-3 mb-3 sm:mb-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-sm font-medium text-green-800">Score: </span>
-                        <span className="text-lg font-bold text-green-600">{assessment.score}%</span>
+                        <span className="text-xs sm:text-sm font-medium text-green-800">Score: </span>
+                        <span className="text-base sm:text-lg font-bold text-green-600">{assessment.score}%</span>
                       </div>
-                      <i className="ri-trophy-line text-2xl text-green-600"></i>
+                      <i className="ri-trophy-line text-xl sm:text-2xl text-green-600"></i>
                     </div>
                   </div>
                 )}
 
                 {assessment.feedback && (
-                  <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                  <div className="bg-blue-50 rounded-lg p-3 mb-3 sm:mb-4">
                     <div className="flex items-start">
-                      <i className="ri-chat-3-line text-blue-600 mr-2 mt-0.5"></i>
+                      <i className="ri-chat-3-line text-blue-600 mr-2 mt-0.5 text-sm sm:text-base"></i>
                       <div>
-                        <div className="text-sm font-medium text-blue-900 mb-1">Instructor Feedback</div>
-                        <div className="text-sm text-blue-800">{assessment.feedback}</div>
+                        <div className="text-xs sm:text-sm font-medium text-blue-900 mb-1">Instructor Feedback</div>
+                        <div className="text-xs sm:text-sm text-blue-800">{assessment.feedback}</div>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="ml-6 flex flex-col space-y-2">
+              <div className="mt-3 sm:mt-0 sm:ml-6 flex flex-col sm:flex-row lg:flex-col space-y-2 sm:space-y-0 sm:space-x-2 lg:space-x-0 lg:space-y-2">
                 {assessment.status === 'upcoming' && (
-                  <Button onClick={() => handleStartAssessment(assessment)}>
+                  <Button onClick={() => handleStartAssessment(assessment)} className="w-full sm:w-auto">
                     <i className="ri-play-line mr-2"></i>
                     Start {assessment.type}
                   </Button>
                 )}
                 {assessment.status === 'in-progress' && (
                   <Button 
-                    className="bg-orange-600 hover:bg-orange-700"
+                    className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto"
                     onClick={() => handleStartAssessment(assessment)}
                   >
                     <i className="ri-play-line mr-2"></i>
@@ -416,13 +443,14 @@ const StudentAssessments: React.FC = () => {
                   <Button 
                     variant="outline"
                     onClick={() => handleViewResults(assessment)}
+                    className="w-full sm:w-auto"
                   >
                     <i className="ri-eye-line mr-2"></i>
                     View Results
                   </Button>
                 )}
                 
-                <span className={`px-3 py-1 rounded-full text-xs font-medium text-center ${
+                <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium text-center ${
                   assessment.status === 'upcoming' ? 'bg-gray-100 text-gray-800' :
                   assessment.status === 'in-progress' ? 'bg-orange-100 text-orange-800' :
                   'bg-green-100 text-green-800'

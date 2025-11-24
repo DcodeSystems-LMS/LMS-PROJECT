@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '@/components/base/Card';
 import Button from '@/components/base/Button';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 import DataService, { ExtendedCourse } from '@/services/dataService';
 import { authService } from '@/lib/auth';
 
@@ -126,7 +127,7 @@ const MentorAllCourses: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <SimpleDCODESpinner size="lg" className="mb-4" />
           <p className="mt-4 text-gray-600">Loading all courses...</p>
         </div>
       </div>

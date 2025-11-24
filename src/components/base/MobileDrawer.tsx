@@ -36,17 +36,6 @@ export default function MobileDrawer({ isOpen, onClose, children, title }: Mobil
       <div className={`fixed left-0 top-0 h-full w-80 max-w-[85vw] bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden overflow-x-hidden touch-pan-y ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        {title && (
-          <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
-            >
-              <i className="ri-close-line text-xl text-gray-600"></i>
-            </button>
-          </div>
-        )}
         <div className="overflow-y-auto h-full pb-4">
           {children}
         </div>

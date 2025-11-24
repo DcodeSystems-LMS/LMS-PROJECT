@@ -3,6 +3,7 @@ import Modal from '@/components/base/Modal';
 import Button from '@/components/base/Button';
 import DataService from '@/services/dataService';
 import { supabase } from '@/lib/supabase';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 
 interface Question {
   id: string;
@@ -424,7 +425,7 @@ const AssessmentResults: React.FC<AssessmentResultsProps> = ({
       <Modal isOpen={isOpen} onClose={onClose} title="Assessment Results" size="xl">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <SimpleDCODESpinner size="lg" className="mx-auto mb-4" />
             <p className="text-gray-600">Loading assessment results...</p>
           </div>
         </div>

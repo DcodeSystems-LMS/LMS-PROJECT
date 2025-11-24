@@ -2,6 +2,7 @@
 import { BrowserRouter } from 'react-router-dom';
 import { AppRoutes } from './router';
 import { UserThemeProvider } from './contexts/UserThemeContext';
+import { SidebarSettingsProvider } from './contexts/SidebarSettingsContext';
 import ErrorBoundary from './components/base/ErrorBoundary';
 
 function App() {
@@ -15,7 +16,9 @@ function App() {
         }}
       >
         <UserThemeProvider>
-          <AppRoutes />
+          <SidebarSettingsProvider>
+            <AppRoutes />
+          </SidebarSettingsProvider>
         </UserThemeProvider>
       </BrowserRouter>
     </ErrorBoundary>

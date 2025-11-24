@@ -324,13 +324,13 @@ const ResumeBuilderPage: React.FC = () => {
 
   const renderPersonalInfoSection = () => (
     <div className="dashboard-content">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h2>
+      <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Personal Information</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div className="form-group">
-          <label className="form-label">Full Name *</label>
+          <label className="form-label text-sm sm:text-base">Full Name *</label>
           <input
-            className="form-input"
+            className="form-input text-sm sm:text-base"
             type="text"
             value={personalInfo.fullName}
             onChange={(e) => setPersonalInfo({...personalInfo, fullName: e.target.value})}
@@ -339,9 +339,9 @@ const ResumeBuilderPage: React.FC = () => {
         </div>
 
         <div className="form-group">
-          <label className="form-label">Email Address *</label>
+          <label className="form-label text-sm sm:text-base">Email Address *</label>
           <input
-            className="form-input"
+            className="form-input text-sm sm:text-base"
             type="email"
             value={personalInfo.email}
             onChange={(e) => setPersonalInfo({...personalInfo, email: e.target.value})}
@@ -350,9 +350,9 @@ const ResumeBuilderPage: React.FC = () => {
         </div>
 
         <div className="form-group">
-          <label className="form-label">Phone Number *</label>
+          <label className="form-label text-sm sm:text-base">Phone Number *</label>
           <input
-            className="form-input"
+            className="form-input text-sm sm:text-base"
             type="tel"
             value={personalInfo.phone}
             onChange={(e) => setPersonalInfo({...personalInfo, phone: e.target.value})}
@@ -361,9 +361,9 @@ const ResumeBuilderPage: React.FC = () => {
         </div>
 
         <div className="form-group">
-          <label className="form-label">Address *</label>
+          <label className="form-label text-sm sm:text-base">Address *</label>
           <input
-            className="form-input"
+            className="form-input text-sm sm:text-base"
             type="text"
             value={personalInfo.address}
             onChange={(e) => setPersonalInfo({...personalInfo, address: e.target.value})}
@@ -372,9 +372,9 @@ const ResumeBuilderPage: React.FC = () => {
         </div>
 
         <div className="form-group">
-          <label className="form-label">LinkedIn Profile</label>
+          <label className="form-label text-sm sm:text-base">LinkedIn Profile</label>
           <input
-            className="form-input"
+            className="form-input text-sm sm:text-base"
             type="url"
             value={personalInfo.linkedin}
             onChange={(e) => setPersonalInfo({...personalInfo, linkedin: e.target.value})}
@@ -383,9 +383,9 @@ const ResumeBuilderPage: React.FC = () => {
         </div>
 
         <div className="form-group">
-          <label className="form-label">GitHub Profile</label>
+          <label className="form-label text-sm sm:text-base">GitHub Profile</label>
           <input
-            className="form-input"
+            className="form-input text-sm sm:text-base"
             type="url"
             value={personalInfo.github}
             onChange={(e) => setPersonalInfo({...personalInfo, github: e.target.value})}
@@ -393,10 +393,10 @@ const ResumeBuilderPage: React.FC = () => {
           />
         </div>
 
-        <div className="form-group md:col-span-2">
-          <label className="form-label">Personal Website</label>
+        <div className="form-group sm:col-span-2">
+          <label className="form-label text-sm sm:text-base">Personal Website</label>
           <input
-            className="form-input"
+            className="form-input text-sm sm:text-base"
             type="url"
             value={personalInfo.website}
             onChange={(e) => setPersonalInfo({...personalInfo, website: e.target.value})}
@@ -405,8 +405,8 @@ const ResumeBuilderPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="btn-group justify-end pt-8 border-t border-gray-200 mt-8">
-        <Button className="min-h-[44px]" onClick={() => setActiveSection('education')}>
+      <div className="btn-group justify-end pt-6 sm:pt-8 border-t border-gray-200 mt-6 sm:mt-8">
+        <Button className="min-h-[44px] w-full sm:w-auto text-sm" onClick={() => setActiveSection('education')}>
           Next: Education
           <i className="ri-arrow-right-line ml-2"></i>
         </Button>
@@ -416,33 +416,34 @@ const ResumeBuilderPage: React.FC = () => {
 
   const renderEducationSection = () => (
     <div className="dashboard-content">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Education</h2>
-        <Button onClick={addEducationEntry} className="min-h-[44px]">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-0">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Education</h2>
+        <Button onClick={addEducationEntry} className="min-h-[44px] w-full sm:w-auto text-sm">
           <i className="ri-add-line mr-2"></i>
           Add Education
         </Button>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {educationEntries.map((entry, index) => (
           <div key={entry.id} className="form-section">
-            <div className="flex justify-between items-start mb-6">
-              <h3 className="text-lg font-medium text-gray-900">Education #{index + 1}</h3>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6 gap-3 sm:gap-0">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">Education #{index + 1}</h3>
               <Button
                 variant="outline"
                 onClick={() => removeEducationEntry(entry.id)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-200 min-h-[44px] min-w-[44px] !p-3"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-200 min-h-[44px] w-full sm:w-auto sm:min-w-[44px] !p-3 text-sm"
               >
-                <i className="ri-delete-bin-line"></i>
+                <i className="ri-delete-bin-line mr-2 sm:mr-0"></i>
+                <span className="sm:hidden">Remove Education</span>
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <div className="form-group">
-                <label className="form-label">Education Level *</label>
+                <label className="form-label text-sm sm:text-base">Education Level *</label>
                 <select
-                  className="form-input pr-8"
+                  className="form-input pr-8 text-sm sm:text-base"
                   value={entry.level}
                   onChange={(e) => updateEducationEntry(entry.id, 'level', e.target.value)}
                 >
@@ -456,9 +457,9 @@ const ResumeBuilderPage: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Institution *</label>
+                <label className="form-label text-sm sm:text-base">Institution *</label>
                 <input
-                  className="form-input"
+                  className="form-input text-sm sm:text-base"
                   type="text"
                   value={entry.institution}
                   onChange={(e) => updateEducationEntry(entry.id, 'institution', e.target.value)}
@@ -467,9 +468,9 @@ const ResumeBuilderPage: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Board/University *</label>
+                <label className="form-label text-sm sm:text-base">Board/University *</label>
                 <input
-                  className="form-input"
+                  className="form-input text-sm sm:text-base"
                   type="text"
                   value={entry.board}
                   onChange={(e) => updateEducationEntry(entry.id, 'board', e.target.value)}
@@ -478,9 +479,9 @@ const ResumeBuilderPage: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Year of Completion *</label>
+                <label className="form-label text-sm sm:text-base">Year of Completion *</label>
                 <input
-                  className="form-input"
+                  className="form-input text-sm sm:text-base"
                   type="text"
                   value={entry.year}
                   onChange={(e) => updateEducationEntry(entry.id, 'year', e.target.value)}
@@ -488,10 +489,10 @@ const ResumeBuilderPage: React.FC = () => {
                 />
               </div>
 
-              <div className="form-group md:col-span-2">
-                <label className="form-label">Percentage/CGPA *</label>
+              <div className="form-group sm:col-span-2">
+                <label className="form-label text-sm sm:text-base">Percentage/CGPA *</label>
                 <input
-                  className="form-input"
+                  className="form-input text-sm sm:text-base"
                   type="text"
                   value={entry.percentage}
                   onChange={(e) => updateEducationEntry(entry.id, 'percentage', e.target.value)}
@@ -1007,20 +1008,20 @@ const ResumeBuilderPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {/* Header - Mobile Optimized */}
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Resume Builder</h1>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">Create a professional resume with live preview and PDF export</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Resume Builder</h1>
+              <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1">Create a professional resume with live preview and PDF export</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button variant="outline" className="min-h-[44px] w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <Button variant="outline" className="min-h-[44px] w-full sm:w-auto text-sm">
                 <i className="ri-eye-line mr-2"></i>
                 Preview
               </Button>
-              <Button className="min-h-[44px] w-full sm:w-auto" onClick={handleDownloadPDF}>
+              <Button className="min-h-[44px] w-full sm:w-auto text-sm" onClick={handleDownloadPDF}>
                 <i className="ri-download-line mr-2"></i>
                 Download PDF
               </Button>
@@ -1028,32 +1029,32 @@ const ResumeBuilderPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 lg:gap-8">
-          {/* Sidebar Navigation */}
+        {/* Main Content - Mobile Optimized */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
+          {/* Sidebar Navigation - Mobile Optimized */}
           <div className="xl:col-span-2 order-2 xl:order-1">
-            <Card noPadding className="sticky top-6">
-              <div className="p-4 sm:p-6">
-                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
+            <Card noPadding className="sticky top-4 xl:top-6">
+              <div className="p-3 sm:p-4 lg:p-6">
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3 sm:mb-4">
                   Resume Sections
                 </h3>
-                <nav className="space-y-2">
+                <nav className="space-y-1 sm:space-y-2">
                   {sections.map((section) => (
                     <button
                       key={section.id}
                       onClick={() => setActiveSection(section.id)}
-                      className={`dashboard-nav-item w-full flex items-center text-sm font-medium cursor-pointer min-h-[44px] px-3 py-2 rounded-lg transition-all duration-200 ${
+                      className={`dashboard-nav-item w-full flex items-center text-xs sm:text-sm font-medium cursor-pointer min-h-[40px] sm:min-h-[44px] px-2 sm:px-3 py-2 rounded-lg transition-all duration-200 ${
                         activeSection === section.id
                           ? 'bg-gradient-to-r from-purple-600 to-orange-500 text-white'
                           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                       }`}
                     >
-                      <div className="w-5 h-5 flex items-center justify-center mr-3">
-                        <i className={section.icon}></i>
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center mr-2 sm:mr-3">
+                        <i className={`${section.icon} text-sm sm:text-base`}></i>
                       </div>
-                      <span className="flex-1 text-left">{section.label}</span>
+                      <span className="flex-1 text-left truncate">{section.label}</span>
                       {completedSections.includes(section.id) && (
-                        <i className="ri-check-line text-green-500 ml-2"></i>
+                        <i className="ri-check-line text-green-500 ml-1 sm:ml-2 text-sm"></i>
                       )}
                     </button>
                   ))}
@@ -1062,12 +1063,12 @@ const ResumeBuilderPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Content Area */}
+          {/* Content Area - Mobile Optimized */}
           <div className="xl:col-span-3 order-1 xl:order-2">
-            <div className="space-y-6">
-              {/* Form Section */}
+            <div className="space-y-4 sm:space-y-6">
+              {/* Form Section - Mobile Optimized */}
               <Card>
-                <div className="p-4 sm:p-6">
+                <div className="p-3 sm:p-4 lg:p-6">
                   {activeSection === 'personal' && renderPersonalInfoSection()}
                   {activeSection === 'education' && renderEducationSection()}
                   {activeSection === 'skills' && renderSkillsSection()}
@@ -1077,15 +1078,15 @@ const ResumeBuilderPage: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Live Preview */}
+              {/* Live Preview - Mobile Optimized */}
               <Card>
-                <div className="p-4 sm:p-6">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Live Preview</h3>
-                    <p className="text-gray-600 text-sm">See how your resume looks in real-time</p>
+                <div className="p-3 sm:p-4 lg:p-6">
+                  <div className="mb-3 sm:mb-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">Live Preview</h3>
+                    <p className="text-gray-600 text-xs sm:text-sm">See how your resume looks in real-time</p>
                   </div>
-                  <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
-                    <div className="min-w-full" style={{ minWidth: '600px' }}>
+                  <div className="max-h-80 sm:max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                    <div className="min-w-full" style={{ minWidth: '400px' }}>
                       {renderResumePreview()}
                     </div>
                   </div>

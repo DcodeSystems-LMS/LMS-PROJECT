@@ -1,5 +1,6 @@
 
 import { ReactNode } from 'react';
+import SimpleDCODESpinner from './SimpleDCODESpinner';
 
 interface ButtonProps {
   children: ReactNode;
@@ -53,7 +54,7 @@ export default function Button({
       className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${widthClass} ${transitionClass} ${className}`}
     >
       {loading && (
-        <i className="ri-loader-4-line animate-spin mr-2"></i>
+        <SimpleDCODESpinner size="sm" className="mr-2" />
       )}
       {children}
     </button>

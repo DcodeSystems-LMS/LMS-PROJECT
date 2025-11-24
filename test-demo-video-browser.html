@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Video Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        video {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+        .info { background: #2196F3; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Demo Video Test</h1>
+    
+    <div class="test-container">
+        <h2>Video URL Test</h2>
+        <p id="url-status">Testing video URL...</p>
+        <p id="video-details"></p>
+    </div>
+
+    <div class="test-container">
+        <h2>Video Player Test</h2>
+        <video id="demo-video" controls preload="metadata">
+            <source src="https://supabase.dcodesys.in/storage/v1/object/public/demo-videos/DCodesystems_LMS_Demo_Video_Generation.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div id="video-info"></div>
+    </div>
+
+    <script>
+        const demoVideoUrl = 'https://supabase.dcodesys.in/storage/v1/object/public/demo-videos/DCodesystems_LMS_Demo_Video_Generation.mp4';
+        const video = document.getElementById('demo-video');
+        const urlStatus = document.getElementById('url-status');
+        const videoDetails = document.getElementById('video-details');
+        const videoInfo = document.getElementById('video-info');
+
+        // Test video URL accessibility
+        async function testVideoUrl() {
+            try {
+                const response = await fetch(demoVideoUrl, { method: 'HEAD' });
+                
+                if (response.ok) {
+                    urlStatus.innerHTML = '<div class="status success">✅ Demo video is accessible!</div>';
+                    videoDetails.innerHTML = `
+                        <div class="status info">
+                            <strong>Video Details:</strong><br>
+                            Content-Type: ${response.headers.get('content-type')}<br>
+                            Content-Length: ${response.headers.get('content-length')} bytes<br>
+                            Last-Modified: ${response.headers.get('last-modified')}
+                        </div>
+                    `;
+                } else {
+                    urlStatus.innerHTML = `<div class="status error">❌ Demo video is not accessible (Status: ${response.status})</div>`;
+                }
+            } catch (error) {
+                urlStatus.innerHTML = `<div class="status error">❌ Error testing video URL: ${error.message}</div>`;
+            }
+        }
+
+        // Test video player functionality
+        function testVideoPlayer() {
+            video.addEventListener('loadedmetadata', () => {
+                videoInfo.innerHTML = `
+                    <div class="status success">
+                        <strong>✅ Video Player Test Successful!</strong><br>
+                        Duration: ${video.duration.toFixed(2)} seconds<br>
+                        Video Width: ${video.videoWidth}px<br>
+                        Video Height: ${video.videoHeight}px<br>
+                        Ready State: ${video.readyState}
+                    </div>
+                `;
+            });
+
+            video.addEventListener('error', (e) => {
+                videoInfo.innerHTML = `
+                    <div class="status error">
+                        <strong>❌ Video Player Error:</strong><br>
+                        Error Code: ${video.error?.code}<br>
+                        Error Message: ${video.error?.message}
+                    </div>
+                `;
+            });
+
+            video.addEventListener('loadstart', () => {
+                videoInfo.innerHTML = '<div class="status info">🔄 Loading video...</div>';
+            });
+        }
+
+        // Run tests
+        testVideoUrl();
+        testVideoPlayer();
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

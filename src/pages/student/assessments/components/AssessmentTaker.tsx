@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import DataService from '@/services/dataService';
 import { authService } from '@/lib/auth';
 import AssessmentCelebration from '@/components/celebration/AssessmentCelebration';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 
 interface Question {
   id: string;
@@ -174,63 +175,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
     }
   }, [isOpen, assessment?.id]);
 
-  // Mock questions as fallback (for testing)
-  const mockQuestions: Question[] = [
-    {
-      id: '1',
-      question: 'What is the primary purpose of React Hooks?',
-      type: 'multiple-choice',
-      options: [
-        'To replace class components entirely',
-        'To allow state and lifecycle features in function components',
-        'To improve performance of React applications',
-        'To handle routing in React applications'
-      ],
-      correctAnswer: 'To allow state and lifecycle features in function components',
-      explanation: 'React Hooks were introduced to allow function components to use state and other React features that were previously only available in class components.',
-      points: 4
-    },
-    {
-      id: '2',
-      question: 'Which hook is used for side effects in React?',
-      type: 'multiple-choice',
-      options: ['useState', 'useEffect', 'useContext', 'useReducer'],
-      correctAnswer: 'useEffect',
-      explanation: 'useEffect is used to perform side effects in function components, such as data fetching, subscriptions, or manually changing the DOM.',
-      points: 3
-    },
-    {
-      id: '3',
-      question: 'React components must return a single root element.',
-      type: 'true-false',
-      options: ['True', 'False'],
-      correctAnswer: 'False',
-      explanation: 'With React Fragments or array returns, components can return multiple elements without a single root element.',
-      points: 2
-    },
-    {
-      id: '4',
-      question: 'What does the dependency array in useEffect control?',
-      type: 'short-answer',
-      correctAnswer: 'when the effect runs',
-      explanation: 'The dependency array controls when the useEffect hook runs. If empty, it runs once after mount. If it contains values, it runs when those values change.',
-      points: 5
-    },
-    {
-      id: '5',
-      question: 'Which of the following is NOT a valid way to create a React component?',
-      type: 'multiple-choice',
-      options: [
-        'Function declaration',
-        'Arrow function',
-        'Class component',
-        'Object literal'
-      ],
-      correctAnswer: 'Object literal',
-      explanation: 'React components must be either functions or classes. Object literals cannot be used to create React components.',
-      points: 3
-    }
-  ];
+  // Questions will be loaded from the assessment data
 
   useEffect(() => {
     if (isOpen && assessment) {
@@ -405,8 +350,8 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
     let totalPoints = 0;
     let earnedPoints = 0;
 
-    // Use real questions if available, otherwise use mock questions
-    const currentQuestions = questions.length > 0 ? questions : mockQuestions;
+    // Use real questions from the assessment
+    const currentQuestions = questions;
 
     currentQuestions.forEach(question => {
       totalPoints += question.points;
@@ -648,8 +593,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
   };
 
   const nextQuestion = () => {
-    const currentQuestions = questions.length > 0 ? questions : mockQuestions;
-    if (currentQuestionIndex < currentQuestions.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
@@ -664,16 +608,15 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
     return Object.keys(answers).length;
   };
 
-  // Use real questions if available, otherwise use mock questions
-  const currentQuestions = questions.length > 0 ? questions : mockQuestions;
-  const currentQuestion = currentQuestions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
+  // Use real questions from the assessment
+  const currentQuestion = questions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   
   // Debug logging
   console.log('🔍 Current question index:', currentQuestionIndex);
-  console.log('🔍 Total questions:', currentQuestions.length);
+  console.log('🔍 Total questions:', questions.length);
   console.log('🔍 Current question:', currentQuestion);
-  console.log('🔍 All questions:', currentQuestions);
+  console.log('🔍 All questions:', questions);
 
   if (!assessment) return null;
   
@@ -681,8 +624,8 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
   if (!currentQuestion) {
     console.error('❌ Current question is undefined!', {
       currentQuestionIndex,
-      currentQuestionsLength: currentQuestions.length,
-      currentQuestions
+      questionsLength: questions.length,
+      questions
     });
     return (
       <Modal isOpen={isOpen} onClose={onClose} title="Assessment Error">
@@ -692,7 +635,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">Question Loading Error</h3>
           <p className="text-gray-600 mb-4">
-            There was an issue loading question {currentQuestionIndex + 1} of {currentQuestions.length}.
+            There was an issue loading question {currentQuestionIndex + 1} of {questions.length}.
           </p>
           <Button onClick={onClose}>Close Assessment</Button>
         </div>
@@ -710,16 +653,16 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
       >
         {isSubmitting ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="ri-loader-4-line text-2xl text-blue-600 animate-spin"></i>
+            <div className="flex justify-center mb-4">
+              <SimpleDCODESpinner size="lg" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Submitting Assessment</h3>
             <p className="text-gray-600">Please wait while we process your answers...</p>
           </div>
         ) : loading ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="ri-loader-4-line text-2xl text-blue-600 animate-spin"></i>
+            <div className="flex justify-center mb-4">
+              <SimpleDCODESpinner size="lg" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Loading Assessment</h3>
             <p className="text-gray-600">Please wait while we load the questions...</p>
@@ -735,7 +678,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
               Close
             </Button>
           </div>
-        ) : currentQuestions.length === 0 ? (
+        ) : questions.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <i className="ri-question-line text-2xl text-yellow-600"></i>
@@ -752,10 +695,10 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
             <div className="flex items-center justify-between pb-4 border-b border-gray-200">
               <div>
                 <div className="text-sm text-gray-600">
-                  Question {currentQuestionIndex + 1} of {currentQuestions.length}
+                  Question {currentQuestionIndex + 1} of {questions.length}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  Answered: {getAnsweredCount()}/{currentQuestions.length}
+                  Answered: {getAnsweredCount()}/{questions.length}
                 </div>
               </div>
               <div className="text-right">
@@ -778,10 +721,10 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
             <div className="bg-gray-50 rounded-lg p-6">
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900 flex-1">
-                  {currentQuestion.question}
+                  {String(currentQuestion.question || '')}
                 </h3>
                 <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full ml-4">
-                  {currentQuestion.points} pts
+                  {String(currentQuestion.points || 0)} pts
                 </span>
               </div>
 
@@ -799,7 +742,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
                           onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         />
-                        <span className="ml-3 text-gray-900">{option}</span>
+                        <span className="ml-3 text-gray-900">{String(option || '')}</span>
                       </label>
                     ))}
                   </div>
@@ -824,7 +767,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
                           onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         />
-                        <span className="ml-3 font-medium text-gray-900">{option}</span>
+                        <span className="ml-3 font-medium text-gray-900">{String(option || '')}</span>
                       </label>
                     ))}
                     </div>
@@ -863,7 +806,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
                           }}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
-                        <span className="ml-3 text-gray-900">{option}</span>
+                        <span className="ml-3 text-gray-900">{String(option || '')}</span>
                       </label>
                     ))}
                   </div>
@@ -958,7 +901,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
                     <div className="text-gray-700 leading-relaxed">
                       {currentQuestion.blankPositions?.map((blank: any, index: number) => (
                         <span key={index}>
-                          {blank.before}
+                          {String(blank.before || '')}
                           <input
                             type="text"
                             value={answers[`${currentQuestion.id}_${index}`] || ''}
@@ -966,7 +909,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
                             className="inline-block mx-1 px-2 py-1 border-b-2 border-blue-500 bg-blue-50 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="___"
                           />
-                          {blank.after}
+                          {String(blank.after || '')}
                         </span>
                       ))}
                     </div>
@@ -987,14 +930,14 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
               </Button>
 
               <div className="flex items-center space-x-2">
-                {currentQuestions.map((_, index) => (
+                {questions.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentQuestionIndex(index)}
                     className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
                       index === currentQuestionIndex
                         ? 'bg-blue-600 text-white'
-                        : answers[currentQuestions[index].id]
+                        : answers[questions[index]?.id]
                         ? 'bg-green-100 text-green-800'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
@@ -1004,7 +947,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
                 ))}
               </div>
 
-              {currentQuestionIndex === currentQuestions.length - 1 ? (
+              {currentQuestionIndex === questions.length - 1 ? (
                 <Button onClick={handleSubmit}>
                   <i className="ri-check-line mr-2"></i>
                   Submit Assessment
@@ -1054,7 +997,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
       <AssessmentCelebration
         isOpen={showCelebration}
         score={finalScore}
-        totalQuestions={questions.length || mockQuestions.length}
+        totalQuestions={questions.length}
         onComplete={handleCelebrationComplete}
       />
     </>

@@ -27,6 +27,7 @@ const Playground = () => {
   const editorRef = useRef(null);
   const consoleRef = useRef(null);
   const inputRef = useRef(null);
+  const terminalRef = useRef(null);
 
   // Initialize component
   useEffect(() => {
@@ -71,10 +72,16 @@ const Playground = () => {
   };
 
   const clearConsole = () => {
+    executionService.reset();
+    
+    // Reset terminal component
+    if (terminalRef.current) {
+      terminalRef.current.reset();
+    }
+    
     setConsoleLines([]);
     setIsWaitingForInput(false);
     setExecutionId(null);
-    executionService.stopExecution();
   };
 
   const checkAuth = async () => {
@@ -159,7 +166,7 @@ const Playground = () => {
           setIsWaitingForInput(true);
           setExecutionId(result.executionId);
         } else {
-          addConsoleLine('system', 'Program completed successfully.');
+          addConsoleLine('system', '=== Code Execution Successful ===');
           setExecutionId(null);
         }
       } else {
@@ -191,20 +198,44 @@ const Playground = () => {
 
     if (!userInput.trim()) return;
 
-    // Add user input to console
-    addConsoleLine('user-input', userInput);
+    // Append user input to the last prompt line (inline format like second image)
+    setConsoleLines(prev => {
+      const newLines = [...prev];
+      // Find the last output/system line and append input to it
+      for (let i = newLines.length - 1; i >= 0; i--) {
+        if (newLines[i].type === 'output' || newLines[i].type === 'system') {
+          const lastLine = newLines[i].content.trim();
+          // Append input inline to the prompt (matching second image format)
+          if (lastLine.endsWith(':') || lastLine.endsWith('?') || lastLine.match(/^(Enter|Input|Type|Number|Please)/i)) {
+            newLines[i] = {
+              ...newLines[i],
+              content: newLines[i].content.trim() + ' ' + userInput
+            };
+          }
+          break;
+        }
+      }
+      return newLines;
+    });
     
     // Execute code with input
     handleRunCode(userInput);
   };
 
   const handleLanguageChange = (newLanguage) => {
+    // Reset execution service state for new language
+    executionService.reset();
+    
+    // Reset terminal component
+    if (terminalRef.current) {
+      terminalRef.current.reset();
+    }
+    
     setSelectedLanguage(newLanguage);
     setCode(getDefaultCode(newLanguage));
     clearConsole();
     setIsWaitingForInput(false);
     setExecutionId(null);
-    executionService.stopExecution();
   };
 
   const handleEditorDidMount = (editor, monaco) => {
@@ -248,11 +279,17 @@ const Playground = () => {
   };
 
   const clearCode = () => {
+    executionService.reset();
+    
+    // Reset terminal component
+    if (terminalRef.current) {
+      terminalRef.current.reset();
+    }
+    
     setCode(getDefaultCode(selectedLanguage));
     clearConsole();
     setIsWaitingForInput(false);
     setExecutionId(null);
-    executionService.stopExecution();
   };
 
   // Render loading state
@@ -418,6 +455,8 @@ const Playground = () => {
                   
                   {/* Terminal Component */}
                   <ConsoleTerminal
+                    ref={terminalRef}
+                    key={selectedLanguage}
                     isWaitingForInput={isWaitingForInput}
                     onInputSubmit={handleInputSubmit}
                     consoleLines={consoleLines}

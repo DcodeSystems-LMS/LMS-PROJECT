@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '@/components/base/Button';
 import GlobalSearch from './GlobalSearch';
+import SidebarSettingsDropdown from './SidebarSettingsDropdown';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -52,7 +53,7 @@ export default function Header() {
             <div className="flex-shrink-0">
               <Link to="/" className="flex items-center">
                 <img 
-                  src="https://static.readdy.ai/image/9a8f01f834659f0ab66072bb9b6ee657/94d4f47a77f88d2925bb5eae1005561d.png" 
+                  src="/DCODE LOGO.png" 
                   alt="DCODE Systems" 
                   className="h-10 w-auto"
                 />

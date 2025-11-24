@@ -2,14 +2,26 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Button from "@/components/base/Button";
 import HeroSection from './components/HeroSection';
-import FeatureSection from './components/FeatureSection';
-import ScreenshotSection from './components/ScreenshotSection';
-import TestimonialsSection from './components/TestimonialsSection';
-import CTASection from './components/CTASection';
-import Footer from './components/Footer';
+import CodePlaygroundAnimation from './components/CodePlaygroundAnimation';
+import AIAssessmentAnimation from './components/AIAssessmentAnimation';
+import VideoLearningAnimation from './components/VideoLearningAnimation';
+import RealTimeCollaborationAnimation from './components/RealTimeCollaborationAnimation';
+import TechStackAnimation from './components/TechStackAnimation';
+import InteractiveDemoSection from './components/InteractiveDemoSection';
+import AIAutomationModal from './components/AIAutomationModal';
+import IoTDeepInfoModal from './components/IoTDeepInfoModal';
+import DataAnalyticsDeepInfoModal from './components/DataAnalyticsDeepInfoModal';
+import SoftwareSolutionsDeepInfoModal from './components/SoftwareSolutionsDeepInfoModal';
+import DemoVideoModal from './components/DemoVideoModal';
+import SimpleBackgroundVideo from './components/SimpleBackgroundVideo';
 
 export default function ProductPage() {
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [isDemoVideoOpen, setIsDemoVideoOpen] = useState(false);
+  
+  // Debug logging
+  console.log('ProductPage - Current activeModal:', activeModal);
 
   const features = [
     {
@@ -115,100 +127,11 @@ export default function ProductPage() {
         </div>
       </motion.nav>
 
-      {/* Hero Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-24 sm:pb-32">
-        <div className="text-center max-w-5xl mx-auto">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-6 sm:mb-8"
-          >
-            <div className="inline-flex items-center gap-2 backdrop-blur-sm bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2 sm:px-6 sm:py-3">
-              <i className="ri-sparkling-line text-yellow-400 text-lg sm:text-xl"></i>
-              <span className="text-white text-sm sm:text-base">Production-Ready Full-Stack LMS Platform</span>
-            </div>
-          </motion.div>
+      {/* Hero Section with Interactive Boxes */}
+      <HeroSection onModalOpen={(modal) => setActiveModal(modal)} />
 
-          {/* Main Headline */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-          >
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl text-white mb-4 sm:mb-6">
-              DCodesystems
-            </h1>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-6 sm:mb-8">
-              LMS Platform
-            </h2>
-          </motion.div>
-
-          {/* Subtitle */}
-          <motion.p
-            className="text-lg sm:text-xl md:text-2xl text-white/70 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed px-4"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            The complete learning management system with interactive coding, AI assessments, 
-            video learning, and real-time collaboration.
-          </motion.p>
-
-          {/* CTA Buttons */}
-          <motion.div
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12 sm:mb-16 px-4"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <Button
-              size="lg"
-              className="group bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 px-6 py-4 sm:px-10 sm:py-7 text-base sm:text-lg shadow-2xl shadow-purple-500/50 rounded-xl w-full sm:w-auto"
-            >
-              <i className="ri-play-line mr-2"></i>
-              Watch Demo
-              <i className="ri-arrow-right-line ml-2 group-hover:translate-x-1 transition-transform"></i>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="backdrop-blur-xl bg-white/5 border-2 border-white/20 text-white hover:bg-white/10 px-6 py-4 sm:px-10 sm:py-7 text-base sm:text-lg rounded-xl w-full sm:w-auto"
-            >
-              Explore Features
-            </Button>
-          </motion.div>
-
-          {/* Quick Stats */}
-          <motion.div
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 mb-12 sm:mb-16 px-4"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            {[
-              { icon: <i className="ri-user-line text-xl sm:text-2xl"></i>, value: "50K+", label: "Active Students" },
-              { icon: <i className="ri-book-open-line text-xl sm:text-2xl"></i>, value: "1000+", label: "Courses" },
-              { icon: <i className="ri-trophy-line text-xl sm:text-2xl"></i>, value: "98%", label: "Success Rate" },
-              { icon: <i className="ri-time-line text-xl sm:text-2xl"></i>, value: "24/7", label: "Support" }
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6"
-                whileHover={{ y: -5, borderColor: "rgba(255, 255, 255, 0.2)" }}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-              >
-                <div className="text-purple-400 flex justify-center mb-2 sm:mb-3">{stat.icon}</div>
-                <div className="text-2xl sm:text-4xl text-white mb-1 sm:mb-2">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-white/60">{stat.label}</div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-
+      {/* Key Features */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Key Features */}
         <motion.div
           className="mb-24 sm:mb-32 mt-20 sm:mt-32"
@@ -255,12 +178,21 @@ export default function ProductPage() {
                     </div>
                   </div>
                   <h3 className="text-xl sm:text-2xl text-white mb-3 sm:mb-4">{feature.title}</h3>
-                  <p className="text-white/60 text-base sm:text-lg leading-relaxed">{feature.description}</p>
+                  <p className="text-white/60 text-base sm:text-lg leading-relaxed mb-4">{feature.description}</p>
+                  
+                  {/* Interactive Demo Preview */}
+                  <div className="mb-4 h-32 bg-white/5 rounded-lg overflow-hidden">
+                    {index === 0 && <CodePlaygroundAnimation className="h-full" />}
+                    {index === 1 && <AIAssessmentAnimation className="h-full" />}
+                    {index === 2 && <VideoLearningAnimation className="h-full" />}
+                    {index === 3 && <RealTimeCollaborationAnimation className="h-full" />}
+                  </div>
+                  
                   <motion.div
                     className="flex items-center gap-2 text-purple-400 mt-4 sm:mt-6 opacity-0 group-hover:opacity-100 transition-opacity"
                     animate={{ x: hoveredFeature === index ? 5 : 0 }}
                   >
-                    <span className="text-sm sm:text-base">Learn more</span>
+                    <span className="text-sm sm:text-base">Try interactive demo</span>
                     <i className="ri-arrow-right-line"></i>
                   </motion.div>
                 </div>
@@ -299,29 +231,9 @@ export default function ProductPage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 px-4">
-            {techStack.map((stack, index) => (
-              <motion.div
-                key={stack.category}
-                className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 hover:border-purple-500/50 hover:bg-white/10 transition-all duration-300"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -10 }}
-              >
-                <div className="text-4xl sm:text-5xl mb-4 sm:mb-6">{stack.icon}</div>
-                <h3 className="text-lg sm:text-xl text-white mb-4 sm:mb-6">{stack.category}</h3>
-                <div className="space-y-2 sm:space-y-3">
-                  {stack.items.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 sm:gap-3 text-white/70 text-sm sm:text-base">
-                      <i className="ri-check-line text-green-400 flex-shrink-0 text-sm"></i>
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
+          {/* Interactive Tech Stack Animation */}
+          <div className="max-w-4xl mx-auto px-4">
+            <TechStackAnimation className="h-96" />
           </div>
         </motion.div>
 
@@ -727,7 +639,7 @@ export default function ProductPage() {
           </div>
         </motion.div>
 
-        {/* Live Demo Section */}
+        {/* Interactive Demo Section */}
         <motion.div
           className="mb-24 sm:mb-32"
           initial={{ opacity: 0 }}
@@ -743,70 +655,23 @@ export default function ProductPage() {
               transition={{ duration: 0.6 }}
             >
               <div className="inline-block backdrop-blur-sm bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-2 sm:px-5 sm:py-2 mb-4 sm:mb-6">
-                <span className="text-emerald-300 text-sm sm:text-base">Live Demo</span>
+                <span className="text-emerald-300 text-sm sm:text-base">Live Interactive Demo</span>
               </div>
             </motion.div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white mb-3 sm:mb-4">
-              Try It Live
+              Experience the Platform
             </h2>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-3 sm:mb-4">
               Interactive Preview
             </h2>
             <p className="text-lg sm:text-xl text-white/60 max-w-2xl mx-auto">
-              Experience our platform features in real-time. No signup required.
+              Try our platform features in real-time. Switch between different demos to explore all capabilities.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 px-4">
-            {[
-              {
-                title: "Code Playground",
-                description: "Try our interactive code editor",
-                icon: <i className="ri-code-s-slash-line text-3xl"></i>,
-                gradient: "from-blue-500 to-cyan-500",
-                demo: "Try Now"
-              },
-              {
-                title: "Video Player",
-                description: "Experience our advanced video features",
-                icon: <i className="ri-play-circle-line text-3xl"></i>,
-                gradient: "from-purple-500 to-pink-500",
-                demo: "Watch Demo"
-              },
-              {
-                title: "Assessment Builder",
-                description: "Create interactive quizzes",
-                icon: <i className="ri-quiz-line text-3xl"></i>,
-                gradient: "from-orange-500 to-red-500",
-                demo: "Build Quiz"
-              },
-              {
-                title: "Analytics Dashboard",
-                description: "View real-time learning analytics",
-                icon: <i className="ri-bar-chart-line text-3xl"></i>,
-                gradient: "from-green-500 to-emerald-500",
-                demo: "View Analytics"
-              }
-            ].map((demo, index) => (
-              <motion.div
-                key={demo.title}
-                className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 hover:border-white/20 transition-all duration-300"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -10 }}
-              >
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${demo.gradient} bg-opacity-20 flex items-center justify-center mx-auto mb-4`}>
-                  <div className="text-white">{demo.icon}</div>
-                </div>
-                <h3 className="text-xl text-white mb-3 text-center">{demo.title}</h3>
-                <p className="text-white/60 text-center mb-4">{demo.description}</p>
-                <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0">
-                  {demo.demo}
-                </Button>
-              </motion.div>
-            ))}
+          {/* Interactive Demo Container */}
+          <div className="max-w-6xl mx-auto px-4">
+            <InteractiveDemoSection className="h-[600px]" />
           </div>
         </motion.div>
 
@@ -1270,6 +1135,32 @@ export default function ProductPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Modals */}
+      <AIAutomationModal 
+        isOpen={activeModal === 'ai'} 
+        onClose={() => setActiveModal(null)} 
+      />
+      <IoTDeepInfoModal 
+        isOpen={activeModal === 'iot'} 
+        onClose={() => setActiveModal(null)}
+        category="IOT Solutions"
+      />
+      <DataAnalyticsDeepInfoModal 
+        isOpen={activeModal === 'data'} 
+        onClose={() => setActiveModal(null)}
+        category="Data Analytics"
+      />
+      <SoftwareSolutionsDeepInfoModal 
+        isOpen={activeModal === 'software'} 
+        onClose={() => setActiveModal(null)}
+        category="Software Solutions"
+      />
+      <DemoVideoModal 
+        isOpen={isDemoVideoOpen} 
+        onClose={() => setIsDemoVideoOpen(false)}
+      />
+
     </div>
   );
 }

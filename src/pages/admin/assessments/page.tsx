@@ -6,6 +6,7 @@ import DataService from '@/services/dataService';
 import { supabase } from '@/lib/supabase';
 import Modal from '@/components/base/Modal';
 import type { ExtendedAssessment } from '@/services/dataService';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 
 interface Assessment {
   id: string; // Changed from number to string (UUID)
@@ -706,7 +707,7 @@ const AdminAssessments: React.FC = () => {
       <div className="p-6">
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center">
-            <i className="ri-loader-4-line text-4xl text-blue-600 animate-spin mb-4"></i>
+            <SimpleDCODESpinner size="md" className="mb-4" />
             <p className="text-gray-600">Loading assessments...</p>
           </div>
         </div>

@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 import { authService } from '@/lib/auth';
 import MobileDrawer from '@/components/base/MobileDrawer';
 import ProfileMenu from '@/components/feature/ProfileMenu';
 import NotificationDropdown from '@/components/feature/NotificationDropdown';
 import Tooltip from '@/components/base/Tooltip';
+import SidebarToggleButton from '@/components/feature/SidebarToggleButton';
+import SidebarSettingsDropdown from '@/components/feature/SidebarSettingsDropdown';
 import { useSidebar } from '@/hooks/useSidebar';
 import { useMentorTheme } from '@/hooks/useMentorTheme';
+import { useSidebarSettings } from '@/contexts/SidebarSettingsContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/mentor/dashboard', icon: 'ri-dashboard-line' },
@@ -26,8 +30,26 @@ export default function MentorLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isCollapsed, toggleSidebar } = useSidebar('mentor-sidebar-collapsed');
+  const { settings } = useSidebarSettings();
+
+  // Determine sidebar state based on settings
+  const getSidebarState = () => {
+    switch (settings.mode) {
+      case 'always-open':
+        return true;
+      case 'button-toggle':
+        return settings.isOpen;
+      case 'hover':
+      default:
+        return isHovered;
+    }
+  };
+
+  const isSidebarExpanded = getSidebarState();
   
   // Force light mode for mentor panel
   useMentorTheme(user?.role || 'mentor');
@@ -36,26 +58,35 @@ export default function MentorLayout() {
     const checkAuth = async () => {
       try {
         const currentUser = await authService.getCurrentUser();
-        if (currentUser?.role !== 'mentor') {
-          throw new Error('Unauthorized');
+        if (!currentUser) {
+          console.log('No user found, redirecting to sign in');
+          navigate('/auth/signin');
+          return;
+        }
+        if (currentUser.role !== 'mentor') {
+          console.log('User is not mentor, redirecting to sign in');
+          navigate('/auth/signin');
+          return;
         }
         setUser(currentUser);
+        setLoading(false);
       } catch (error) {
         console.error('Auth check failed:', error);
-      } finally {
+        // Redirect to sign in page for auth errors
+        navigate('/auth/signin');
         setLoading(false);
       }
     };
 
     checkAuth();
-  }, []);
+  }, [navigate]);
 
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <i className="ri-loader-4-line text-4xl text-brand-primary animate-spin mb-4"></i>
+          <SimpleDCODESpinner size="lg" className="mb-4" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -69,25 +100,24 @@ export default function MentorLayout() {
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Desktop Sidebar */}
-      <div className={`hidden lg:fixed lg:top-16 lg:bottom-0 lg:flex lg:flex-col transition-all duration-300 ease-in-out ${
-        isCollapsed ? 'lg:w-16' : 'lg:w-64'
-      }`}>
+      <div 
+        className={`hidden lg:fixed lg:top-16 lg:bottom-0 lg:flex lg:flex-col transition-all duration-300 ease-in-out ${
+          isSidebarExpanded ? 'lg:w-64' : 'lg:w-16'
+        }`}
+        onMouseEnter={() => settings.mode === 'hover' && setIsHovered(true)}
+        onMouseLeave={() => settings.mode === 'hover' && setIsHovered(false)}
+      >
         <div className="flex flex-col flex-grow pt-5 bg-white border-r border-gray-200 shadow-sm overflow-hidden overflow-x-hidden">
           {/* Sidebar now starts without logo */}
 
-          {/* Collapse Toggle */}
-          <div className={`px-3 mb-2 ${isCollapsed ? 'px-2' : ''}`}>
-            <button
-              onClick={toggleSidebar}
-              className="w-full flex items-center justify-center p-2 text-gray-600 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-all duration-200"
-            >
-              <i className={`ri-${isCollapsed ? 'menu-unfold' : 'menu-fold'}-line text-lg flex justify-center items-center`}></i>
-            </button>
+          {/* Toggle Button - Above Sidebar */}
+          <div className="px-3 mb-2">
+            <SidebarToggleButton className="w-full" />
           </div>
 
           {/* Navigation */}
           <nav className="mt-5 flex-1 flex flex-col divide-y divide-gray-100 overflow-y-auto scrollbar-hide">
-            <div className={`px-3 space-y-1 ${isCollapsed ? 'px-2' : ''}`}>
+            <div className={`px-3 space-y-1 ${isSidebarExpanded ? '' : 'px-2'}`}>
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 const navItem = (
@@ -98,27 +128,27 @@ export default function MentorLayout() {
                       isActive
                         ? 'bg-gradient-to-r from-purple-600 to-orange-500 text-white shadow-md'
                         : 'text-gray-700 hover:bg-gray-100 hover:text-brand-primary'
-                    } ${isCollapsed ? 'justify-center px-2' : ''}`}
+                    } ${isSidebarExpanded ? '' : 'justify-center px-2'}`}
                   >
                     <i className={`${item.icon} text-lg flex-shrink-0 ${
-                      isCollapsed ? 'flex justify-center items-center' : 'mr-3'
+                      isSidebarExpanded ? 'mr-3' : 'flex justify-center items-center'
                     }`}></i>
                     <span className={`truncate transition-all duration-300 ${
-                      isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+                      isSidebarExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'
                     }`}>
                       {item.name}
                     </span>
                   </Link>
                 );
 
-                return isCollapsed ? (
+                return isSidebarExpanded ? (
+                  <div key={item.name} className="relative block">{navItem}</div>
+                ) : (
                   <div key={item.name} className="relative block">
                     <Tooltip content={item.name} position="right">
                       {navItem}
                     </Tooltip>
                   </div>
-                ) : (
-                  <div key={item.name} className="relative block">{navItem}</div>
                 );
               })}
             </div>
@@ -126,18 +156,18 @@ export default function MentorLayout() {
 
           {/* User Info */}
           <div className={`flex-shrink-0 p-4 border-t border-gray-200 ${
-            isCollapsed ? 'px-2' : ''
+            isSidebarExpanded ? '' : 'px-2'
           }`}>
-            <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
+            <div className={`flex items-center ${isSidebarExpanded ? '' : 'justify-center'}`}>
               <div className="flex-shrink-0">
                 <div className={`rounded-full bg-gradient-to-r from-purple-600 to-orange-500 flex items-center justify-center text-white font-semibold transition-all duration-300 ${
-                  isCollapsed ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm'
+                  isSidebarExpanded ? 'w-10 h-10 text-sm' : 'w-8 h-8 text-xs'
                 }`}>
                   {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
               </div>
               <div className={`ml-3 flex-1 min-w-0 transition-all duration-300 ${
-                isCollapsed ? 'opacity-0 w-0 overflow-hidden ml-0' : 'opacity-100'
+                isSidebarExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden ml-0'
               }`}>
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {user.name}
@@ -162,7 +192,7 @@ export default function MentorLayout() {
           <div className="mb-8">
             <Link to="/" className="flex items-center justify-center">
               <img 
-                src="https://static.readdy.ai/image/9a8f01f834659f0ab66072bb9b6ee657/94d4f47a77f88d2925bb5eae1005561d.png" 
+                src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
                 className="h-10 w-auto"
               />
@@ -214,7 +244,7 @@ export default function MentorLayout() {
 
       {/* Main content */}
       <div className={`lg:flex lg:flex-col lg:flex-1 transition-all duration-300 overflow-x-hidden ${
-        isCollapsed ? 'lg:pl-16' : 'lg:pl-64'
+        isSidebarExpanded ? 'lg:pl-64' : 'lg:pl-16'
       }`}>
         {/* Top bar - Fixed Height */}
         <div className="fixed top-0 left-0 right-0 z-40 flex h-16 flex-shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white/95 backdrop-blur-sm px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:pl-24 lg:pr-8">
@@ -228,11 +258,12 @@ export default function MentorLayout() {
             <i className="ri-menu-line text-xl"></i>
           </button>
 
+
           {/* Mobile Logo - Centered */}
           <div className="flex-1 flex justify-center lg:hidden">
             <Link to="/" className="flex items-center">
               <img 
-                src="https://static.readdy.ai/image/9a8f01f834659f0ab66072bb9b6ee657/94d4f47a77f88d2925bb5eae1005561d.png" 
+                src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
                 className="h-8 w-auto"
               />
@@ -246,7 +277,7 @@ export default function MentorLayout() {
           <div className="hidden lg:flex items-center absolute left-0 top-0 h-16 px-4 z-50">
             <Link to="/" className="flex items-center">
               <img 
-                src="https://static.readdy.ai/image/9a8f01f834659f0ab66072bb9b6ee657/94d4f47a77f88d2925bb5eae1005561d.png" 
+                src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
                 className="h-10 w-auto"
               />
@@ -285,7 +316,7 @@ export default function MentorLayout() {
 
         {/* Page content */}
         <main className={`flex-1 pt-16 pr-4 lg:pr-6 transition-all duration-300 ${
-          isCollapsed ? 'lg:pl-4' : 'lg:pl-6'
+          isSidebarExpanded ? 'lg:pl-6' : 'lg:pl-4'
         }`}>
           <Outlet />
         </main>

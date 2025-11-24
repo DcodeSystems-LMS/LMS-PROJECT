@@ -189,30 +189,80 @@ class Judge0Service {
 
     let output = '';
     let error = '';
+    let needsInput = false;
 
     if (hasCompileError) {
       error = `Compilation Error:\n${compile_output}`;
     } else if (hasRuntimeError) {
-      error = `Runtime Error:\n${stderr}`;
+      // Check if runtime error is actually an EOFError (waiting for input)
+      const stderrLower = stderr.toLowerCase();
+      const isEOFError = stderrLower.includes('eof') || 
+                        stderrLower.includes('end of file') ||
+                        stderrLower.includes('eoferror') ||
+                        stderrLower.includes('unexpected eof');
+      
+      if (isEOFError && isInteractive) {
+        // This is actually waiting for input, not a real error
+        output = stdout || '';
+        error = ''; // Clear error since it's just waiting for input
+        needsInput = true;
+      } else {
+        error = `Runtime Error:\n${stderr}`;
+      }
     } else if (message) {
-      error = `Error: ${message}`;
+      // Check if message indicates EOF/input waiting
+      const messageLower = message.toLowerCase();
+      const isEOFMessage = messageLower.includes('eof') || 
+                           messageLower.includes('end of file') ||
+                           messageLower.includes('waiting for input');
+      
+      if (isEOFMessage && isInteractive) {
+        output = stdout || '';
+        error = '';
+        needsInput = true;
+      } else {
+        error = `Error: ${message}`;
+      }
     } else if (hasOutput) {
       output = stdout;
+      // Check if output suggests waiting for input (common prompts)
+      if (isInteractive) {
+        const outputLower = output.toLowerCase();
+        const hasInputPrompt = outputLower.includes('enter') || 
+                              outputLower.includes('input') ||
+                              outputLower.includes('type') ||
+                              outputLower.includes('please') ||
+                              outputLower.includes('name:') ||
+                              outputLower.includes('number:') ||
+                              outputLower.includes('value:');
+        
+        // If there's a prompt but no error, might be waiting for input
+        // This will be determined by the execution service based on whether input was provided
+        needsInput = false; // Will be set by execution service if needed
+      }
     } else if (isSuccess) {
-      output = isInteractive ? '' : 'Program executed successfully (no output)';
+      // Successful execution with no output
+      if (isInteractive) {
+        // In interactive mode, empty output might mean waiting for input
+        // But we can't be sure, so let execution service decide
+        output = '';
+        needsInput = false;
+      } else {
+        output = 'Program executed successfully (no output)';
+      }
     } else {
       error = 'Unknown error occurred';
     }
 
     return {
-      success: isSuccess && !hasCompileError && !hasRuntimeError,
+      success: isSuccess && !hasCompileError && (!hasRuntimeError || needsInput),
       output: output.trim(),
       error: error.trim(),
       time: time || '0',
       memory: memory || '0',
       status: status ? status.description : 'Unknown',
       isInteractive: isInteractive,
-      needsInput: isInteractive && isSuccess && !hasOutput && !hasCompileError && !hasRuntimeError
+      needsInput: needsInput || (isInteractive && isSuccess && !hasOutput && !hasCompileError && !hasRuntimeError && !error)
     };
   }
 

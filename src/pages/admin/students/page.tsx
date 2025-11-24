@@ -5,6 +5,7 @@ import Modal from '@/components/base/Modal';
 import DataService from '@/services/dataService';
 import type { ExtendedProfile } from '@/services/dataService';
 import { useRealtimeProfiles } from '@/hooks/useRealtimeData';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 
 const AdminStudents: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,7 +59,7 @@ const AdminStudents: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <SimpleDCODESpinner size="lg" />
       </div>
     );
   }
@@ -663,7 +664,7 @@ const AdminStudents: React.FC = () => {
               >
                 {isDeletingStudent ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <SimpleDCODESpinner size="sm" className="mr-2" />
                     Deleting...
                   </>
                 ) : (
@@ -834,7 +835,7 @@ const EditStudentForm: React.FC<{
         >
           {isSubmitting ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <SimpleDCODESpinner size="sm" className="mr-2" />
               Saving...
             </>
           ) : (

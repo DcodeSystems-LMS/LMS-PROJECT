@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SidebarSettingsDropdown from '@/components/feature/SidebarSettingsDropdown';
 
 const AdminSettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('general');
@@ -36,6 +37,7 @@ const AdminSettings: React.FC = () => {
 
   const tabs = [
     { id: 'general', name: 'General', icon: 'ri-settings-line' },
+    { id: 'features', name: 'Features', icon: 'ri-magic-line' },
     { id: 'security', name: 'Security', icon: 'ri-shield-line' },
     { id: 'email', name: 'Email', icon: 'ri-mail-line' },
     { id: 'storage', name: 'Storage', icon: 'ri-database-line' },
@@ -52,19 +54,19 @@ const AdminSettings: React.FC = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         {/* Tabs */}
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
+          <nav className="flex space-x-4 sm:space-x-8 px-4 sm:px-6 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm cursor-pointer whitespace-nowrap ${
+                className={`flex items-center py-4 px-2 sm:px-1 border-b-2 font-medium text-sm cursor-pointer whitespace-nowrap flex-shrink-0 min-w-fit ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <i className={`${tab.icon} mr-2`}></i>
-                {tab.name}
+                <i className={`${tab.icon} mr-1 sm:mr-2 text-base sm:text-sm`}></i>
+                <span className="text-sm sm:text-sm">{tab.name}</span>
               </button>
             ))}
           </nav>
@@ -163,6 +165,26 @@ const AdminSettings: React.FC = () => {
                         }`}
                       />
                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Features Settings */}
+          {activeTab === 'features' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Side Navigation Bar</h3>
+                <p className="text-gray-600 mb-6">Configure how the sidebar navigation behaves across all dashboard layouts.</p>
+                
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-md font-medium text-gray-900 mb-2">Sidebar Toggle Mode</h4>
+                      <p className="text-sm text-gray-600">Choose how the sidebar opens and closes</p>
+                    </div>
+                    <SidebarSettingsDropdown />
                   </div>
                 </div>
               </div>

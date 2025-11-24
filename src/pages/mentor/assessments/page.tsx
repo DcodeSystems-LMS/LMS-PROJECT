@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/components/base/Modal';
 import Button from '@/components/base/Button';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 import { authService } from '@/lib/auth';
 import courseService, { Course } from '@/services/courseService';
 import QuestionEditor, { Question } from '@/components/assessment/QuestionEditor';
@@ -935,112 +936,112 @@ const MentorAssessments: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
+    <div className="p-3 sm:p-6">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Assessments</h1>
-            <p className="text-gray-600 mt-2">Create and manage student assessments</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Assessments</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Create and manage student assessments</p>
             {courses.length === 0 && (
               <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <div className="flex items-center">
-                  <i className="ri-information-line text-orange-600 mr-2"></i>
-                  <span className="text-sm text-orange-700">
+                <div className="flex items-start">
+                  <i className="ri-information-line text-orange-600 mr-2 mt-0.5 flex-shrink-0"></i>
+                  <span className="text-xs sm:text-sm text-orange-700">
                     You need to create a course first before creating assessments. 
                     <a href="/mentor/upload-course" className="text-orange-600 hover:text-orange-800 underline ml-1">
                       Go to Upload Course
                     </a>
                   </span>
-          </div>
+                </div>
               </div>
             )}
           </div>
-                  <div className="flex space-x-3">
-          <button 
-                      onClick={() => {
-                        console.log('AI Creation clicked, current questions:', questions);
-                        setCreateMethod('ai');
-                        setShowCreateModal(true);
-                      }}
-                      disabled={courses.length === 0}
-                      className={`px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap cursor-pointer flex items-center ${
-                        courses.length === 0
-                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                          : 'bg-purple-600 text-white hover:bg-purple-700'
-                      }`}
-                    >
-                      <i className="ri-magic-line mr-2"></i>
-                      {courses.length === 0 ? 'Create Course First' : 'AI Creation'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        console.log('Manual Creation clicked, current questions:', questions);
-                        setCreateMethod('manual');
-                        setShowCreateModal(true);
-                      }}
-                      disabled={courses.length === 0}
-                      className={`px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap cursor-pointer flex items-center ${
-                        courses.length === 0
-                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
-                      <i className="ri-edit-line mr-2"></i>
-                      {courses.length === 0 ? 'Create Course First' : 'Manual Creation'}
-          </button>
-                  </div>
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            <button 
+              onClick={() => {
+                console.log('AI Creation clicked, current questions:', questions);
+                setCreateMethod('ai');
+                setShowCreateModal(true);
+              }}
+              disabled={courses.length === 0}
+              className={`w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap cursor-pointer flex items-center justify-center ${
+                courses.length === 0
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
+              }`}
+            >
+              <i className="ri-magic-line mr-1 sm:mr-2"></i>
+              {courses.length === 0 ? 'Create Course First' : 'AI Creation'}
+            </button>
+            <button
+              onClick={() => {
+                console.log('Manual Creation clicked, current questions:', questions);
+                setCreateMethod('manual');
+                setShowCreateModal(true);
+              }}
+              disabled={courses.length === 0}
+              className={`w-full sm:w-auto px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap cursor-pointer flex items-center justify-center ${
+                courses.length === 0
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              <i className="ri-edit-line mr-1 sm:mr-2"></i>
+              {courses.length === 0 ? 'Create Course First' : 'Manual Creation'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="w-12 h-12 flex items-center justify-center mx-auto mb-3 bg-blue-100 rounded-full">
-            <i className="ri-file-list-line text-2xl text-blue-600"></i>
+      {/* Stats Cards - Mobile Optimized */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-4 sm:mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 text-center">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-2 sm:mb-3 bg-blue-100 rounded-full">
+            <i className="ri-file-list-line text-lg sm:text-2xl text-blue-600"></i>
           </div>
-          <div className="text-2xl font-bold text-gray-900">{assessments.length}</div>
-          <div className="text-sm text-gray-600">Total Assessments</div>
+          <div className="text-lg sm:text-2xl font-bold text-gray-900">{assessments.length}</div>
+          <div className="text-xs sm:text-sm text-gray-600">Total</div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="w-12 h-12 flex items-center justify-center mx-auto mb-3 bg-green-100 rounded-full">
-            <i className="ri-check-line text-2xl text-green-600"></i>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 text-center">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-2 sm:mb-3 bg-green-100 rounded-full">
+            <i className="ri-check-line text-lg sm:text-2xl text-green-600"></i>
           </div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-lg sm:text-2xl font-bold text-gray-900">
             {assessments.reduce((sum, assessment) => sum + (assessment.stats?.completed_attempts || 0), 0)}
           </div>
-          <div className="text-sm text-gray-600">Completed</div>
+          <div className="text-xs sm:text-sm text-gray-600">Completed</div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="w-12 h-12 flex items-center justify-center mx-auto mb-3 bg-orange-100 rounded-full">
-            <i className="ri-time-line text-2xl text-orange-600"></i>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 text-center">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-2 sm:mb-3 bg-orange-100 rounded-full">
+            <i className="ri-time-line text-lg sm:text-2xl text-orange-600"></i>
           </div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-lg sm:text-2xl font-bold text-gray-900">
             {assessments.filter(a => a.status === 'active').length}
           </div>
-          <div className="text-sm text-gray-600">Active</div>
+          <div className="text-xs sm:text-sm text-gray-600">Active</div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="w-12 h-12 flex items-center justify-center mx-auto mb-3 bg-purple-100 rounded-full">
-            <i className="ri-bar-chart-line text-2xl text-purple-600"></i>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 text-center">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mx-auto mb-2 sm:mb-3 bg-purple-100 rounded-full">
+            <i className="ri-bar-chart-line text-lg sm:text-2xl text-purple-600"></i>
           </div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-lg sm:text-2xl font-bold text-gray-900">
             {assessments.length > 0 
               ? Math.round(assessments.reduce((sum, assessment) => sum + (assessment.stats?.average_score || 0), 0) / assessments.length)
               : 0}%
           </div>
-          <div className="text-sm text-gray-600">Avg Score</div>
+          <div className="text-xs sm:text-sm text-gray-600">Avg Score</div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs - Mobile Optimized */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
+          <nav className="flex overflow-x-auto space-x-4 sm:space-x-8 px-3 sm:px-6">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm cursor-pointer whitespace-nowrap ${
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm cursor-pointer whitespace-nowrap flex-shrink-0 ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -1052,68 +1053,68 @@ const MentorAssessments: React.FC = () => {
           </nav>
         </div>
 
-        <div className="p-6">
+        <div className="p-3 sm:p-6">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-gray-600">Loading assessments...</span>
+            <div className="flex items-center justify-center py-8 sm:py-12">
+              <SimpleDCODESpinner size="md" className="mr-2" />
+              <span className="text-sm sm:text-base text-gray-600">Loading assessments...</span>
             </div>
           ) : error ? (
-            <div className="text-center py-12">
+            <div className="text-center py-8 sm:py-12">
               <div className="text-red-600 mb-4">
-                <i className="ri-error-warning-line text-4xl"></i>
+                <i className="ri-error-warning-line text-3xl sm:text-4xl"></i>
               </div>
-              <p className="text-gray-600 mb-4">{error}</p>
+              <p className="text-sm sm:text-base text-gray-600 mb-4">{error}</p>
               <button 
                 onClick={loadAssessments}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm sm:text-base"
               >
                 Try Again
               </button>
             </div>
           ) : assessments.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-8 sm:py-12">
               <div className="text-gray-400 mb-4">
-                <i className="ri-file-list-line text-4xl"></i>
+                <i className="ri-file-list-line text-3xl sm:text-4xl"></i>
               </div>
-              <p className="text-gray-600 mb-4">No assessments created yet</p>
+              <p className="text-sm sm:text-base text-gray-600 mb-4">No assessments created yet</p>
               <button 
                 onClick={handleCreateAssessment}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm sm:text-base"
               >
                 Create Your First Assessment
               </button>
             </div>
           ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {assessments.map((assessment) => (
-              <div key={assessment.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
+              <div key={assessment.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 space-y-2 sm:space-y-0">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <i className={`text-blue-600 ${
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <i className={`text-blue-600 text-sm sm:text-base ${
                         assessment.type === 'Quiz' ? 'ri-question-line' :
                         assessment.type === 'Project' ? 'ri-folder-line' :
                         'ri-file-text-line'
                       }`}></i>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{assessment.title}</h3>
-                        <p className="text-sm text-gray-600">{assessment.course_title}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate">{assessment.title}</h3>
+                      <p className="text-xs sm:text-sm text-gray-600 truncate">{assessment.course_title}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleToggleAssessmentStatus(assessment.id, assessment.status || 'draft')}
-                        className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors hover:opacity-80 ${
-                      assessment.status === 'active' 
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                        }`}
-                        title={`Click to ${assessment.status === 'active' ? 'deactivate' : 'activate'} assessment`}
-                      >
-                        {assessment.status === 'active' ? 'Active' : 'Draft'}
-                      </button>
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    <button
+                      onClick={() => handleToggleAssessmentStatus(assessment.id, assessment.status || 'draft')}
+                      className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors hover:opacity-80 ${
+                        assessment.status === 'active' 
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      }`}
+                      title={`Click to ${assessment.status === 'active' ? 'deactivate' : 'activate'} assessment`}
+                    >
+                      {assessment.status === 'active' ? 'Active' : 'Draft'}
+                    </button>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       assessment.type === 'Quiz' ? 'bg-blue-100 text-blue-800' :
                       assessment.type === 'Project' ? 'bg-purple-100 text-purple-800' :
@@ -1124,72 +1125,72 @@ const MentorAssessments: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-3 sm:mb-4">
                   <div className="text-center">
-                    <div className="text-sm text-gray-500">Students</div>
-                      <div className="text-lg font-semibold text-gray-900">
-                        {assessment.stats?.total_students || 0}
-                        {(assessment.stats?.total_students || 0) > 0 && (assessment.stats?.total_students || 0) < 5 && (
-                          <span className="ml-1 text-xs text-blue-600" title="Demo data">📊</span>
-                        )}
-                      </div>
+                    <div className="text-xs sm:text-sm text-gray-500">Students</div>
+                    <div className="text-sm sm:text-lg font-semibold text-gray-900">
+                      {assessment.stats?.total_students || 0}
+                      {(assessment.stats?.total_students || 0) > 0 && (assessment.stats?.total_students || 0) < 5 && (
+                        <span className="ml-1 text-xs text-blue-600" title="Demo data">📊</span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-sm text-gray-500">Avg Score</div>
-                      <div className="text-lg font-semibold text-gray-900">
-                        {(() => {
-                          const score = assessment.stats?.average_score || 0;
-                          console.log(`Displaying avg score for ${assessment.title}:`, score);
-                          return score;
-                        })()}%
-                        {(assessment.stats?.average_score || 0) > 0 && (assessment.stats?.average_score || 0) < 100 && (
-                          <span className="ml-1 text-xs text-blue-600" title="Demo data">📊</span>
-                        )}
-                      </div>
+                    <div className="text-xs sm:text-sm text-gray-500">Avg Score</div>
+                    <div className="text-sm sm:text-lg font-semibold text-gray-900">
+                      {(() => {
+                        const score = assessment.stats?.average_score || 0;
+                        console.log(`Displaying avg score for ${assessment.title}:`, score);
+                        return score;
+                      })()}%
+                      {(assessment.stats?.average_score || 0) > 0 && (assessment.stats?.average_score || 0) < 100 && (
+                        <span className="ml-1 text-xs text-blue-600" title="Demo data">📊</span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-sm text-gray-500">Due Date</div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {assessment.due_date ? new Date(assessment.due_date).toLocaleDateString() : 'No due date'}
-                      </div>
+                    <div className="text-xs sm:text-sm text-gray-500">Due Date</div>
+                    <div className="text-xs sm:text-sm font-medium text-gray-900">
+                      {assessment.due_date ? new Date(assessment.due_date).toLocaleDateString() : 'No due date'}
+                    </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-sm text-gray-500">Created</div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {new Date(assessment.created_at).toLocaleDateString()}
-                      </div>
+                    <div className="text-xs sm:text-sm text-gray-500">Created</div>
+                    <div className="text-xs sm:text-sm font-medium text-gray-900">
+                      {new Date(assessment.created_at).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-3 sm:pt-4 border-t border-gray-200 space-y-2 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-600">
                     <span className="flex items-center">
                       <i className="ri-user-line mr-1"></i>
-                        {assessment.stats?.total_students || 0} enrolled
+                      {assessment.stats?.total_students || 0} enrolled
                     </span>
                     <span className="flex items-center">
                       <i className="ri-check-line mr-1"></i>
-                        {assessment.stats?.completed_attempts || 0} completed
+                      {assessment.stats?.completed_attempts || 0} completed
                     </span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 overflow-x-auto">
                     <button 
                       onClick={() => handleViewResults(assessment.id)}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium cursor-pointer whitespace-nowrap flex items-center"
+                      className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium cursor-pointer whitespace-nowrap flex items-center flex-shrink-0"
                     >
                       <i className="ri-bar-chart-line mr-1"></i>
                       View Results
                     </button>
                     <button 
                       onClick={() => handleEditAssessment(assessment)}
-                      className="text-gray-600 hover:text-gray-700 text-sm font-medium cursor-pointer whitespace-nowrap flex items-center"
+                      className="text-gray-600 hover:text-gray-700 text-xs sm:text-sm font-medium cursor-pointer whitespace-nowrap flex items-center flex-shrink-0"
                     >
                       <i className="ri-edit-line mr-1"></i>
                       Edit
                     </button>
                     <button 
                       onClick={() => setShowDeleteConfirm(assessment.id)}
-                      className="text-red-600 hover:text-red-700 text-sm font-medium cursor-pointer whitespace-nowrap flex items-center"
+                      className="text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium cursor-pointer whitespace-nowrap flex items-center flex-shrink-0"
                     >
                       <i className="ri-delete-bin-line mr-1"></i>
                       Delete

@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 
-const ConsoleTerminal = ({ 
+const ConsoleTerminal = forwardRef(({ 
   isWaitingForInput, 
   onInputSubmit, 
   consoleLines, 
   onClearConsole,
   isRunning 
-}) => {
+}, ref) => {
   const [currentInput, setCurrentInput] = useState('');
   const [inputHistory, setInputHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -15,6 +15,52 @@ const ConsoleTerminal = ({
   const consoleRef = useRef(null);
   const inputRef = useRef(null);
   const cursorIntervalRef = useRef(null);
+
+  // Expose reset method via ref
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      setCurrentInput('');
+      setInputHistory([]);
+      setHistoryIndex(-1);
+      setShowCursor(true);
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
+      if (cursorIntervalRef.current) {
+        clearInterval(cursorIntervalRef.current);
+        cursorIntervalRef.current = null;
+      }
+    },
+    focus: () => {
+      if (inputRef.current && isWaitingForInput) {
+        inputRef.current.focus();
+      }
+    }
+  }));
+
+  // Reset terminal state when console is cleared (consoleLines becomes empty)
+  useEffect(() => {
+    if (consoleLines.length === 0 && !isWaitingForInput) {
+      setCurrentInput('');
+      setInputHistory([]);
+      setHistoryIndex(-1);
+      setShowCursor(true);
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
+    }
+  }, [consoleLines.length, isWaitingForInput]);
+
+  // Reset input state when no longer waiting for input
+  useEffect(() => {
+    if (!isWaitingForInput) {
+      setCurrentInput('');
+      setHistoryIndex(-1);
+      if (inputRef.current) {
+        inputRef.current.blur();
+      }
+    }
+  }, [isWaitingForInput]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -52,15 +98,17 @@ const ConsoleTerminal = ({
 
   const handleInputSubmit = useCallback((e) => {
     e.preventDefault();
-    if (!currentInput.trim() && !isWaitingForInput) return;
+    
+    // Only submit if we're waiting for input
+    if (!isWaitingForInput) return;
 
-    // Add to input history
+    // Add to input history (even if empty, for tracking)
     if (currentInput.trim()) {
       setInputHistory(prev => [...prev, currentInput]);
-      setHistoryIndex(-1);
     }
+    setHistoryIndex(-1);
 
-    // Submit input
+    // Submit input (can be empty string for programs that accept empty input)
     onInputSubmit(currentInput);
     setCurrentInput('');
   }, [currentInput, onInputSubmit, isWaitingForInput]);
@@ -183,6 +231,8 @@ const ConsoleTerminal = ({
       )}
     </div>
   );
-};
+});
+
+ConsoleTerminal.displayName = 'ConsoleTerminal';
 
 export default ConsoleTerminal;

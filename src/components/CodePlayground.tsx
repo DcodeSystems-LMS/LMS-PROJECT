@@ -31,6 +31,8 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
   const consoleEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<any>(null);
+  const waitingForInputRef = useRef<boolean>(false);
+  const consoleAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (consoleEndRef.current) {
@@ -38,12 +40,45 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
     }
   }, [consoleLines]);
 
+  // Update ref when state changes
+  useEffect(() => {
+    waitingForInputRef.current = waitingForInput;
+  }, [waitingForInput]);
+
   useEffect(() => {
     if (waitingForInput) {
-      // Auto-focus the console area when waiting for input
-      const consoleArea = document.querySelector('[tabindex="0"]') as HTMLElement;
-      if (consoleArea) {
-        consoleArea.focus();
+      // Disable editor when waiting for input
+      if (editorRef.current) {
+        editorRef.current.updateOptions({ readOnly: true });
+        // Blur the editor to remove focus - get DOM node and blur it
+        const editorDomNode = editorRef.current.getDomNode();
+        if (editorDomNode) {
+          const textArea = editorDomNode.querySelector('textarea') as HTMLTextAreaElement;
+          if (textArea) {
+            textArea.blur();
+          }
+          // Also blur the container
+          (editorDomNode as HTMLElement).blur();
+        }
+        // Blur active element if it's within the editor
+        if (document.activeElement && editorDomNode?.contains(document.activeElement)) {
+          (document.activeElement as HTMLElement).blur();
+        }
+      }
+      
+      // Auto-focus the console area and input when waiting for input
+      setTimeout(() => {
+        if (consoleAreaRef.current) {
+          consoleAreaRef.current.focus();
+        }
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 100);
+    } else {
+      // Re-enable editor when not waiting for input
+      if (editorRef.current) {
+        editorRef.current.updateOptions({ readOnly: false });
       }
     }
   }, [waitingForInput]);
@@ -68,27 +103,52 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (waitingForInput) {
+      if (!waitingForInput) return;
+      
+      // Check if the event is coming from the editor
+      const target = e.target as HTMLElement;
+      const isFromEditor = target.closest('.monaco-editor') !== null;
+      
+      // If event is from editor, prevent it and stop propagation
+      if (isFromEditor) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return;
+      }
+      
+      // Only handle events when waiting for input and not from editor
+      if (waitingForInput && !isFromEditor) {
+        // Prevent default behavior for all keys when waiting for input
+        if (e.key !== 'Tab' && !(e.ctrlKey && e.key === 'c')) {
+          // Allow Tab for accessibility, Ctrl+C for stopping
+          if (!(e.ctrlKey || e.metaKey) || e.key === 'c') {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+        
         if (e.key === 'Enter') {
           e.preventDefault();
-          if (currentInput.trim()) {
-            // Add to input history
-            setInputHistory(prev => [...prev, currentInput]);
+          e.stopPropagation();
+          if (currentInput.trim() || waitingForInput) {
+            // Add to input history if input is not empty
+            if (currentInput.trim()) {
+              setInputHistory(prev => [...prev, currentInput]);
+            }
             setHistoryIndex(-1);
             
-            // Collect input and execute immediately
-            const newInputs = [...collectedInputs, currentInput];
-            setCollectedInputs(newInputs);
-            setConsoleLines(prev => [...prev, { type: "input", text: `>> ${currentInput}` }]);
+            // Use the current input (don't collect multiple, execute immediately)
+            const inputToSubmit = currentInput.trim();
             setCurrentInput("");
             
-            // Execute with collected inputs
+            // Execute with the input
             setWaitingForInput(false);
-            const stdin = newInputs.join('\n');
-            executeCode(stdin);
+            executeCode(inputToSubmit);
           }
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
+          e.stopPropagation();
           if (waitingForInput && inputHistory.length > 0) {
             const newIndex = historyIndex === -1 ? inputHistory.length - 1 : Math.max(0, historyIndex - 1);
             setHistoryIndex(newIndex);
@@ -96,6 +156,7 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
           }
         } else if (e.key === 'ArrowDown') {
           e.preventDefault();
+          e.stopPropagation();
           if (waitingForInput) {
             const newIndex = historyIndex + 1;
             if (newIndex >= inputHistory.length) {
@@ -108,13 +169,18 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
           }
         } else if (e.key === 'c' && e.ctrlKey) {
           e.preventDefault();
+          e.stopPropagation();
           // Handle Ctrl+C to stop execution
           setWaitingForInput(false);
           setConsoleLines(prev => [...prev, { type: "prompt", text: "Execution stopped by user." }]);
-        } else if (e.key.length === 1) {
-          // Handle regular character input
+        } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          // Handle regular character input (only if no modifiers)
+          e.preventDefault();
+          e.stopPropagation();
           setCurrentInput(prev => prev + e.key);
         } else if (e.key === 'Backspace') {
+          e.preventDefault();
+          e.stopPropagation();
           // Handle backspace
           setCurrentInput(prev => prev.slice(0, -1));
         }
@@ -122,25 +188,50 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
     };
 
     if (waitingForInput) {
-      document.addEventListener('keydown', handleKeyPress);
+      // Use capture phase to intercept events before they reach editor
+      document.addEventListener('keydown', handleKeyPress, true);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyPress);
+      document.removeEventListener('keydown', handleKeyPress, true);
     };
   }, [waitingForInput, currentInput, collectedInputs, inputHistory, historyIndex]);
 
   useEffect(() => {
     console.log('Selected language changed to:', selectedLanguage);
+    // Ensure terminal state is reset when language changes
+    executionService.reset();
+    setConsoleLines([]);
+    setCollectedInputs([]);
+    setWaitingForInput(false);
+    setCurrentInput("");
+    setInputHistory([]);
+    setHistoryIndex(-1);
+    if (editorRef.current) {
+      editorRef.current.updateOptions({ readOnly: false });
+    }
   }, [selectedLanguage]);
 
   const handleLanguageChange = (langName: string) => {
     console.log('Language changed to:', langName);
     console.log('Current selectedLanguage before change:', selectedLanguage);
+    
+    // Reset execution service state for new language
+    executionService.reset();
+    
     setSelectedLanguage(langName);
     setCode(getDefaultCode(langName));
     setConsoleLines([]);
     setCollectedInputs([]);
+    setWaitingForInput(false);
+    setCurrentInput("");
+    setInputHistory([]);
+    setHistoryIndex(-1);
+    
+    // Re-enable editor if it was disabled
+    if (editorRef.current) {
+      editorRef.current.updateOptions({ readOnly: false });
+    }
   };
 
   const handleZoomIn = () => {
@@ -166,33 +257,48 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
     }
   };
 
-  const handleEditorMount = (editor: any) => {
+  const handleEditorMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
     
     // Add keyboard shortcuts for zoom
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Equal, () => {
-      handleZoomIn();
+      if (!waitingForInput) {
+        handleZoomIn();
+      }
     });
     
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Minus, () => {
-      handleZoomOut();
+      if (!waitingForInput) {
+        handleZoomOut();
+      }
     });
     
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Digit0, () => {
-      handleResetZoom();
+      if (!waitingForInput) {
+        handleResetZoom();
+      }
     });
     
     // Additional zoom shortcuts
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyP, () => {
-      handleZoomIn();
+      if (!waitingForInput) {
+        handleZoomIn();
+      }
     });
     
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM, () => {
-      handleZoomOut();
+      if (!waitingForInput) {
+        handleZoomOut();
+      }
     });
     
     // Mouse wheel zoom (Ctrl + Scroll)
     editor.onMouseWheel((e: any) => {
+      if (waitingForInput) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         e.stopPropagation();
@@ -204,15 +310,81 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
       }
     });
     
-    // Prevent browser zoom when editor is focused
+    // Prevent keyboard input when waiting for input
     const editorContainer = editor.getDomNode();
     if (editorContainer) {
-      editorContainer.addEventListener('keydown', (e: KeyboardEvent) => {
+      // Intercept all keyboard events when waiting for input
+      const keydownHandler = (e: KeyboardEvent) => {
+        // Use ref to get current state value
+        if (waitingForInputRef.current) {
+          // Prevent all keyboard input to editor when waiting for input
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          
+          // Blur editor and focus console
+          const editorDomNode = editor.getDomNode();
+          if (editorDomNode) {
+            const textArea = editorDomNode.querySelector('textarea') as HTMLTextAreaElement;
+            if (textArea) {
+              textArea.blur();
+            }
+            (editorDomNode as HTMLElement).blur();
+          }
+          // Blur active element if it's within the editor
+          if (document.activeElement && editorContainer.contains(document.activeElement)) {
+            (document.activeElement as HTMLElement).blur();
+          }
+          
+          const consoleArea = document.querySelector('[tabindex="0"]') as HTMLElement;
+          if (consoleArea) {
+            consoleArea.focus();
+          }
+          return false;
+        }
+        
+        // Prevent browser zoom when editor is focused
         if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=' || e.key === '-')) {
           e.preventDefault();
           e.stopPropagation();
         }
-      }, true);
+      };
+      
+      editorContainer.addEventListener('keydown', keydownHandler, true);
+      
+      // Also prevent click focus when waiting for input
+      const clickHandler = (e: MouseEvent) => {
+        // Use ref to get current state value
+        if (waitingForInputRef.current) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Blur editor
+          const editorDomNode = editor.getDomNode();
+          if (editorDomNode) {
+            const textArea = editorDomNode.querySelector('textarea') as HTMLTextAreaElement;
+            if (textArea) {
+              textArea.blur();
+            }
+            (editorDomNode as HTMLElement).blur();
+          }
+          // Blur active element if it's within the editor
+          if (document.activeElement && editorContainer.contains(document.activeElement)) {
+            (document.activeElement as HTMLElement).blur();
+          }
+          
+          const consoleArea = document.querySelector('[tabindex="0"]') as HTMLElement;
+          if (consoleArea) {
+            consoleArea.focus();
+          }
+        }
+      };
+      
+      editorContainer.addEventListener('mousedown', clickHandler, true);
+      
+      // Store handlers for cleanup
+      (editorContainer as any)._keydownHandler = keydownHandler;
+      (editorContainer as any)._clickHandler = clickHandler;
     }
   };
 
@@ -230,64 +402,196 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
 
   const executeCode = async (stdin: string = "") => {
     setIsRunning(true);
-    setConsoleLines(prev => [...prev, { type: "output", text: "⚡ Compiling and running..." }]);
+    const isFirstRun = stdin === "";
+    
+    // Only show "Compiling" message on first run
+    if (isFirstRun) {
+      setConsoleLines(prev => [...prev, { type: "output", text: "⚡ Compiling and running..." }]);
+    }
+
+    // If we have input, append it to the last prompt line (inline format like second image)
+    if (!isFirstRun && stdin) {
+      setConsoleLines(prev => {
+        const newLines = [...prev];
+        // Find the last output/prompt line and append input to it
+        for (let i = newLines.length - 1; i >= 0; i--) {
+          if (newLines[i].type === "output" || newLines[i].type === "prompt") {
+            const lastLine = newLines[i].text.trim();
+            // Append input inline to the prompt (matching second image format)
+            if (lastLine.endsWith(':') || lastLine.endsWith('?') || lastLine.match(/^(Enter|Input|Type|Number|Please)/i)) {
+              newLines[i] = {
+                ...newLines[i],
+                text: newLines[i].text.trim() + ' ' + stdin
+              };
+            }
+            break;
+          }
+        }
+        return newLines;
+      });
+    }
 
     try {
       console.log('Executing code:', {
         language: selectedLanguage,
         codeLength: code.length,
         stdinLength: stdin.length,
-        isFirstRun: stdin === ""
+        isFirstRun: isFirstRun
       });
 
-      const result = await executionService.executeCode(code, selectedLanguage, stdin, stdin === "");
+      const result = await executionService.executeCode(code, selectedLanguage, stdin, isFirstRun);
       
+      // Remove "Compiling" message
       setConsoleLines(prev => prev.filter(line => !line.text.includes("Compiling")));
 
-      // Display the input that was provided (if any)
-      if (stdin) {
-        setConsoleLines(prev => [...prev, { type: "prompt", text: "--- Input provided ---" }]);
-        const inputLines = stdin.split('\n');
-        inputLines.forEach(line => {
-          setConsoleLines(prev => [...prev, { type: "input", text: line }]);
-        });
-        setConsoleLines(prev => [...prev, { type: "prompt", text: "--- Program output ---" }]);
+      // Handle first run (showing first prompt)
+      if (isFirstRun && result.needsInput) {
+        // Display only the first prompt (remove "Program is waiting for input" type messages)
+        if (result.output && result.output.trim()) {
+          const outputText = result.output.trim();
+          // Filter out generic waiting messages
+          if (!outputText.toLowerCase().includes('program is waiting for input') && 
+              !outputText.toLowerCase().includes('waiting for input')) {
+            // Show the prompt line by line
+            const promptLines = outputText.split('\n');
+            promptLines.forEach(line => {
+              const trimmedLine = line.trim();
+              if (trimmedLine && !trimmedLine.toLowerCase().includes('program is waiting')) {
+                setConsoleLines(prev => [...prev, { type: "output", text: trimmedLine }]);
+              }
+            });
+          } else {
+            // If only generic message, try to get prompt from promptOutput
+            if (result.promptOutput && result.promptOutput.trim()) {
+              setConsoleLines(prev => [...prev, { type: "output", text: result.promptOutput.trim() }]);
+            }
+          }
+        }
+        
+        // Set waiting for input state
+        setWaitingForInput(true);
+        setCollectedInputs([]);
+        
+        // Ensure editor is disabled and console is focused
+        if (editorRef.current) {
+          editorRef.current.updateOptions({ readOnly: true });
+          const editorDomNode = editorRef.current.getDomNode();
+          if (editorDomNode) {
+            const textArea = editorDomNode.querySelector('textarea') as HTMLTextAreaElement;
+            if (textArea) {
+              textArea.blur();
+            }
+            (editorDomNode as HTMLElement).blur();
+            if (document.activeElement && editorDomNode.contains(document.activeElement)) {
+              (document.activeElement as HTMLElement).blur();
+            }
+          }
+        }
+        
+        // Focus console area and input
+        setTimeout(() => {
+          if (consoleAreaRef.current) {
+            consoleAreaRef.current.focus();
+          }
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 100);
+        return; // Exit early, waiting for user input
       }
 
+
       // Display output or error
-      if (result.success && result.output) {
-        const lines = result.output.trim().split('\n');
-        lines.forEach(line => {
+      // For sequential inputs, this will be either:
+      // 1. The next prompt (if needsInput is true)
+      // 2. The final result (if isComplete is true)
+      if (result.needsInput) {
+        // Show the next prompt only (filter out generic messages)
+        if (result.output && result.output.trim()) {
+          const outputText = result.output.trim();
+          // Filter out generic waiting messages
+          if (!outputText.toLowerCase().includes('program is waiting for input') && 
+              !outputText.toLowerCase().includes('waiting for input')) {
+            const promptLines = outputText.split('\n');
+            promptLines.forEach(line => {
+              const trimmedLine = line.trim();
+              if (trimmedLine && !trimmedLine.toLowerCase().includes('program is waiting')) {
+                setConsoleLines(prev => [...prev, { type: "output", text: trimmedLine }]);
+              }
+            });
+          } else if (result.promptOutput && result.promptOutput.trim()) {
+            // Use promptOutput if available
+            setConsoleLines(prev => [...prev, { type: "output", text: result.promptOutput.trim() }]);
+          }
+        }
+        
+        setWaitingForInput(true);
+        setCollectedInputs([]);
+        
+        // Ensure editor is disabled and console is focused
+        if (editorRef.current) {
+          editorRef.current.updateOptions({ readOnly: true });
+          const editorDomNode = editorRef.current.getDomNode();
+          if (editorDomNode) {
+            const textArea = editorDomNode.querySelector('textarea') as HTMLTextAreaElement;
+            if (textArea) {
+              textArea.blur();
+            }
+            (editorDomNode as HTMLElement).blur();
+            if (document.activeElement && editorDomNode.contains(document.activeElement)) {
+              (document.activeElement as HTMLElement).blur();
+            }
+          }
+        }
+        
+        // Focus console area and input
+        setTimeout(() => {
+          if (consoleAreaRef.current) {
+            consoleAreaRef.current.focus();
+          }
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 100);
+      } else if (result.success && result.output) {
+        // Program completed - show the final output
+        const outputLines = result.output.trim().split('\n');
+        outputLines.forEach(line => {
           if (line.trim()) {
             setConsoleLines(prev => [...prev, { type: "output", text: line }]);
           }
         });
-      } else if (result.error) {
-        setConsoleLines(prev => [...prev, { type: "error", text: result.error }]);
-      }
-
-      // Handle input requirements
-      if (result.needsInput) {
-        setWaitingForInput(true);
-        setConsoleLines(prev => [...prev, { type: "prompt", text: "Program is waiting for input. Type your input and press Enter to execute." }]);
-      } else if (result.success && result.isComplete) {
-        // Program completed successfully
+        
         setWaitingForInput(false);
-      } else if (result.error && result.error.includes('EOFError')) {
-        // Handle EOFError as waiting for input
-        setWaitingForInput(true);
-        setConsoleLines(prev => [...prev, { type: "prompt", text: "Program is waiting for input. Type your input and press Enter to execute." }]);
-      }
-
-      // Display execution status
-      if (result.success && result.isComplete) {
-        setConsoleLines(prev => [...prev, { type: "prompt", text: `✓ Execution completed successfully` }]);
-      } else if (!result.success) {
-        setConsoleLines(prev => [...prev, { type: "error", text: `Execution failed` }]);
+        setCollectedInputs([]);
+        if (editorRef.current) {
+          editorRef.current.updateOptions({ readOnly: false });
+        }
+        
+        // Display completion message (matching second image format)
+        setConsoleLines(prev => [...prev, { type: "prompt", text: `=== Code Execution Successful ===` }]);
+      } else if (result.error && result.error.trim()) {
+        // Show error
+        setConsoleLines(prev => [...prev, { type: "error", text: result.error }]);
+        setWaitingForInput(false);
+        setCollectedInputs([]);
+        if (editorRef.current) {
+          editorRef.current.updateOptions({ readOnly: false });
+        }
+      } else if (result.success && result.isComplete) {
+        // Program completed with no output
+        setWaitingForInput(false);
+        setCollectedInputs([]);
+        if (editorRef.current) {
+          editorRef.current.updateOptions({ readOnly: false });
+        }
+        
+        // Display completion message (matching second image format)
+        setConsoleLines(prev => [...prev, { type: "prompt", text: `=== Code Execution Successful ===` }]);
       }
 
       // Display execution time and memory
-      if (result.time) {
+      if (result.time && result.isComplete) {
         setConsoleLines(prev => [...prev, { type: "prompt", text: `⏱️  Time: ${result.time}s | Memory: ${result.memory || 'N/A'} KB` }]);
       }
 
@@ -297,14 +601,32 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
         ...prev.filter(line => !line.text.includes("Compiling")),
         { type: "error", text: `❌ Error: ${error.message}` }
       ]);
+      setWaitingForInput(false);
+      setCollectedInputs([]);
+      if (editorRef.current) {
+        editorRef.current.updateOptions({ readOnly: false });
+      }
     } finally {
       setIsRunning(false);
     }
   };
 
   const handleRun = () => {
+    // Reset execution service state for fresh run
+    executionService.reset();
+    
+    // Reset input state
     setConsoleLines([]);
     setCollectedInputs([]);
+    setWaitingForInput(false);
+    setCurrentInput("");
+    setInputHistory([]);
+    setHistoryIndex(-1);
+    
+    // Re-enable editor if it was disabled
+    if (editorRef.current) {
+      editorRef.current.updateOptions({ readOnly: false });
+    }
     
     const needsInput = detectInputRequirement(code);
     
@@ -319,10 +641,20 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
 
 
   const handleClear = () => {
+    // Reset execution service state
+    executionService.reset();
+    
     setConsoleLines([]);
     setCollectedInputs([]);
     setWaitingForInput(false);
     setCurrentInput("");
+    setInputHistory([]);
+    setHistoryIndex(-1);
+    
+    // Re-enable editor
+    if (editorRef.current) {
+      editorRef.current.updateOptions({ readOnly: false });
+    }
   };
 
   return (
@@ -420,7 +752,7 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
           </div>
           
           {/* Editor */}
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <Editor
               height="100%"
               language={getMonacoLanguage(selectedLanguage)}
@@ -435,9 +767,35 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
                 scrollBeyondLastLine: false,
                 automaticLayout: true,
                 tabSize: 2,
-                wordWrap: "on"
+                wordWrap: "on",
+                readOnly: waitingForInput || isRunning
               }}
             />
+            {/* Overlay when waiting for input */}
+            {waitingForInput && (
+              <div 
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10 cursor-not-allowed"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const consoleArea = document.querySelector('[tabindex="0"]') as HTMLElement;
+                  if (consoleArea) {
+                    consoleArea.focus();
+                  }
+                }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <div className="bg-yellow-900/90 border border-yellow-600 rounded-lg p-4 text-yellow-200 text-center max-w-md mx-4">
+                  <div className="text-lg font-semibold mb-2">🔒 Editor Locked</div>
+                  <div className="text-sm">
+                    Program is waiting for input. Type in the terminal below.
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -461,12 +819,56 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
 
           {/* Console Output */}
           <div 
-            className="flex-1 overflow-y-auto p-4 font-mono text-sm focus:outline-none bg-gray-900 text-green-400"
+            ref={consoleAreaRef}
+            className="flex-1 overflow-y-auto p-4 font-mono text-sm focus:outline-none bg-gray-900 text-green-400 cursor-text"
             style={{ fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace' }}
             tabIndex={0}
+            onClick={(e) => {
+              // When waiting for input, clicking anywhere on console should focus input
+              if (waitingForInput) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Focus the input field
+                if (inputRef.current) {
+                  inputRef.current.focus();
+                } else {
+                  // If no input ref, focus the console area itself
+                  if (consoleAreaRef.current) {
+                    consoleAreaRef.current.focus();
+                  }
+                }
+              }
+            }}
             onFocus={() => {
               if (waitingForInput) {
                 console.log('Console area focused for input');
+                // Ensure editor is blurred when console gets focus
+                if (editorRef.current) {
+                  // Blur editor properly
+                  const editorDomNode = editorRef.current.getDomNode();
+                  if (editorDomNode) {
+                    const textArea = editorDomNode.querySelector('textarea') as HTMLTextAreaElement;
+                    if (textArea) {
+                      textArea.blur();
+                    }
+                    (editorDomNode as HTMLElement).blur();
+                    if (document.activeElement && editorDomNode.contains(document.activeElement)) {
+                      (document.activeElement as HTMLElement).blur();
+                    }
+                  }
+                }
+                // Focus input if available
+                setTimeout(() => {
+                  if (inputRef.current) {
+                    inputRef.current.focus();
+                  }
+                }, 50);
+              }
+            }}
+            onKeyDown={(e) => {
+              // Prevent event from bubbling to document listener if not waiting for input
+              if (!waitingForInput) {
+                e.stopPropagation();
               }
             }}
           >
@@ -492,15 +894,64 @@ export default function CodePlayground({ onBack }: CodePlaygroundProps) {
               </div>
             ))}
             {waitingForInput && (
-              <div className="flex items-center gap-2 mb-1">
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (currentInput.trim() || waitingForInput) {
+                    const inputToSubmit = currentInput.trim();
+                    setCurrentInput("");
+                    setWaitingForInput(false);
+                    executeCode(inputToSubmit);
+                  }
+                }}
+                className="flex items-center gap-2 mb-1"
+                onClick={(e) => {
+                  // Focus input when form is clicked
+                  e.stopPropagation();
+                  if (inputRef.current) {
+                    inputRef.current.focus();
+                  }
+                }}
+              >
                 <span className="text-green-300 font-mono">&gt;&gt;</span>
-                <span className="text-green-400 font-mono">
-                  {currentInput || "Waiting for input... (Type and press Enter)"}
-                  <span className={`ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>
-                    █
-                  </span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={currentInput}
+                  onChange={(e) => setCurrentInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      if (inputHistory.length > 0) {
+                        const newIndex = historyIndex === -1 ? inputHistory.length - 1 : Math.max(0, historyIndex - 1);
+                        setHistoryIndex(newIndex);
+                        setCurrentInput(inputHistory[newIndex]);
+                      }
+                    } else if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      if (historyIndex !== -1) {
+                        const newIndex = historyIndex + 1;
+                        if (newIndex >= inputHistory.length) {
+                          setHistoryIndex(-1);
+                          setCurrentInput("");
+                        } else {
+                          setHistoryIndex(newIndex);
+                          setCurrentInput(inputHistory[newIndex]);
+                        }
+                      }
+                    }
+                  }}
+                  className="bg-transparent border-none outline-none text-green-400 flex-1 font-mono min-w-0"
+                  placeholder="Type input and press Enter..."
+                  autoFocus
+                  autoComplete="off"
+                  spellCheck="false"
+                  style={{ width: '100%' }}
+                />
+                <span className={`text-green-300 ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>
+                  █
                 </span>
-              </div>
+              </form>
             )}
             <div ref={consoleEndRef} />
           </div>

@@ -200,7 +200,7 @@ class InstantPreloadService {
     console.log('⚡ ULTRA-FAST: Using ultra-fast extraction strategy...');
     
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://49.204.168.41:3001';
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
       

@@ -74,7 +74,7 @@ const SignInPage: React.FC = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-block mb-6">
             <img 
-              src="https://static.readdy.ai/image/9a8f01f834659f0ab66072bb9b6ee657/94d4f47a77f88d2925bb5eae1005561d.png" 
+              src="/DCODE LOGO.png" 
               alt="DCODE Systems" 
               className="h-12 w-auto mx-auto"
             />

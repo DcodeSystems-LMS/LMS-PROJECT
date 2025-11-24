@@ -202,9 +202,16 @@ const MentorUploadCourse: React.FC = () => {
   };
 
   const updateMaterial = (id: number, field: keyof CourseMaterial, value: any) => {
-    setMaterials(prev => prev.map(material => 
-      material.id === id ? { ...material, [field]: value } : material
-    ));
+    setMaterials(prev => prev.map(material => {
+      if (material.id === id) {
+        // Ensure category is always a string
+        if (field === 'category' && typeof value !== 'string') {
+          value = String(value || 'general');
+        }
+        return { ...material, [field]: value };
+      }
+      return material;
+    }));
   };
 
   const getFileIcon = (fileName: string) => {
@@ -336,7 +343,8 @@ const MentorUploadCourse: React.FC = () => {
         instructor_id: currentUser.id,
         price: parseInt(courseData.price) || 0,
         duration_hours: parseInt(courseData.duration) || 0,
-        level: courseData.level.toLowerCase(), // Convert to lowercase for database constraint
+        level: courseData.level.toLowerCase() as "beginner" | "intermediate" | "advanced", // Convert to lowercase for database constraint
+        difficulty: courseData.difficulty as "beginner" | "intermediate" | "advanced", // Add missing difficulty field
         objectives: courseData.objectives.filter(obj => obj.trim() !== ''),
         requirements: courseData.requirements.filter(req => req.trim() !== ''),
         tags: courseData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== ''),
@@ -369,7 +377,7 @@ const MentorUploadCourse: React.FC = () => {
                 title: material.title,
                 description: material.description,
                 category: material.category,
-                lessonId: material.lessonId
+                lessonId: material.lessonId ? parseInt(material.lessonId.toString()) : undefined
               });
               console.log(`✅ Material uploaded: ${material.title}`);
             } catch (materialError) {
@@ -445,59 +453,178 @@ const MentorUploadCourse: React.FC = () => {
         )}
       </div>
 
-      {/* Progress Steps */}
-      <Card>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex items-center w-full sm:w-auto">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                currentStep >= step.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-              }`}>
-                <i className={step.icon}></i>
-              </div>
-              <div className="ml-3 flex-1 sm:flex-none">
-                <div className={`text-sm font-medium ${
-                  currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'
-                }`}>
-                  {step.title}
+      {/* Mobile-Optimized Progress Steps */}
+      <Card className="overflow-hidden">
+        <div className="relative">
+          {/* Desktop Steps */}
+          <div className="hidden sm:block">
+            <div className="flex items-center justify-between py-2">
+              {steps.map((step, index) => (
+                <div 
+                  key={step.id} 
+                  className={`flex items-center group cursor-pointer transition-all duration-300 ${
+                    currentStep === step.id ? 'scale-105' : 'hover:scale-102'
+                  }`}
+                  onClick={() => currentStep > step.id && setCurrentStep(step.id)}
+                >
+                  {/* Step Circle */}
+                  <div className="relative">
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-300 ${
+                      currentStep > step.id 
+                        ? 'bg-green-500 border-green-500 text-white' 
+                        : currentStep === step.id
+                        ? 'bg-blue-600 border-blue-600 text-white animate-pulse'
+                        : 'bg-white border-gray-300 text-gray-400 group-hover:border-blue-300 group-hover:text-blue-400'
+                    }`}>
+                      {currentStep > step.id ? (
+                        <i className="ri-check-line text-sm"></i>
+                      ) : (
+                        <i className={`${step.icon} text-sm`}></i>
+                      )}
+                    </div>
+                    
+                    {/* Step Number Badge */}
+                    <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-xs font-bold flex items-center justify-center transition-all duration-300 ${
+                      currentStep >= step.id 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-300 text-gray-600'
+                    }`}>
+                      {step.id}
+                    </div>
+                  </div>
+                  
+                  {/* Step Title */}
+                  <div className="ml-2">
+                    <span className={`text-sm font-medium transition-colors duration-300 ${
+                      currentStep >= step.id 
+                        ? 'text-blue-600' 
+                        : 'text-gray-500 group-hover:text-blue-400'
+                    }`}>
+                      {step.title}
+                    </span>
+                  </div>
+                  
+                  {/* Connector Line */}
+                  {index < steps.length - 1 && (
+                    <div className={`mx-4 w-8 h-0.5 transition-all duration-300 ${
+                      currentStep > step.id 
+                        ? 'bg-green-400' 
+                        : currentStep === step.id
+                        ? 'bg-blue-400'
+                        : 'bg-gray-200'
+                    }`}></div>
+                  )}
                 </div>
-              </div>
-              {index < steps.length - 1 && (
-                <div className={`hidden sm:block w-16 h-1 mx-4 ${
-                  currentStep > step.id ? 'bg-blue-600' : 'bg-gray-200'
-                }`}></div>
-              )}
+              ))}
             </div>
-          ))}
+          </div>
+          
+          {/* Mobile Steps - Compact Design */}
+          <div className="sm:hidden">
+            {/* Mobile Progress Bar */}
+            <div className="mb-3">
+              <div className="flex justify-between text-xs text-gray-600 mb-1">
+                <span>Step {currentStep} of {steps.length}</span>
+                <span className="font-medium text-blue-600">{Math.round((currentStep / steps.length) * 100)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div 
+                  className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
+                  style={{ width: `${(currentStep / steps.length) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+            
+            {/* Mobile Step Indicators */}
+            <div className="flex items-center justify-between">
+              {steps.map((step, index) => (
+                <div 
+                  key={step.id} 
+                  className="flex flex-col items-center cursor-pointer"
+                  onClick={() => currentStep > step.id && setCurrentStep(step.id)}
+                >
+                  {/* Step Circle */}
+                  <div className={`relative w-8 h-8 rounded-full border-2 transition-all duration-300 ${
+                    currentStep > step.id 
+                      ? 'bg-green-500 border-green-500' 
+                      : currentStep === step.id 
+                      ? 'bg-blue-500 border-blue-500 animate-pulse' 
+                      : 'bg-white border-gray-300'
+                  }`}>
+                    {currentStep > step.id ? (
+                      <i className="ri-check-line text-white text-sm absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></i>
+                    ) : (
+                      <i className={`${step.icon} text-sm absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${
+                        currentStep === step.id ? 'text-white' : 'text-gray-400'
+                      }`}></i>
+                    )}
+                    
+                    {/* Step Number */}
+                    <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-xs font-bold flex items-center justify-center ${
+                      currentStep >= step.id 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-300 text-gray-600'
+                    }`}>
+                      {step.id}
+                    </div>
+                  </div>
+                  
+                  {/* Step Title */}
+                  <span className={`text-xs mt-1 text-center font-medium transition-colors duration-300 ${
+                    currentStep >= step.id 
+                      ? 'text-blue-600' 
+                      : currentStep === step.id
+                      ? 'text-blue-500'
+                      : 'text-gray-400'
+                  }`}>
+                    {step.title}
+                  </span>
+                  
+                  {/* Connector Line */}
+                  {index < steps.length - 1 && (
+                    <div className={`absolute top-4 left-8 w-6 h-0.5 transition-all duration-300 ${
+                      currentStep > step.id 
+                        ? 'bg-green-400' 
+                        : currentStep === step.id
+                        ? 'bg-blue-400'
+                        : 'bg-gray-200'
+                    }`}></div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </Card>
 
       {/* Step Content */}
       <Card>
-        {/* Step 1: Course Info */}
+        {/* Step 1: Course Info - Mobile Optimized */}
         {currentStep === 1 && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Course Information</h2>
-            <div className="space-y-4">
+          <div className="px-2 sm:px-0">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Course Information</h2>
+            <div className="space-y-3 sm:space-y-4">
+              {/* Course Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Course Title *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Course Title *</label>
                 <input
                   type="text"
                   value={courseData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter course title"
                 />
               </div>
 
+              {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Description *</label>
                 <textarea
                   value={courseData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  rows={4}
+                  rows={3}
                   maxLength={500}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   placeholder="Describe what students will learn in this course"
                 />
                 <div className="text-xs text-gray-500 mt-1">
@@ -505,13 +632,14 @@ const MentorUploadCourse: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Basic Info Grid - Mobile First */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Category *</label>
                   <select
                     value={courseData.category}
                     onChange={(e) => handleInputChange('category', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
+                    className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
                   >
                     <option value="">Select Category</option>
                     <option value="Web Development">Web Development</option>
@@ -522,11 +650,11 @@ const MentorUploadCourse: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Level *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Level *</label>
                   <select
                     value={courseData.level}
                     onChange={(e) => handleInputChange('level', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
+                    className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
                   >
                     <option value="">Select Level</option>
                     <option value="Beginner">Beginner</option>
@@ -536,25 +664,39 @@ const MentorUploadCourse: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Price (₹) *</label>
                   <input
                     type="number"
                     value={courseData.price}
                     onChange={(e) => handleInputChange('price', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="999"
                     min="0"
                   />
                 </div>
               </div>
 
+              {/* Duration */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Duration (Hours)</label>
+                <input
+                  type="number"
+                  value={courseData.duration}
+                  onChange={(e) => handleInputChange('duration', e.target.value)}
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="10"
+                  min="0"
+                />
+              </div>
+
+              {/* Cover Image */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Cover Image URL</label>
                 <input
                   type="url"
                   value={courseData.coverImage}
                   onChange={(e) => handleInputChange('coverImage', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="https://example.com/image.jpg"
                 />
                 {courseData.coverImage && (
@@ -562,7 +704,7 @@ const MentorUploadCourse: React.FC = () => {
                     <img 
                       src={courseData.coverImage} 
                       alt="Course cover preview"
-                      className="w-32 h-20 object-cover rounded border"
+                      className="w-24 h-16 sm:w-32 sm:h-20 object-cover rounded border"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
@@ -571,22 +713,11 @@ const MentorUploadCourse: React.FC = () => {
                 )}
               </div>
 
+              {/* Course Objectives - Mobile Optimized */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Duration (Hours)</label>
-                <input
-                  type="number"
-                  value={courseData.duration}
-                  onChange={(e) => handleInputChange('duration', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="10"
-                  min="0"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Course Objectives</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Course Objectives</label>
                 {courseData.objectives.map((objective, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
+                  <div key={index} className="flex gap-1 sm:gap-2 mb-2">
                     <input
                       type="text"
                       value={objective}
@@ -595,7 +726,7 @@ const MentorUploadCourse: React.FC = () => {
                         newObjectives[index] = e.target.value;
                         setCourseData(prev => ({ ...prev, objectives: newObjectives }));
                       }}
-                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder={`Objective ${index + 1}`}
                     />
                     {courseData.objectives.length > 1 && (
@@ -605,7 +736,7 @@ const MentorUploadCourse: React.FC = () => {
                           const newObjectives = courseData.objectives.filter((_, i) => i !== index);
                           setCourseData(prev => ({ ...prev, objectives: newObjectives }));
                         }}
-                        className="px-3 py-2 text-red-600 hover:text-red-700"
+                        className="px-2 sm:px-3 py-2 text-red-600 hover:text-red-700 text-sm"
                       >
                         <i className="ri-delete-bin-line"></i>
                       </button>
@@ -621,10 +752,11 @@ const MentorUploadCourse: React.FC = () => {
                 </button>
               </div>
 
+              {/* Course Requirements - Mobile Optimized */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Course Requirements</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Course Requirements</label>
                 {courseData.requirements.map((requirement, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
+                  <div key={index} className="flex gap-1 sm:gap-2 mb-2">
                     <input
                       type="text"
                       value={requirement}
@@ -633,7 +765,7 @@ const MentorUploadCourse: React.FC = () => {
                         newRequirements[index] = e.target.value;
                         setCourseData(prev => ({ ...prev, requirements: newRequirements }));
                       }}
-                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder={`Requirement ${index + 1}`}
                     />
                     {courseData.requirements.length > 1 && (
@@ -643,7 +775,7 @@ const MentorUploadCourse: React.FC = () => {
                           const newRequirements = courseData.requirements.filter((_, i) => i !== index);
                           setCourseData(prev => ({ ...prev, requirements: newRequirements }));
                         }}
-                        className="px-3 py-2 text-red-600 hover:text-red-700"
+                        className="px-2 sm:px-3 py-2 text-red-600 hover:text-red-700 text-sm"
                       >
                         <i className="ri-delete-bin-line"></i>
                       </button>
@@ -659,13 +791,14 @@ const MentorUploadCourse: React.FC = () => {
                 </button>
               </div>
 
+              {/* Tags */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Tags (comma-separated)</label>
                 <input
                   type="text"
                   value={courseData.tags}
                   onChange={(e) => handleInputChange('tags', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-2.5 sm:p-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="React, JavaScript, Frontend"
                 />
               </div>
@@ -891,7 +1024,7 @@ const MentorUploadCourse: React.FC = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                         <select
-                          value={material.category}
+                          value={typeof material.category === 'string' ? material.category : 'general'}
                           onChange={(e) => updateMaterial(material.id, 'category', e.target.value)}
                           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
@@ -988,15 +1121,15 @@ const MentorUploadCourse: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
                     <span className="flex items-center">
                       <i className="ri-bookmark-line mr-1"></i>
-                      {courseData.category}
+                      {String(courseData.category || '')}
                     </span>
                     <span className="flex items-center">
                       <i className="ri-signal-tower-line mr-1"></i>
-                      {courseData.level}
+                      {String(courseData.level || '')}
                     </span>
                     <span className="flex items-center">
                       <i className="ri-money-rupee-circle-line mr-1"></i>
-                      ₹{courseData.price}
+                      ₹{String(courseData.price || '')}
                     </span>
                   </div>
                   <div className="text-sm text-gray-600">
@@ -1039,7 +1172,7 @@ const MentorUploadCourse: React.FC = () => {
                           <div className="flex items-center space-x-3 flex-shrink-0">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                               <i className="ri-global-line mr-1"></i>
-                              {lesson.language}
+                              {String(lesson.language || '')}
                             </span>
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               <i className={`${lesson.videoType === 'youtube' ? 'ri-youtube-line' : 'ri-file-video-line'} mr-1`}></i>
@@ -1064,9 +1197,9 @@ const MentorUploadCourse: React.FC = () => {
                     Your course includes lessons in multiple languages:
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from(new Set(lessons.map(l => l.language))).map(language => (
+                    {Array.from(new Set(lessons.map(l => String(l.language || '')))).map(language => (
                       <span key={language} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {language} ({lessons.filter(l => l.language === language).length} lesson{lessons.filter(l => l.language === language).length !== 1 ? 's' : ''})
+                        {language} ({lessons.filter(l => String(l.language || '') === language).length} lesson{lessons.filter(l => String(l.language || '') === language).length !== 1 ? 's' : ''})
                       </span>
                     ))}
                   </div>
@@ -1087,7 +1220,7 @@ const MentorUploadCourse: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-gray-900 truncate">{material.title}</h4>
                         <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <span className="capitalize">{material.category}</span>
+                          <span className="capitalize">{String(material.category || '')}</span>
                           {material.file && (
                             <>
                               <span>•</span>
@@ -1144,7 +1277,7 @@ const MentorUploadCourse: React.FC = () => {
           ) : (
             <Button
               onClick={handleCreateCourse}
-              variant="neon"
+              variant="brand"
               fullWidth={window.innerWidth < 640}
               disabled={loading}
             >

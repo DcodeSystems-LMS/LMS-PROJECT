@@ -14,47 +14,8 @@ interface Integration {
   config?: any;
 }
 
-const mockIntegrations: Integration[] = [
-  {
-    id: '1',
-    name: 'Google SSO',
-    type: 'sso',
-    provider: 'Google',
-    status: 'active',
-    description: 'Single Sign-On with Google Workspace',
-    lastSync: '2024-01-15T10:30:00Z',
-    config: { clientId: 'xxx...', domain: 'company.com' }
-  },
-  {
-    id: '2',
-    name: 'Stripe Payments',
-    type: 'payment',
-    provider: 'Stripe',
-    status: 'active',
-    description: 'Payment processing for course enrollments',
-    lastSync: '2024-01-15T09:15:00Z',
-    config: { mode: 'live', currency: 'USD' }
-  },
-  {
-    id: '3',
-    name: 'Canvas LTI',
-    type: 'lti',
-    provider: 'Canvas',
-    status: 'inactive',
-    description: 'LTI 1.3 integration with Canvas LMS',
-    config: { ltiVersion: '1.3', deploymentId: 'canvas-123' }
-  },
-  {
-    id: '4',
-    name: 'Progress Webhook',
-    type: 'webhook',
-    provider: 'Custom',
-    status: 'error',
-    description: 'Student progress notifications',
-    lastSync: '2024-01-14T18:45:00Z',
-    config: { endpoint: 'https://api.university.edu/webhooks/progress' }
-  }
-];
+// Integration data will be fetched from Supabase
+const defaultIntegrations: Integration[] = [];
 
 const integrationTypes = [
   { key: 'sso', label: 'SSO', icon: 'ri-shield-user-line', color: 'text-blue-600' },
@@ -65,7 +26,7 @@ const integrationTypes = [
 
 export default function AdminIntegrationsPage() {
   const [activeTab, setActiveTab] = useState<string>('all');
-  const [integrations, setIntegrations] = useState<Integration[]>(mockIntegrations);
+  const [integrations, setIntegrations] = useState<Integration[]>(defaultIntegrations);
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -197,34 +158,34 @@ export default function AdminIntegrationsPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Integrations & LTI Tools</h1>
-          <p className="text-gray-600 mt-1">Manage external integrations and tools</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Integrations & LTI Tools</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage external integrations and tools</p>
         </div>
-        <Button variant="brand" onClick={() => setIsConfigModalOpen(true)}>
+        <Button variant="brand" onClick={() => setIsConfigModalOpen(true)} className="w-full sm:w-auto">
           <i className="ri-add-line mr-2"></i>
           Add Integration
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
         {integrationTypes.map((type) => {
           const count = integrations.filter(i => i.type === type.key).length;
           const activeCount = integrations.filter(i => i.type === type.key && i.status === 'active').length;
           
           return (
-            <Card key={type.key} className="p-6">
+            <Card key={type.key} className="p-4 sm:p-6">
               <div className="flex items-center">
-                <div className={`p-3 rounded-lg bg-gray-50 mr-4`}>
-                  <i className={`${type.icon} text-xl ${type.color}`}></i>
+                <div className={`p-2 sm:p-3 rounded-lg bg-gray-50 mr-3 sm:mr-4 flex-shrink-0`}>
+                  <i className={`${type.icon} text-lg sm:text-xl ${type.color}`}></i>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{type.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{activeCount}/{count}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">{type.label}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-gray-900">{activeCount}/{count}</p>
                 </div>
               </div>
             </Card>
@@ -234,10 +195,10 @@ export default function AdminIntegrationsPage() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveTab('all')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 whitespace-nowrap flex-shrink-0 ${
               activeTab === 'all'
                 ? 'border-brand-primary text-brand-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -249,14 +210,16 @@ export default function AdminIntegrationsPage() {
             <button
               key={type.key}
               onClick={() => setActiveTab(type.key)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 flex items-center ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 flex items-center whitespace-nowrap flex-shrink-0 ${
                 activeTab === type.key
                   ? 'border-brand-primary text-brand-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <i className={`${type.icon} mr-2 ${type.color}`}></i>
-              {type.label} ({integrations.filter(i => i.type === type.key).length})
+              <i className={`${type.icon} mr-1 sm:mr-2 ${type.color} text-sm sm:text-base`}></i>
+              <span className="hidden sm:inline">{type.label}</span>
+              <span className="sm:hidden">{type.label}</span>
+              <span className="ml-1">({integrations.filter(i => i.type === type.key).length})</span>
             </button>
           ))}
         </nav>
@@ -268,31 +231,31 @@ export default function AdminIntegrationsPage() {
           const typeInfo = integrationTypes.find(t => t.key === integration.type);
           
           return (
-            <Card key={integration.id} className="p-6 hover:shadow-md transition-shadow duration-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4 flex-1">
-                  <div className="p-3 rounded-lg bg-gray-50">
-                    <i className={`${typeInfo?.icon} text-xl ${typeInfo?.color}`}></i>
+            <Card key={integration.id} className="p-4 sm:p-6 hover:shadow-md transition-shadow duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                  <div className="p-2 sm:p-3 rounded-lg bg-gray-50 flex-shrink-0">
+                    <i className={`${typeInfo?.icon} text-lg sm:text-xl ${typeInfo?.color}`}></i>
                   </div>
                   
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
-                      <h3 className="text-lg font-semibold text-gray-900">{integration.name}</h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(integration.status)}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{integration.name}</h3>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-fit ${getStatusColor(integration.status)}`}>
                         <i className={`${getStatusIcon(integration.status)} mr-1`}></i>
                         {integration.status}
                       </span>
                     </div>
-                    <p className="text-gray-600 mt-1">{integration.description}</p>
-                    <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                    <p className="text-sm sm:text-base text-gray-600 mt-1 line-clamp-2">{integration.description}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-500">
                       <span>Provider: {integration.provider}</span>
-                      <span>•</span>
+                      <span className="hidden sm:inline">•</span>
                       <span>Last sync: {formatLastSync(integration.lastSync)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -300,25 +263,30 @@ export default function AdminIntegrationsPage() {
                       setSelectedIntegration(integration);
                       setIsConfigModalOpen(true);
                     }}
+                    className="flex-1 sm:flex-none"
                   >
-                    <i className="ri-settings-line mr-2"></i>
-                    Configure
+                    <i className="ri-settings-line mr-1 sm:mr-2"></i>
+                    <span className="hidden sm:inline">Configure</span>
+                    <span className="sm:hidden">Config</span>
                   </Button>
                   
                   <Button
                     variant={integration.status === 'active' ? 'danger-outline' : 'brand-outline'}
                     size="sm"
                     onClick={() => toggleIntegrationStatus(integration.id)}
+                    className="flex-1 sm:flex-none"
                   >
                     {integration.status === 'active' ? (
                       <>
-                        <i className="ri-pause-line mr-2"></i>
-                        Disable
+                        <i className="ri-pause-line mr-1 sm:mr-2"></i>
+                        <span className="hidden sm:inline">Disable</span>
+                        <span className="sm:hidden">Off</span>
                       </>
                     ) : (
                       <>
-                        <i className="ri-play-line mr-2"></i>
-                        Enable
+                        <i className="ri-play-line mr-1 sm:mr-2"></i>
+                        <span className="hidden sm:inline">Enable</span>
+                        <span className="sm:hidden">On</span>
                       </>
                     )}
                   </Button>
@@ -330,6 +298,7 @@ export default function AdminIntegrationsPage() {
                       setSelectedIntegration(integration);
                       setIsDeleteModalOpen(true);
                     }}
+                    className="flex-shrink-0"
                   >
                     <i className="ri-delete-bin-line"></i>
                   </Button>
@@ -349,22 +318,22 @@ export default function AdminIntegrationsPage() {
           setSelectedIntegrationType(null);
         }}
         title={selectedIntegration?.id ? `Configure ${selectedIntegration.name}` : 'Add New Integration'}
-        maxWidth="2xl"
+        size="lg"
       >
         <div className="space-y-6">
           {!selectedIntegrationType && !selectedIntegration?.id ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {integrationTypes.map((type) => (
                 <button
                   key={type.key}
                   onClick={() => handleIntegrationTypeSelect(type.key)}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-brand-primary hover:bg-brand-50 transition-all duration-200 text-left"
+                  className="p-4 sm:p-6 border-2 border-gray-200 rounded-lg hover:border-brand-primary hover:bg-brand-50 transition-all duration-200 text-left w-full"
                 >
                   <div className="flex items-center space-x-3">
-                    <i className={`${type.icon} text-2xl ${type.color}`}></i>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{type.label}</h3>
-                      <p className="text-sm text-gray-600 mt-1">
+                    <i className={`${type.icon} text-xl sm:text-2xl ${type.color} flex-shrink-0`}></i>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-gray-900 text-sm sm:text-base">{type.label}</h3>
+                      <p className="text-xs sm:text-sm text-gray-600 mt-1 break-words">
                         {type.key === 'sso' && 'Single Sign-On providers'}
                         {type.key === 'payment' && 'Payment processors'}
                         {type.key === 'lti' && 'Learning Tools Interoperability'}
@@ -419,7 +388,7 @@ export default function AdminIntegrationsPage() {
                   <div className="border-t pt-4">
                     <h4 className="text-lg font-medium text-gray-900 mb-4">LTI Configuration</h4>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           LTI Version
@@ -470,7 +439,7 @@ export default function AdminIntegrationsPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Consumer Key
@@ -526,7 +495,7 @@ export default function AdminIntegrationsPage() {
                   <div className="border-t pt-4">
                     <h4 className="text-lg font-medium text-gray-900 mb-4">SSO Configuration</h4>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Client ID
@@ -591,7 +560,7 @@ export default function AdminIntegrationsPage() {
                   <div className="border-t pt-4">
                     <h4 className="text-lg font-medium text-gray-900 mb-4">Payment Configuration</h4>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           API Key
@@ -631,7 +600,7 @@ export default function AdminIntegrationsPage() {
             </div>
           )}
           
-          <div className="flex justify-end space-x-3 pt-4 border-t">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
             <Button
               variant="secondary"
               onClick={() => {
@@ -639,11 +608,12 @@ export default function AdminIntegrationsPage() {
                 setSelectedIntegration(null);
                 setSelectedIntegrationType(null);
               }}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             {(selectedIntegrationType || selectedIntegration?.id) && (
-              <Button variant="brand" onClick={saveIntegration}>
+              <Button variant="brand" onClick={saveIntegration} className="w-full sm:w-auto">
                 {selectedIntegration?.id ? 'Save Changes' : 'Add Integration'}
               </Button>
             )}
@@ -666,19 +636,21 @@ export default function AdminIntegrationsPage() {
             This action cannot be undone and may affect connected services.
           </p>
           
-          <div className="flex justify-end space-x-3 pt-4 border-t">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
             <Button
               variant="secondary"
               onClick={() => {
                 setIsDeleteModalOpen(false);
                 setSelectedIntegration(null);
               }}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               variant="danger"
               onClick={() => selectedIntegration && deleteIntegration(selectedIntegration.id)}
+              className="w-full sm:w-auto"
             >
               Delete Integration
             </Button>

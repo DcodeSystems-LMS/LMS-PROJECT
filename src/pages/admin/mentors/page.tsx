@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../../components/base/Modal';
 import DataService from '@/services/dataService';
 import type { ExtendedProfile } from '@/services/dataService';
+import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 // Removed sample data imports - using real-time data instead
 
 // Extend Window interface to include supabase
@@ -708,7 +709,7 @@ const AdminMentors: React.FC = () => {
                 <tr>
                   <td colSpan={8} className="px-6 py-8 text-center">
                     <div className="flex items-center justify-center">
-                      <i className="ri-loader-4-line text-2xl text-gray-400 animate-spin mr-2"></i>
+                      <SimpleDCODESpinner size="xs" className="mr-2" />
                       <span className="text-gray-500">Loading mentors...</span>
                     </div>
                   </td>
