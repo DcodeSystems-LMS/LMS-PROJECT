@@ -140,3 +140,4 @@ To verify the fix works:
 
 The terminal should now work exactly like the second image! 🎉
 
+

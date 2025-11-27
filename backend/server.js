@@ -430,6 +430,148 @@ function processVideoInfo(videoInfo) {
   };
 }
 
+// ============================================================================
+// Judge0 API Proxy Routes
+// ============================================================================
+// These routes proxy requests to the Judge0 Cloud API to avoid CORS issues
+// 
+// Judge0 Cloud API: https://judge0-ce.p.rapidapi.com
+// 
+// Configure JUDGE0_BASE_URL and JUDGE0_API_KEY in environment variables
+// Default: https://judge0-ce.p.rapidapi.com
+
+const JUDGE0_BASE_URL = process.env.JUDGE0_BASE_URL || 'https://judge0-ce.p.rapidapi.com';
+const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY || process.env.JUDGE0_RAPIDAPI_KEY;
+const JUDGE0_TIMEOUT = parseInt(process.env.JUDGE0_TIMEOUT) || 20000; // 20 seconds default
+
+// Helper function to proxy requests to Judge0 Cloud API
+async function proxyToJudge0(req, res, endpoint, method = 'GET', body = null) {
+  const url = `${JUDGE0_BASE_URL}${endpoint}`;
+  
+  // Build query string from request query params
+  const queryParams = new URLSearchParams(req.query).toString();
+  const fullUrl = queryParams ? `${url}?${queryParams}` : url;
+  
+  // Prepare headers for Judge0 Cloud API
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  
+  // Add API key if available (for RapidAPI or other cloud services)
+  if (JUDGE0_API_KEY) {
+    headers['X-RapidAPI-Key'] = JUDGE0_API_KEY;
+    headers['X-RapidAPI-Host'] = 'judge0-ce.p.rapidapi.com';
+  }
+  
+  const options = {
+    method: method,
+    headers: headers,
+    timeout: JUDGE0_TIMEOUT,
+  };
+  
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+  
+  let timeoutId;
+  try {
+    // Use node-fetch if available, otherwise use built-in fetch (Node 18+)
+    let fetch;
+    try {
+      fetch = require('node-fetch');
+    } catch {
+      // Node 18+ has built-in fetch
+      fetch = global.fetch;
+    }
+    
+    const controller = new AbortController();
+    timeoutId = setTimeout(() => controller.abort(), JUDGE0_TIMEOUT);
+    
+    const response = await fetch(fullUrl, {
+      ...options,
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: data.error || data.message || 'Judge0 API error',
+        details: data
+      });
+    }
+    
+    res.json(data);
+  } catch (error) {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    
+    if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+      return res.status(408).json({
+        error: 'Request timeout',
+        message: 'Judge0 server did not respond in time. Please try again later.'
+      });
+    }
+    
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      return res.status(503).json({
+        error: 'Service unavailable',
+        message: 'Judge0 execution server is not reachable right now. Please try again later.'
+      });
+    }
+    
+    console.error('Judge0 proxy error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: NODE_ENV === 'development' ? error.message : 'Failed to communicate with Judge0 server'
+    });
+  }
+}
+
+// GET /api/judge0/languages - Get all supported languages
+app.get('/api/judge0/languages', async (req, res) => {
+  await proxyToJudge0(req, res, '/languages', 'GET');
+});
+
+// GET /api/judge0/statuses - Get all status codes
+app.get('/api/judge0/statuses', async (req, res) => {
+  await proxyToJudge0(req, res, '/statuses', 'GET');
+});
+
+// GET /api/judge0/about - Get API information
+app.get('/api/judge0/about', async (req, res) => {
+  await proxyToJudge0(req, res, '/about', 'GET');
+});
+
+// POST /api/judge0/submissions - Create a new submission
+app.post('/api/judge0/submissions', async (req, res) => {
+  // Add query parameters for Judge0 Cloud API
+  // Use wait=true to get result immediately (no polling needed)
+  req.query = {
+    base64_encoded: 'false',
+    wait: 'true', // Get result immediately
+    fields: 'stdout,stderr,compile_output,status_id,status,language,time,memory,message'
+  };
+  
+  await proxyToJudge0(req, res, '/submissions', 'POST', req.body);
+});
+
+// GET /api/judge0/submissions/:token - Get submission result
+app.get('/api/judge0/submissions/:token', async (req, res) => {
+  // Add query parameters for Judge0
+  req.query = {
+    base64_encoded: 'false',
+    wait: 'false',
+    fields: 'stdout,stderr,compile_output,status_id,status,language,time,memory,message'
+  };
+  
+  const endpoint = `/submissions/${req.params.token}`;
+  await proxyToJudge0(req, res, endpoint, 'GET');
+});
+
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {

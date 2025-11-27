@@ -20,6 +20,7 @@ const Cookies = lazy(() => import('@/pages/cookies/page'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const TestAuth = lazy(() => import('@/pages/test-auth/page'));
 const Playground = lazy(() => import('@/pages/playground/page'));
+const PlaygroundIDE = lazy(() => import('@/pages/student/playground-ide/page'));
 
 // Student Dashboard
 const StudentLayout = lazy(() => import('@/pages/student/layout'));
@@ -132,6 +133,10 @@ const routes: RouteObject[] = [
   {
     path: '/playground',
     element: <SuspenseWrapper><Playground /></SuspenseWrapper>
+  },
+  {
+    path: '/playground-ide',
+    element: <SuspenseWrapper><PlaygroundIDE /></SuspenseWrapper>
   },
   {
     path: '/wishlist',

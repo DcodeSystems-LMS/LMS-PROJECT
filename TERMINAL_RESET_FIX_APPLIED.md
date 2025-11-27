@@ -96,3 +96,4 @@ To verify the fix works:
 
 The terminal should now reset properly in all scenarios! 🎉
 
+

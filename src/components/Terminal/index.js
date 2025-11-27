@@ -13,3 +13,4 @@ export { default as Terminal } from '../ConsoleTerminal';
 // Re-export as CodeTerminal for alternative naming
 export { default as CodeTerminal } from '../ConsoleTerminal';
 
+

@@ -18,6 +18,7 @@ const navigation = [
   { name: 'Continue Learning', href: '/student/continue', icon: 'ri-play-circle-line' },
   { name: 'Assessments', href: '/student/assessments', icon: 'ri-file-list-line' },
   { name: 'Code Playground', href: '/playground', icon: 'ri-code-line' },
+  { name: 'Playground IDE', href: '/playground-ide', icon: 'ri-terminal-box-line' },
   { name: 'Schedule', href: '/student/schedule', icon: 'ri-calendar-line' },
   { name: 'Resume Builder', href: '/student/resume-builder', icon: 'ri-file-text-line' },
   { name: 'Achievements', href: '/student/achievements', icon: 'ri-trophy-line' },
@@ -102,16 +103,16 @@ export default function StudentLayout() {
         onMouseEnter={() => settings.mode === 'hover' && setIsHovered(true)}
         onMouseLeave={() => settings.mode === 'hover' && setIsHovered(false)}
       >
-        <div className="flex flex-col flex-grow pt-5 bg-theme-card-bg border-r border-theme-border shadow-sm overflow-hidden overflow-x-hidden glass-dark">
+        <div className="flex flex-col flex-grow pt-2 bg-theme-card-bg border-r border-theme-border shadow-sm overflow-hidden overflow-x-hidden glass-dark">
           {/* Sidebar now starts without logo */}
 
           {/* Toggle Button - Above Sidebar */}
-          <div className="px-3 mb-2">
+          <div className="px-3 mb-1">
             <SidebarToggleButton className="w-full" />
           </div>
 
           {/* Navigation */}
-          <nav className="mt-5 flex-1 flex flex-col divide-y divide-theme-border overflow-y-auto scrollbar-hide">
+          <nav className="mt-2 flex-1 flex flex-col divide-y divide-theme-border overflow-y-auto scrollbar-hide">
             <div className={`px-3 space-y-1 ${isSidebarExpanded ? '' : 'px-2'}`}>
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
@@ -198,7 +199,7 @@ export default function StudentLayout() {
         <div className="px-4 py-6">
           {/* Logo */}
           <div className="mb-8">
-            <Link to="/" className="flex items-center justify-center">
+            <Link to="/student/dashboard" className="flex items-center justify-center">
               <img 
                 src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
@@ -274,7 +275,7 @@ export default function StudentLayout() {
 
           {/* Mobile Logo - Centered */}
           <div className="flex-1 flex justify-center lg:hidden">
-            <Link to="/" className="flex items-center">
+            <Link to="/student/dashboard" className="flex items-center">
               <img 
                 src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
@@ -288,7 +289,7 @@ export default function StudentLayout() {
 
           {/* Desktop Logo */}
           <div className="hidden lg:flex items-center absolute left-0 top-0 h-16 px-4 z-50">
-            <Link to="/" className="flex items-center">
+            <Link to="/student/dashboard" className="flex items-center">
               <img 
                 src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 

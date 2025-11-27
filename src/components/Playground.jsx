@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
 import { supabase } from '../lib/supabase';
-import executionService from '../services/executionService';
-import ConsoleTerminal from './ConsoleTerminal';
+import { useJudge0Runner } from '../hooks/useJudge0Runner';
 import { 
   getAllLanguageNames, 
   getLanguageByName, 
@@ -14,20 +13,17 @@ const Playground = () => {
   // State management
   const [selectedLanguage, setSelectedLanguage] = useState('Python');
   const [code, setCode] = useState('');
+  const [stdin, setStdin] = useState('');
   const [consoleLines, setConsoleLines] = useState([]);
-  const [isRunning, setIsRunning] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [submissions, setSubmissions] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [isWaitingForInput, setIsWaitingForInput] = useState(false);
-  const [executionId, setExecutionId] = useState(null);
-
-  const editorRef = useRef(null);
   const consoleRef = useRef(null);
-  const inputRef = useRef(null);
-  const terminalRef = useRef(null);
+  
+  // Use Judge0 runner hook
+  const { run, isRunning, result, error, statusLabel, reset: resetRunner } = useJudge0Runner();
 
   // Initialize component
   useEffect(() => {
@@ -47,12 +43,7 @@ const Playground = () => {
     checkAuth();
   }, []);
 
-  // Focus input when waiting for input
-  useEffect(() => {
-    if (isWaitingForInput && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isWaitingForInput]);
+  // Auto-scroll console when output changes
 
   // Auto-scroll console
   useEffect(() => {
@@ -72,16 +63,8 @@ const Playground = () => {
   };
 
   const clearConsole = () => {
-    executionService.reset();
-    
-    // Reset terminal component
-    if (terminalRef.current) {
-      terminalRef.current.reset();
-    }
-    
+    resetRunner();
     setConsoleLines([]);
-    setIsWaitingForInput(false);
-    setExecutionId(null);
   };
 
   const checkAuth = async () => {
@@ -138,104 +121,123 @@ const Playground = () => {
     }
   };
 
-  const handleRunCode = async (userInput = '') => {
+  // Handle result updates from Judge0
+  useEffect(() => {
+    if (result) {
+      setConsoleLines([]);
+      
+      // Show compilation error if present
+      if (result.compile_output) {
+        const compileLines = result.compile_output.trim().split('\n');
+        compileLines.forEach(line => {
+          if (line.trim()) {
+            addConsoleLine('error', line.trim());
+          }
+        });
+      }
+      
+      // Show stderr if present
+      if (result.stderr) {
+        const errorLines = result.stderr.trim().split('\n');
+        errorLines.forEach(line => {
+          if (line.trim()) {
+            addConsoleLine('error', line.trim());
+          }
+        });
+      }
+      
+      // Show stdout if present
+      if (result.stdout) {
+        const outputLines = result.stdout.trim().split('\n');
+        outputLines.forEach(line => {
+          if (line.trim()) {
+            addConsoleLine('output', line.trim());
+          }
+        });
+      }
+      
+      // Show message if present (often contains error details)
+      if (result.message) {
+        const messageLines = result.message.trim().split('\n');
+        messageLines.forEach(line => {
+          if (line.trim()) {
+            addConsoleLine('error', line.trim());
+          }
+        });
+      }
+      
+      // Show status
+      if (statusLabel) {
+        if (statusLabel === 'Accepted') {
+          addConsoleLine('system', '=== Code Execution Successful ===');
+        } else {
+          addConsoleLine('error', `Status: ${statusLabel}`);
+        }
+      }
+      
+      // Show execution time and memory
+      if (result.time !== null && result.time !== undefined) {
+        const memoryStr = result.memory ? `${result.memory} KB` : 'N/A';
+        addConsoleLine('system', `⏱️  Time: ${result.time}s | Memory: ${memoryStr}`);
+      }
+      
+      // Save submission if user is authenticated
+      if (user && statusLabel === 'Accepted') {
+        const output = result.stdout || result.stderr || result.compile_output || '';
+        saveSubmission(code, selectedLanguage, output, statusLabel === 'Accepted');
+      }
+    }
+  }, [result, statusLabel, user, code, selectedLanguage]);
+
+  // Handle errors from Judge0
+  useEffect(() => {
+    if (error) {
+      setConsoleLines(prev => [
+        ...prev.filter(line => !line.content.includes('Compiling')),
+        { type: 'error', content: `❌ ${error}`, timestamp: Date.now() }
+      ]);
+    }
+  }, [error]);
+
+  const handleRunCode = async () => {
     if (!code.trim()) {
       addConsoleLine('error', 'Please enter some code to run.');
       return;
     }
 
-    setIsRunning(true);
-    setIsWaitingForInput(false);
-    
-    // Clear console and show fresh output for new runs
-    if (!userInput) {
-      setConsoleLines([]);
-      addConsoleLine('system', 'Running code...');
-    }
-
-    try {
-      const isFirstRun = !userInput;
-      const result = await executionService.executeCode(code, selectedLanguage, userInput, isFirstRun);
-      
-      if (result.success) {
-        if (result.output) {
-          addConsoleLine('output', result.output);
-        }
-        
-        if (result.needsInput) {
-          setIsWaitingForInput(true);
-          setExecutionId(result.executionId);
-        } else {
-          addConsoleLine('system', '=== Code Execution Successful ===');
-          setExecutionId(null);
-        }
-      } else {
-        addConsoleLine('error', result.error);
-        setExecutionId(null);
-      }
-
-      // Save submission if user is authenticated and execution is complete
-      if (user && result.isComplete) {
-        await saveSubmission(code, selectedLanguage, result.output || result.error, result.success);
-      }
-    } catch (error) {
-      addConsoleLine('error', error.message);
-      setExecutionId(null);
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
-  const handleInputSubmit = (userInput) => {
-    if (userInput === '__STOP__') {
-      // Handle Ctrl+C to stop execution
-      executionService.stopExecution();
-      setIsWaitingForInput(false);
-      setExecutionId(null);
-      addConsoleLine('system', 'Execution stopped by user.');
+    // Get language ID
+    const languageId = getLanguageId(selectedLanguage);
+    if (!languageId) {
+      addConsoleLine('error', `Language "${selectedLanguage}" is not supported.`);
       return;
     }
 
-    if (!userInput.trim()) return;
-
-    // Append user input to the last prompt line (inline format like second image)
-    setConsoleLines(prev => {
-      const newLines = [...prev];
-      // Find the last output/system line and append input to it
-      for (let i = newLines.length - 1; i >= 0; i--) {
-        if (newLines[i].type === 'output' || newLines[i].type === 'system') {
-          const lastLine = newLines[i].content.trim();
-          // Append input inline to the prompt (matching second image format)
-          if (lastLine.endsWith(':') || lastLine.endsWith('?') || lastLine.match(/^(Enter|Input|Type|Number|Please)/i)) {
-            newLines[i] = {
-              ...newLines[i],
-              content: newLines[i].content.trim() + ' ' + userInput
-            };
-          }
-          break;
-        }
-      }
-      return newLines;
-    });
+    // Clear console and show compiling message
+    setConsoleLines([]);
+    addConsoleLine('system', '⚡ Compiling and running...');
     
-    // Execute code with input
-    handleRunCode(userInput);
+    // Reset runner state
+    resetRunner();
+    
+    // Run code with Judge0
+    try {
+      await run(languageId, code, stdin);
+    } catch (err) {
+      console.error('Execution error:', err);
+      setConsoleLines(prev => [
+        ...prev.filter(line => !line.content.includes('Compiling')),
+        { type: 'error', content: `❌ Error: ${err.message}`, timestamp: Date.now() }
+      ]);
+    }
   };
 
   const handleLanguageChange = (newLanguage) => {
-    // Reset execution service state for new language
-    executionService.reset();
-    
-    // Reset terminal component
-    if (terminalRef.current) {
-      terminalRef.current.reset();
-    }
+    // Reset runner state for new language
+    resetRunner();
     
     setSelectedLanguage(newLanguage);
     setCode(getDefaultCode(newLanguage));
     clearConsole();
-    setIsWaitingForInput(false);
-    setExecutionId(null);
   };
 
   const handleEditorDidMount = (editor, monaco) => {
@@ -280,16 +282,8 @@ const Playground = () => {
 
   const clearCode = () => {
     executionService.reset();
-    
-    // Reset terminal component
-    if (terminalRef.current) {
-      terminalRef.current.reset();
-    }
-    
     setCode(getDefaultCode(selectedLanguage));
     clearConsole();
-    setIsWaitingForInput(false);
-    setExecutionId(null);
   };
 
   // Render loading state
@@ -378,8 +372,8 @@ const Playground = () => {
                 Clear
               </button>
               <button
-                onClick={() => handleRunCode()}
-                disabled={isRunning || isWaitingForInput}
+                onClick={handleRunCode}
+                disabled={isRunning}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-md transition-colors flex items-center space-x-2"
               >
                 {isRunning ? (
@@ -431,38 +425,65 @@ const Playground = () => {
                 />
               </div>
 
-              {/* Interactive Console */}
+              {/* Stdin Input Area */}
               <div className="border-t border-gray-200 dark:border-gray-700">
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Interactive Terminal
+                      Standard Input (stdin)
                     </h3>
-                    <div className="flex items-center space-x-2">
-                      {isWaitingForInput && (
-                        <span className="text-xs text-yellow-600 dark:text-yellow-400">
-                          Waiting for input...
-                        </span>
-                      )}
-                      <button
-                        onClick={clearConsole}
-                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      >
-                        Clear Console
-                      </button>
-                    </div>
+                  </div>
+                  <textarea
+                    value={stdin}
+                    onChange={(e) => setStdin(e.target.value)}
+                    placeholder="Enter input for your program (one value per line)..."
+                    className="w-full h-24 px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-gray-100"
+                    disabled={isRunning}
+                  />
+                </div>
+              </div>
+
+              {/* Terminal Output (Read-Only) */}
+              <div className="border-t border-gray-200 dark:border-gray-700">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Terminal (Output Only)
+                    </h3>
+                    <button
+                      onClick={clearConsole}
+                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      Clear Console
+                    </button>
                   </div>
                   
-                  {/* Terminal Component */}
-                  <ConsoleTerminal
-                    ref={terminalRef}
-                    key={selectedLanguage}
-                    isWaitingForInput={isWaitingForInput}
-                    onInputSubmit={handleInputSubmit}
-                    consoleLines={consoleLines}
-                    onClearConsole={clearConsole}
-                    isRunning={isRunning}
-                  />
+                  {/* Read-Only Console Output */}
+                  <div 
+                    ref={consoleRef}
+                    className="bg-gray-900 text-green-400 p-4 rounded-md font-mono text-sm min-h-32 max-h-96 overflow-y-auto"
+                    style={{ fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace' }}
+                  >
+                    {consoleLines.length === 0 && (
+                      <div className="text-gray-500 text-center py-8">
+                        No output yet. Write your code and click "Run Code" to execute.
+                      </div>
+                    )}
+                    {consoleLines.map((line, index) => (
+                      <div
+                        key={index}
+                        className={`mb-1 ${
+                          line.type === 'error'
+                            ? 'text-red-400'
+                            : line.type === 'system'
+                            ? 'text-yellow-400'
+                            : 'text-green-400'
+                        }`}
+                      >
+                        {line.content}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

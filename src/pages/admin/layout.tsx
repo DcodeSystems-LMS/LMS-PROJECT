@@ -156,7 +156,7 @@ export default function AdminLayout() {
         <div className="px-4 py-6">
           {/* Logo */}
           <div className="mb-8">
-            <Link to="/" className="flex items-center justify-center">
+            <Link to="/admin/dashboard" className="flex items-center justify-center">
               <img 
                 src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
@@ -226,7 +226,7 @@ export default function AdminLayout() {
 
           {/* Mobile Logo - Centered */}
           <div className="flex-1 flex justify-center lg:hidden">
-            <Link to="/" className="flex items-center">
+            <Link to="/admin/dashboard" className="flex items-center">
               <img 
                 src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
@@ -240,7 +240,7 @@ export default function AdminLayout() {
 
           {/* Desktop Logo */}
           <div className="hidden lg:flex items-center absolute left-0 top-0 h-16 px-4 z-50">
-            <Link to="/" className="flex items-center">
+            <Link to="/admin/dashboard" className="flex items-center">
               <img 
                 src="/DCODE LOGO.png" 
                 alt="DCODE Systems" 
