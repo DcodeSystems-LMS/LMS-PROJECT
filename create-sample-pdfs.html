@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Sample PDFs for Course Materials</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .pdf-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .instructions {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Generate Sample Course Materials</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li>Click the buttons below to generate sample PDF files</li>
+                <li>Download each PDF file</li>
+                <li>Upload them to your Supabase storage bucket <code>course-materials</code> in the <code>materials/</code> folder</li>
+                <li>Use the exact filenames: <code>html-basics-handout.pdf</code>, <code>css-flexbox-guide.pdf</code>, <code>javascript-fundamentals.pdf</code></li>
+            </ol>
+        </div>
+
+        <div class="pdf-section">
+            <h3>📄 HTML Basics Handout</h3>
+            <p>Generate a comprehensive HTML fundamentals guide</p>
+            <button onclick="generateHTMLPDF()">Generate HTML Basics PDF</button>
+        </div>
+
+        <div class="pdf-section">
+            <h3>🎨 CSS Flexbox Guide</h3>
+            <p>Create a complete CSS Flexbox layout reference</p>
+            <button onclick="generateCSSPDF()">Generate CSS Flexbox PDF</button>
+        </div>
+
+        <div class="pdf-section">
+            <h3>⚡ JavaScript Fundamentals</h3>
+            <p>Build an introduction to JavaScript programming</p>
+            <button onclick="generateJSPDF()">Generate JavaScript PDF</button>
+        </div>
+
+        <div class="pdf-section">
+            <h3>🚀 Generate All PDFs</h3>
+            <p>Generate all three PDFs at once</p>
+            <button onclick="generateAllPDFs()">Generate All PDFs</button>
+        </div>
+    </div>
+
+    <script>
+        function generateHTMLPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Title
+            doc.setFontSize(20);
+            doc.text('HTML Basics Handout', 20, 30);
+            
+            // Content
+            doc.setFontSize(12);
+            const content = [
+                'HTML (HyperText Markup Language) is the standard markup language',
+                'for creating web pages and web applications.',
+                '',
+                'Key HTML Elements:',
+                '• <html> - Root element',
+                '• <head> - Contains meta information',
+                '• <body> - Contains visible content',
+                '• <h1> to <h6> - Headings',
+                '• <p> - Paragraphs',
+                '• <a> - Links',
+                '• <img> - Images',
+                '• <div> - Container element',
+                '',
+                'HTML Structure:',
+                '<!DOCTYPE html>',
+                '<html>',
+                '<head>',
+                '    <title>Page Title</title>',
+                '</head>',
+                '<body>',
+                '    <h1>My First Heading</h1>',
+                '    <p>My first paragraph.</p>',
+                '</body>',
+                '</html>',
+                '',
+                'Best Practices:',
+                '• Use semantic HTML elements',
+                '• Always include alt text for images',
+                '• Use proper heading hierarchy',
+                '• Validate your HTML code',
+                '• Keep your code clean and readable'
+            ];
+            
+            let y = 50;
+            content.forEach(line => {
+                if (y > 280) {
+                    doc.addPage();
+                    y = 20;
+                }
+                doc.text(line, 20, y);
+                y += 7;
+            });
+            
+            doc.save('html-basics-handout.pdf');
+        }
+
+        function generateCSSPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Title
+            doc.setFontSize(20);
+            doc.text('CSS Flexbox Guide', 20, 30);
+            
+            // Content
+            doc.setFontSize(12);
+            const content = [
+                'CSS Flexbox (Flexible Box Layout) is a layout method',
+                'designed to distribute space among items in a container.',
+                '',
+                'Flex Container Properties:',
+                '• display: flex - Creates a flex container',
+                '• flex-direction - Main axis direction',
+                '• flex-wrap - Whether items wrap',
+                '• justify-content - Main axis alignment',
+                '• align-items - Cross axis alignment',
+                '• align-content - Cross axis alignment (multiple lines)',
+                '',
+                'Flex Item Properties:',
+                '• flex-grow - How much item grows',
+                '• flex-shrink - How much item shrinks',
+                '• flex-basis - Initial size before free space',
+                '• flex - Shorthand for grow, shrink, basis',
+                '• align-self - Override align-items for item',
+                '',
+                'Example:',
+                '.container {',
+                '    display: flex;',
+                '    justify-content: center;',
+                '    align-items: center;',
+                '    height: 100vh;',
+                '}',
+                '',
+                '.item {',
+                '    flex: 1;',
+                '    margin: 10px;',
+                '}',
+                '',
+                'Common Use Cases:',
+                '• Centering content',
+                '• Creating responsive layouts',
+                '• Building navigation bars',
+                '• Creating card layouts',
+                '• Building forms'
+            ];
+            
+            let y = 50;
+            content.forEach(line => {
+                if (y > 280) {
+                    doc.addPage();
+                    y = 20;
+                }
+                doc.text(line, 20, y);
+                y += 7;
+            });
+            
+            doc.save('css-flexbox-guide.pdf');
+        }
+
+        function generateJSPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Title
+            doc.setFontSize(20);
+            doc.text('JavaScript Fundamentals', 20, 30);
+            
+            // Content
+            doc.setFontSize(12);
+            const content = [
+                'JavaScript is a high-level, interpreted programming language',
+                'that is one of the core technologies of the World Wide Web.',
+                '',
+                'Variables and Data Types:',
+                '• let - Block-scoped variable',
+                '• const - Block-scoped constant',
+                '• var - Function-scoped variable (legacy)',
+                '• String, Number, Boolean, Object, Array',
+                '',
+                'Functions:',
+                'function greet(name) {',
+                '    return "Hello, " + name + "!";',
+                '}',
+                '',
+                '// Arrow function',
+                'const greet = (name) => "Hello, " + name + "!";',
+                '',
+                'Arrays and Objects:',
+                'const fruits = ["apple", "banana", "orange"];',
+                'const person = {',
+                '    name: "John",',
+                '    age: 30,',
+                '    city: "New York"',
+                '};',
+                '',
+                'Control Structures:',
+                'if (condition) {',
+                '    // code block',
+                '} else if (anotherCondition) {',
+                '    // another code block',
+                '} else {',
+                '    // final code block',
+                '}',
+                '',
+                'Loops:',
+                'for (let i = 0; i < 5; i++) {',
+                '    console.log(i);',
+                '}',
+                '',
+                '// For...of loop',
+                'for (const fruit of fruits) {',
+                '    console.log(fruit);',
+                '}',
+                '',
+                'DOM Manipulation:',
+                'document.getElementById("myId");',
+                'document.querySelector(".myClass");',
+                'element.textContent = "New text";',
+                'element.style.color = "red";'
+            ];
+            
+            let y = 50;
+            content.forEach(line => {
+                if (y > 280) {
+                    doc.addPage();
+                    y = 20;
+                }
+                doc.text(line, 20, y);
+                y += 7;
+            });
+            
+            doc.save('javascript-fundamentals.pdf');
+        }
+
+        function generateAllPDFs() {
+            generateHTMLPDF();
+            setTimeout(() => generateCSSPDF(), 500);
+            setTimeout(() => generateJSPDF(), 1000);
+        }
+    </script>
+</body>
+</html>

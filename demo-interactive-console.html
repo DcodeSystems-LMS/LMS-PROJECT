@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Console Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .terminal {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        .cursor-blink {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Interactive Console Demo</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">How the Interactive Console Works</h2>
+            
+            <div class="terminal p-4 rounded-lg mb-4 min-h-32">
+                <div class="text-yellow-400 mb-1">Running code...</div>
+                <div class="text-green-400 mb-1">Enter your name:</div>
+                <div class="text-green-300 mb-1">>> <span class="cursor-blink">|</span></div>
+            </div>
+            
+            <p class="text-gray-600 mb-4">
+                When your code contains input functions (like <code class="bg-gray-100 px-2 py-1 rounded">input()</code> in Python or <code class="bg-gray-100 px-2 py-1 rounded">scanf()</code> in C), the console will:
+            </p>
+            
+            <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                <li>Show any prompts from your program</li>
+                <li>Display a <code class="bg-gray-100 px-2 py-1 rounded">>> </code> prompt</li>
+                <li>Wait for you to type input</li>
+                <li>Execute the code with your input</li>
+                <li>Show the complete output</li>
+            </ol>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Python Example -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold mb-3 text-blue-600">Python Example</h3>
+                <pre class="bg-gray-900 text-green-400 p-3 rounded text-sm mb-3"><code>name = input("Enter your name: ")
+print(f"Hello, {name}!")</code></pre>
+                <div class="terminal p-3 rounded text-sm">
+                    <div class="text-yellow-400">Running code...</div>
+                    <div class="text-green-400">Enter your name:</div>
+                    <div class="text-green-300">>> <span class="cursor-blink">|</span></div>
+                </div>
+            </div>
+
+            <!-- C Example -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold mb-3 text-blue-600">C Example</h3>
+                <pre class="bg-gray-900 text-green-400 p-3 rounded text-sm mb-3"><code>#include &lt;stdio.h&gt;
+int main() {
+    int num;
+    printf("Enter an integer: ");
+    scanf("%d", &num);
+    printf("You entered: %d\n", num);
+    return 0;
+}</code></pre>
+                <div class="terminal p-3 rounded text-sm">
+                    <div class="text-yellow-400">Running code...</div>
+                    <div class="text-green-400">Enter an integer:</div>
+                    <div class="text-green-300">>> <span class="cursor-blink">|</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">🎯 Key Features</h3>
+            <ul class="space-y-2 text-blue-700">
+                <li>✅ <strong>Real-time input:</strong> Type directly in the console</li>
+                <li>✅ <strong>Input history:</strong> Use ↑/↓ arrows to navigate</li>
+                <li>✅ <strong>Terminal styling:</strong> Dark background with colored text</li>
+                <li>✅ <strong>Blinking cursor:</strong> Visual feedback when waiting</li>
+                <li>✅ <strong>Auto-scroll:</strong> Console shows latest content</li>
+                <li>✅ <strong>Multiple languages:</strong> Python, C, C++, Java, JavaScript, Go, PHP, Ruby</li>
+            </ul>
+        </div>
+
+        <div class="bg-green-50 border border-green-200 rounded-lg p-6 mt-6">
+            <h3 class="text-lg font-semibold text-green-800 mb-3">🚀 Ready to Test!</h3>
+            <p class="text-green-700 mb-4">
+                Your enhanced playground now supports interactive console input. 
+                Navigate to <code class="bg-green-100 px-2 py-1 rounded">/playground</code> and try the examples above!
+            </p>
+            <div class="flex space-x-4">
+                <a href="/playground" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors">
+                    Go to Playground
+                </a>
+                <a href="/interactive-console-test-examples.md" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+                    View Test Examples
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

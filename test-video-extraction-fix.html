@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Extraction Test - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-result {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .video-container {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🎬 Video Extraction Test - Fixed</h1>
+        
+        <div class="test-result">
+            <h3>Test Status:</h3>
+            <p id="test-status">Ready to test video extraction...</p>
+        </div>
+
+        <div class="video-container">
+            <video id="test-video" controls style="width: 100%; height: 100%; object-fit: contain;">
+                <source id="video-source" src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <div>
+            <button class="test-button" onclick="testBackendConnection()">Test Backend Connection</button>
+            <button class="test-button" onclick="testVideoExtraction()">Test Video Extraction</button>
+            <button class="test-button" onclick="testVideoPlayback()">Test Video Playback</button>
+            <button class="test-button" onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <div class="debug-info">
+            <h4>Debug Information:</h4>
+            <div id="debug-output"></div>
+        </div>
+    </div>
+
+    <script>
+        const testVideoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+        const backendUrl = 'http://localhost:3001';
+        
+        function log(message, type = 'info') {
+            const debugOutput = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            logEntry.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#333';
+            debugOutput.appendChild(logEntry);
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('test-status');
+            statusElement.textContent = message;
+            statusElement.parentElement.className = `test-result ${type}`;
+        }
+
+        async function testBackendConnection() {
+            log('🔍 Testing backend connection...');
+            updateStatus('Testing backend connection...', 'info');
+            
+            try {
+                const response = await fetch(`${backendUrl}/api/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Backend is running: ${data.status}`, 'success');
+                    log(`   Environment: ${data.environment}`, 'info');
+                    log(`   yt-dlp Available: ${data.ytDlpAvailable}`, 'info');
+                    log(`   Uptime: ${data.uptime}s`, 'info');
+                    updateStatus('✅ Backend connection successful!', 'success');
+                } else {
+                    log(`❌ Backend health check failed: ${response.status}`, 'error');
+                    updateStatus('❌ Backend connection failed!', 'error');
+                }
+            } catch (error) {
+                log(`❌ Backend connection error: ${error.message}`, 'error');
+                updateStatus('❌ Backend connection error!', 'error');
+            }
+        }
+
+        async function testVideoExtraction() {
+            log('🎬 Testing video extraction...');
+            updateStatus('Testing video extraction...', 'info');
+            
+            try {
+                const response = await fetch(`${backendUrl}/api/extract-video`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: testVideoUrl }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Video extraction successful!`, 'success');
+                    log(`   Title: ${data.title}`, 'info');
+                    log(`   Video ID: ${data.id}`, 'info');
+                    log(`   Duration: ${data.duration}s`, 'info');
+                    log(`   Available Qualities: ${data.availableQualities?.join(', ') || 'None'}`, 'info');
+                    log(`   Streams Found: ${data.streams?.length || 0}`, 'info');
+                    
+                    if (data.streams && data.streams.length > 0) {
+                        log(`   First Stream URL: ${data.streams[0].url}`, 'info');
+                        log(`   First Stream Quality: ${data.streams[0].quality}`, 'info');
+                        log(`   First Stream Type: ${data.streams[0].type}`, 'info');
+                    }
+                    
+                    updateStatus('✅ Video extraction successful!', 'success');
+                    
+                    // Store the extracted data for playback test
+                    window.extractedVideoData = data;
+                } else {
+                    log(`❌ Video extraction failed: ${response.status}`, 'error');
+                    log(`   Error: ${data.error || 'Unknown error'}`, 'error');
+                    if (data.fallback) {
+                        log(`   Fallback: ${data.fallback}`, 'info');
+                    }
+                    updateStatus('❌ Video extraction failed!', 'error');
+                }
+            } catch (error) {
+                log(`❌ Video extraction error: ${error.message}`, 'error');
+                updateStatus('❌ Video extraction error!', 'error');
+            }
+        }
+
+        async function testVideoPlayback() {
+            log('📺 Testing video playback...');
+            updateStatus('Testing video playback...', 'info');
+            
+            if (!window.extractedVideoData || !window.extractedVideoData.streams) {
+                log('❌ No extracted video data available. Run video extraction first.', 'error');
+                updateStatus('❌ No video data available!', 'error');
+                return;
+            }
+            
+            const video = document.getElementById('test-video');
+            const source = document.getElementById('video-source');
+            
+            try {
+                const firstStream = window.extractedVideoData.streams[0];
+                log(`🎥 Setting video source: ${firstStream.url}`, 'info');
+                log(`   Quality: ${firstStream.quality}`, 'info');
+                log(`   Type: ${firstStream.type}`, 'info');
+                
+                source.src = firstStream.url;
+                video.load();
+                
+                video.addEventListener('loadeddata', () => {
+                    log('✅ Video loaded successfully!', 'success');
+                    updateStatus('✅ Video loaded successfully!', 'success');
+                });
+                
+                video.addEventListener('error', (e) => {
+                    log(`❌ Video load error: ${e.message || 'Unknown error'}`, 'error');
+                    updateStatus('❌ Video load failed!', 'error');
+                });
+                
+                video.addEventListener('canplay', () => {
+                    log('✅ Video can start playing!', 'success');
+                });
+                
+            } catch (error) {
+                log(`❌ Video playback setup error: ${error.message}`, 'error');
+                updateStatus('❌ Video playback setup failed!', 'error');
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('debug-output').innerHTML = '';
+            updateStatus('Ready to test video extraction...', 'info');
+            window.extractedVideoData = null;
+            
+            const video = document.getElementById('test-video');
+            const source = document.getElementById('video-source');
+            source.src = '';
+            video.load();
+        }
+
+        // Auto-run backend connection test on page load
+        window.addEventListener('load', () => {
+            log('🎬 Video Extraction Test Page Loaded');
+            log('Ready to test the fixed video extraction system');
+            
+            // Run initial backend test
+            setTimeout(() => {
+                testBackendConnection();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

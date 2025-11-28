@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Audio 2160p Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .test-steps {
+            list-style-type: decimal;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .expected-result {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border-left: 4px solid #28a745;
+        }
+        .video-container {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+        }
+        .debug-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .debug-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">🔊 Audio 2160p Fix Test</h1>
+        
+        <div class="test-instructions">
+            <h3>Test Instructions:</h3>
+            <ol class="test-steps">
+                <li>Load a YouTube video that supports 2160p quality</li>
+                <li>Switch to 2160p quality using the quality selector</li>
+                <li>Click play to start the video</li>
+                <li>Verify that audio starts automatically without manual adjustment</li>
+                <li>Test seeking and volume controls work properly</li>
+                <li>Test switching between different qualities</li>
+            </ol>
+        </div>
+
+        <div class="expected-result">
+            <h4>✅ Expected Result:</h4>
+            <p><strong>Audio should start automatically when playing 2160p videos without requiring manual audio control adjustment.</strong></p>
+            <p>The fix includes:</p>
+            <ul>
+                <li>Added missing audio element for separate audio streams</li>
+                <li>Improved audio synchronization with video playback</li>
+                <li>Better audio loading and ready state handling</li>
+                <li>Enhanced quality switching with proper audio initialization</li>
+            </ul>
+        </div>
+
+        <div class="video-container">
+            <!-- This would be replaced with your actual video player component -->
+            <div style="padding: 20px; color: white; text-align: center;">
+                <h3>Video Player Component</h3>
+                <p>Replace this with your CustomVideoPlayer component</p>
+                <p>Test with a YouTube URL that supports 2160p</p>
+            </div>
+        </div>
+
+        <div class="debug-info">
+            <h4>Debug Information:</h4>
+            <p>Use the browser console to monitor audio/video synchronization:</p>
+            <ul>
+                <li>Look for "🔊 Audio metadata loaded" messages</li>
+                <li>Look for "🔊 Audio can play" messages</li>
+                <li>Look for "🎬 Video play event - syncing audio" messages</li>
+                <li>Check for any audio playback errors</li>
+            </ul>
+            
+            <button class="debug-button" onclick="testAudioSync()">Test Audio Sync</button>
+            <button class="debug-button" onclick="checkAudioState()">Check Audio State</button>
+        </div>
+    </div>
+
+    <script>
+        function testAudioSync() {
+            console.log('🧪 Testing audio synchronization...');
+            
+            // This would be called on your video player component
+            if (window.debugVideoPlayer) {
+                window.debugVideoPlayer();
+            } else {
+                console.log('Video player debug function not available');
+            }
+        }
+
+        function checkAudioState() {
+            console.log('🔍 Checking audio state...');
+            
+            const audioElements = document.querySelectorAll('audio');
+            const videoElements = document.querySelectorAll('video');
+            
+            console.log('Audio elements found:', audioElements.length);
+            console.log('Video elements found:', videoElements.length);
+            
+            audioElements.forEach((audio, index) => {
+                console.log(`Audio ${index}:`, {
+                    src: audio.src,
+                    currentTime: audio.currentTime,
+                    duration: audio.duration,
+                    volume: audio.volume,
+                    muted: audio.muted,
+                    paused: audio.paused,
+                    readyState: audio.readyState,
+                    networkState: audio.networkState
+                });
+            });
+            
+            videoElements.forEach((video, index) => {
+                console.log(`Video ${index}:`, {
+                    src: video.src,
+                    currentTime: video.currentTime,
+                    duration: video.duration,
+                    volume: video.volume,
+                    muted: video.muted,
+                    paused: video.paused,
+                    readyState: video.readyState,
+                    networkState: video.networkState
+                });
+            });
+        }
+
+        // Auto-run debug check on page load
+        window.addEventListener('load', () => {
+            console.log('🎬 Audio 2160p Fix Test Page Loaded');
+            console.log('Ready to test audio synchronization improvements');
+        });
+    </script>
+</body>
+</html>
+

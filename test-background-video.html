@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Video Demo - DCodesystems LMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .hero-section {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .background-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 2;
+        }
+
+        .gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.3) 0%, transparent 50%, rgba(59, 130, 246, 0.3) 100%);
+            z-index: 3;
+        }
+
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 64px 64px;
+            z-index: 4;
+        }
+
+        .content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(147, 51, 234, 0.2);
+            border: 1px solid rgba(147, 51, 234, 0.3);
+            border-radius: 9999px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(8px);
+        }
+
+        .badge-icon {
+            color: #fbbf24;
+            font-size: 1.25rem;
+        }
+
+        .badge-text {
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .title {
+            font-size: clamp(2.5rem, 8vw, 6rem);
+            font-weight: 900;
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            background: linear-gradient(135deg, #a855f7, #ec4899, #3b82f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .description {
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 48rem;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .cta-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        @media (min-width: 640px) {
+            .cta-buttons {
+                flex-direction: row;
+            }
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f172a, #581c87, #0f172a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        .spinner {
+            width: 3rem;
+            height: 3rem;
+            border: 4px solid #3b82f6;
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .video-status {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            z-index: 20;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-playing {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .status-loading {
+            background: #f59e0b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .floating-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 6;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) translateX(0px);
+                opacity: 0.2;
+            }
+            50% {
+                transform: translateY(-100px) translateX(25px);
+                opacity: 0.8;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-section">
+        <!-- Background Video -->
+        <video 
+            class="background-video" 
+            autoplay 
+            muted 
+            loop 
+            playsinline
+            preload="metadata"
+            poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiB2aWV3Qm94PSIwIDAgMTkyMCAxMDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBmaWxsPSIjMTE0MTU0Ii8+CjxjaXJjbGUgY3g9Ijk2MCIgY3k9IjU0MCIgcj0iODAiIGZpbGw9IiM2MzY2RjEiLz4KPHBhdGggZD0iTTkyMCA1MDAgTDkyMCA1ODAgTDkyMCA1MDAgWiIgZmlsbD0iI0ZGRiIvPgo8L3N2Zz4K"
+        >
+            <source src="https://supabase.dcodesys.in/storage/v1/object/public/demo-videos/DCodesystems_LMS_Demo_Video_Generation.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+
+        <!-- Video Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Video Overlays -->
+        <div class="video-overlay"></div>
+        <div class="gradient-overlay"></div>
+        <div class="grid-pattern"></div>
+
+        <!-- Floating Particles -->
+        <div class="floating-particles" id="particles"></div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="badge">
+                <span class="badge-icon">✨</span>
+                <span class="badge-text">Live Demo Running</span>
+            </div>
+
+            <h1 class="title">DCodesystems</h1>
+            <h2 class="subtitle">LMS Platform</h2>
+            
+            <p class="description">
+                The complete learning management system with interactive coding, AI assessments, 
+                video learning, and real-time collaboration.
+            </p>
+
+            <div class="cta-buttons">
+                <button class="btn btn-primary" onclick="openDemoModal()">
+                    <span>▶️</span>
+                    Watch Demo
+                </button>
+                <button class="btn btn-secondary" onclick="scrollToFeatures()">
+                    Explore Features
+                </button>
+            </div>
+        </div>
+
+        <!-- Video Status Indicator -->
+        <div class="video-status" id="videoStatus">
+            <span class="status-dot status-loading"></span>
+            <span>Loading demo video...</span>
+        </div>
+    </div>
+
+    <script>
+        const video = document.querySelector('.background-video');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const videoStatus = document.getElementById('videoStatus');
+        const particles = document.getElementById('particles');
+
+        // Create floating particles
+        function createParticles() {
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 3 + 's';
+                particle.style.animationDuration = (3 + Math.random() * 2) + 's';
+                particles.appendChild(particle);
+            }
+        }
+
+        // Video event handlers
+        video.addEventListener('loadeddata', () => {
+            loadingOverlay.style.display = 'none';
+            videoStatus.innerHTML = '<span class="status-dot status-playing"></span><span>Demo video playing in background</span>';
+        });
+
+        video.addEventListener('error', (e) => {
+            loadingOverlay.style.display = 'none';
+            videoStatus.innerHTML = '<span class="status-dot" style="background: #ef4444;"></span><span>Video loading error</span>';
+            console.error('Video error:', e);
+        });
+
+        video.addEventListener('play', () => {
+            videoStatus.innerHTML = '<span class="status-dot status-playing"></span><span>Demo video playing in background</span>';
+        });
+
+        video.addEventListener('pause', () => {
+            videoStatus.innerHTML = '<span class="status-dot" style="background: #f59e0b;"></span><span>Demo video paused</span>';
+        });
+
+        // Demo modal function
+        function openDemoModal() {
+            alert('Demo modal would open here! This is just a preview of the background video effect.');
+        }
+
+        // Scroll to features function
+        function scrollToFeatures() {
+            alert('This would scroll to the features section!');
+        }
+
+        // Initialize particles
+        createParticles();
+
+        // Log video info when loaded
+        video.addEventListener('loadedmetadata', () => {
+            console.log('🎬 Background Video Info:');
+            console.log('   - Duration:', video.duration, 'seconds');
+            console.log('   - Video Width:', video.videoWidth);
+            console.log('   - Video Height:', video.videoHeight);
+            console.log('   - Ready State:', video.readyState);
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+

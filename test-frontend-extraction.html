@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Video Extraction</title>
+</head>
+<body>
+    <h1>Test Video Extraction</h1>
+    <button onclick="testExtraction()">Test Video Extraction</button>
+    <div id="result"></div>
+
+    <script>
+        async function testExtraction() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                console.log('Testing video extraction...');
+                
+                const response = await fetch('http://localhost:5173/api/extract-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Success:', data);
+                    resultDiv.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p><strong>Title:</strong> ${data.title}</p>
+                        <p><strong>Streams:</strong> ${data.streams?.length || 0}</p>
+                        <p><strong>Available Qualities:</strong> ${data.availableQualities?.join(', ') || 'None'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    console.error('Error:', response.status, response.statusText);
+                    resultDiv.innerHTML = `
+                        <h3>❌ Error</h3>
+                        <p>Status: ${response.status} ${response.statusText}</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ Fetch Error</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+

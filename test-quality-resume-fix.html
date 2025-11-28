@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quality Change Resume Position Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: black;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        video {
+            width: 100%;
+            height: auto;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .play-btn { background: #4CAF50; color: white; }
+        .pause-btn { background: #f44336; color: white; }
+        .quality-btn { background: #2196F3; color: white; }
+        .seek-btn { background: #FF9800; color: white; }
+        .log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .quality-change {
+            color: #2196F3;
+            font-weight: bold;
+        }
+        .position-restore {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .buffering {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.buffering { background: #fff3cd; color: #856404; }
+        .status.playing { background: #d4edda; color: #155724; }
+        .status.paused { background: #f8d7da; color: #721c24; }
+        .quality-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            border-left: 4px solid #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quality Change Resume Position Fix Test</h1>
+        <p>This test demonstrates the improved quality switching behavior where:</p>
+        <ul>
+            <li>Quality change option remains enabled during buffering</li>
+            <li>Video resumes from the exact position where quality change occurred</li>
+            <li>No restart from beginning after quality change</li>
+        </ul>
+        
+        <div class="video-container">
+            <video id="testVideo" controls>
+                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="loading-overlay" id="loadingOverlay">
+                <div>
+                    <div class="spinner"></div>
+                    <h3>Switching Quality</h3>
+                    <p>Preparing your video experience...</p>
+                    <div id="qualityInfo"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status" id="status">Ready</div>
+        
+        <div class="quality-info" id="qualityInfo">
+            <strong>Current Quality:</strong> <span id="currentQuality">Auto</span><br>
+            <strong>Position Before Change:</strong> <span id="positionBefore">0.0s</span><br>
+            <strong>Position After Resume:</strong> <span id="positionAfter">0.0s</span>
+        </div>
+        
+        <div class="controls">
+            <button class="play-btn" onclick="playVideo()">Play</button>
+            <button class="pause-btn" onclick="pauseVideo()">Pause</button>
+            <button class="seek-btn" onclick="seekTo30()">Seek to 30s</button>
+            <button class="quality-btn" onclick="simulateQualityChange('1080p')">Switch to 1080p</button>
+            <button class="quality-btn" onclick="simulateQualityChange('720p')">Switch to 720p</button>
+            <button class="quality-btn" onclick="simulateQualityChange('480p')">Switch to 480p</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="log" id="log">
+            <div>Quality change resume position test initialized...</div>
+            <div>Try playing the video, seeking to a position, then switching quality</div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('testVideo');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+        const currentQualitySpan = document.getElementById('currentQuality');
+        const positionBeforeSpan = document.getElementById('positionBefore');
+        const positionAfterSpan = document.getElementById('positionAfter');
+        
+        let isBuffering = false;
+        let wasPlaying = false;
+        let positionBeforeChange = 0;
+        let currentQuality = 'Auto';
+        
+        function logMessage(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #666;">[${timestamp}]</span> ${message}`;
+            
+            if (type === 'quality-change') {
+                logEntry.classList.add('quality-change');
+            } else if (type === 'position-restore') {
+                logEntry.classList.add('position-restore');
+            } else if (type === 'buffering') {
+                logEntry.classList.add('buffering');
+            }
+            
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateStatus(statusText, className) {
+            status.textContent = statusText;
+            status.className = `status ${className}`;
+        }
+        
+        function updateQualityInfo() {
+            currentQualitySpan.textContent = currentQuality;
+            positionBeforeSpan.textContent = positionBeforeChange.toFixed(1) + 's';
+        }
+        
+        function showLoadingOverlay(quality) {
+            isBuffering = true;
+            loadingOverlay.style.display = 'flex';
+            document.getElementById('qualityInfo').innerHTML = `
+                <strong>Switching to ${quality}</strong><br>
+                <small>From position: ${positionBeforeChange.toFixed(1)}s</small>
+            `;
+            updateStatus('Switching Quality...', 'buffering');
+        }
+        
+        function hideLoadingOverlay() {
+            isBuffering = false;
+            loadingOverlay.style.display = 'none';
+        }
+        
+        async function simulateQualityChange(newQuality) {
+            if (video.paused && !wasPlaying) {
+                logMessage('❌ Cannot simulate quality change - video is paused');
+                return;
+            }
+            
+            // Store current state
+            wasPlaying = !video.paused;
+            positionBeforeChange = video.currentTime;
+            const currentVolume = video.volume;
+            const wasMuted = video.muted;
+            
+            logMessage(`🎯 Quality change requested: ${currentQuality} → ${newQuality}`, 'quality-change');
+            logMessage(`📍 Current position: ${positionBeforeChange.toFixed(1)}s`, 'quality-change');
+            
+            // Update quality info
+            updateQualityInfo();
+            
+            // Immediately pause video
+            logMessage('🛑 Quality switching - immediately pausing video', 'buffering');
+            video.pause();
+            updateStatus('Paused for Quality Change', 'paused');
+            
+            // Show loading overlay
+            showLoadingOverlay(newQuality);
+            
+            // Simulate quality switching delay (1-3 seconds)
+            const switchingTime = 1000 + Math.random() * 2000;
+            logMessage(`⏳ Simulating quality switching for ${switchingTime.toFixed(0)}ms...`, 'buffering');
+            
+            await new Promise(resolve => setTimeout(resolve, switchingTime));
+            
+            // Update current quality
+            currentQuality = newQuality;
+            
+            logMessage('✅ Quality switching complete, restoring position...', 'position-restore');
+            hideLoadingOverlay();
+            
+            // Restore position with robust handling
+            const restorePosition = () => {
+                if (video.readyState >= 2) { // HAVE_CURRENT_DATA
+                    video.currentTime = positionBeforeChange;
+                    logMessage(`⏱️ Position restored to: ${positionBeforeChange.toFixed(1)}s`, 'position-restore');
+                    positionAfterSpan.textContent = positionBeforeChange.toFixed(1) + 's';
+                } else {
+                    // Wait for video to be ready
+                    const waitForReady = () => {
+                        if (video.readyState >= 2) {
+                            video.currentTime = positionBeforeChange;
+                            logMessage(`⏱️ Position restored to (delayed): ${positionBeforeChange.toFixed(1)}s`, 'position-restore');
+                            positionAfterSpan.textContent = positionBeforeChange.toFixed(1) + 's';
+                        } else {
+                            setTimeout(waitForReady, 100);
+                        }
+                    };
+                    waitForReady();
+                }
+            };
+            
+            restorePosition();
+            
+            // Resume playback if it was playing before
+            if (wasPlaying) {
+                try {
+                    // Restore volume settings
+                    video.volume = wasMuted ? 0 : currentVolume;
+                    video.muted = wasMuted;
+                    
+                    // Small delay to ensure position is set before playing
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await video.play();
+                    updateStatus('Playing', 'playing');
+                    logMessage('▶️ Video playback resumed from exact position', 'position-restore');
+                    
+                } catch (err) {
+                    logMessage('❌ Failed to resume playback: ' + err.message);
+                    updateStatus('Resume Failed', 'paused');
+                }
+            } else {
+                updateStatus('Paused', 'paused');
+                logMessage('⏸️ Video paused at restored position', 'position-restore');
+            }
+        }
+        
+        function seekTo30() {
+            video.currentTime = 30;
+            logMessage('⏭️ Seeked to 30 seconds');
+        }
+        
+        // Enhanced buffering detection
+        video.addEventListener('waiting', () => {
+            if (!isBuffering) {
+                logMessage('⏳ Video waiting for data - buffering detected', 'buffering');
+            }
+        });
+        
+        video.addEventListener('canplay', () => {
+            if (isBuffering) {
+                logMessage('📺 Video can play - buffering complete', 'position-restore');
+            }
+        });
+        
+        video.addEventListener('seeked', () => {
+            logMessage(`⏭️ Video seeked to: ${video.currentTime.toFixed(1)}s`);
+        });
+        
+        video.addEventListener('loadedmetadata', () => {
+            logMessage(`📺 Video loaded: ${video.duration.toFixed(1)}s duration`);
+        });
+        
+        video.addEventListener('play', () => {
+            updateStatus('Playing', 'playing');
+            logMessage('▶️ Video started playing');
+        });
+        
+        video.addEventListener('pause', () => {
+            if (!isBuffering) {
+                updateStatus('Paused', 'paused');
+                logMessage('⏸️ Video paused');
+            }
+        });
+        
+        video.addEventListener('timeupdate', () => {
+            // Log progress every 10 seconds
+            if (Math.floor(video.currentTime) % 10 === 0 && Math.floor(video.currentTime) !== Math.floor(video.currentTime - 0.1)) {
+                logMessage(`Video progress: ${video.currentTime.toFixed(1)}/${video.duration.toFixed(1)}`);
+            }
+        });
+        
+        function playVideo() {
+            video.play();
+        }
+        
+        function pauseVideo() {
+            video.pause();
+        }
+        
+        function clearLog() {
+            log.innerHTML = '<div>Log cleared...</div>';
+        }
+        
+        // Initialize
+        logMessage('🎬 Quality change resume position test ready');
+        logMessage('💡 Try: 1) Play video, 2) Seek to a position, 3) Switch quality, 4) Verify resume position');
+    </script>
+</body>
+</html>
