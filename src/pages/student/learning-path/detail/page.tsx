@@ -198,26 +198,34 @@ const StudentLearningPathDetail: React.FC = () => {
   }
 
   return (
-    <div className="h-screen bg-white overflow-hidden">
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] relative">
+    <div className="h-screen bg-white overflow-hidden" style={{ display: 'flex', height: '100vh' }}>
+      <div className="flex flex-col lg:flex-row h-full w-full relative">
         {/* Left Sidebar - Units List */}
         <div
           className={`fixed lg:absolute inset-y-0 left-0 z-20 w-[280px] sm:w-80 bg-gray-50 border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
-          style={{ top: '4rem', bottom: 0 }}
+          style={{ 
+            top: 0, 
+            bottom: 0, 
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: 0,
+            flexShrink: 0
+          }}
         >
-          <div className="h-full flex flex-col overflow-hidden">
+          <div className="h-full flex flex-col overflow-hidden w-full">
             {/* Header */}
-            <div className="flex-shrink-0 pl-3 pr-2 py-2 sm:py-1.5 border-b border-gray-200">
-              <div className="flex items-center justify-between gap-2">
-                <div>
+            <div className="flex-shrink-0 pl-3 pr-2 py-1.5 sm:py-2 border-b border-gray-200 w-full">
+              <div className="flex items-center justify-between gap-2 w-full">
+                <div className="min-w-0 flex-1">
                   <h2 className="text-xs sm:text-sm font-semibold text-gray-900">Course Units</h2>
                   <p className="text-[10px] text-gray-500 truncate">{learningPath.title}</p>
                 </div>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="p-1 sm:p-0.5 hover:bg-gray-200 rounded"
+                  className="p-1 sm:p-0.5 hover:bg-gray-200 rounded flex-shrink-0"
                   aria-label="Close sidebar"
                 >
                   <i className="ri-close-line text-base sm:text-lg"></i>
@@ -226,8 +234,15 @@ const StudentLearningPathDetail: React.FC = () => {
             </div>
 
             {/* Units List - Scrollable */}
-            <div className="flex-1 overflow-y-auto pl-2 sm:pl-3 pr-2 pb-6">
-              <div className="space-y-1">
+            <div 
+              className="flex-1 overflow-y-auto overflow-x-hidden pl-2 sm:pl-3 pr-2 pb-6 w-full"
+              style={{ 
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                width: '100%'
+              }}
+            >
+              <div className="space-y-1 w-full">
                 {learningPath.units.map((unit) => {
                   const isExpanded = expandedUnits.has(unit.id);
                   const isSelected = selectedUnit?.id === unit.id;
@@ -235,19 +250,21 @@ const StudentLearningPathDetail: React.FC = () => {
                   return (
                     <div
                       key={unit.id}
-                      className={`rounded-lg border transition-all ${
+                      className={`rounded-lg border transition-all w-full ${
                         isSelected
                           ? 'bg-blue-50 border-blue-500'
                           : 'bg-white border-gray-200'
                       }`}
+                      style={{ width: '100%' }}
                     >
                       {/* Unit Header */}
-                      <div className="flex items-center justify-between px-2 py-2 sm:py-2.5">
+                      <div className="flex items-center justify-between px-2 py-2 sm:py-2.5 w-full">
                         <button
                           onClick={() => handleUnitSelect(unit)}
-                          className="flex-1 text-left hover:bg-gray-50 rounded-lg transition-all"
+                          className="flex-1 text-left hover:bg-gray-50 rounded-lg transition-all min-w-0"
+                          style={{ width: '100%' }}
                         >
-                          <span className="font-medium text-gray-900 text-xs sm:text-sm truncate">
+                          <span className="font-medium text-gray-900 text-xs sm:text-sm truncate block w-full">
                             {unit.title}
                           </span>
                         </button>
@@ -273,7 +290,7 @@ const StudentLearningPathDetail: React.FC = () => {
 
                       {/* Modules Dropdown */}
                       {isExpanded && unit.modules && unit.modules.length > 0 && (
-                        <div className="pl-2 pr-2 pb-3 space-y-1">
+                        <div className="pl-2 pr-2 pb-3 space-y-1 w-full">
                           {unit.modules.map((module) => (
                             <button
                               key={module.id}
@@ -283,9 +300,10 @@ const StudentLearningPathDetail: React.FC = () => {
                                   ? 'bg-blue-100 text-blue-900 font-medium'
                                   : 'text-gray-700 hover:bg-gray-100'
                               }`}
+                              style={{ width: '100%' }}
                             >
-                              <div className="flex items-center justify-between">
-                                <span className="truncate">{module.title}</span>
+                              <div className="flex items-center justify-between w-full min-w-0">
+                                <span className="truncate flex-1 min-w-0">{module.title}</span>
                                 <i
                                   className={`ml-2 flex-shrink-0 ${
                                     module.content_type === 'Video'
@@ -317,7 +335,7 @@ const StudentLearningPathDetail: React.FC = () => {
           <div
             className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-10"
             onClick={() => setSidebarOpen(false)}
-            style={{ top: '4rem' }}
+            style={{ top: 0 }}
           ></div>
         )}
 
@@ -325,12 +343,17 @@ const StudentLearningPathDetail: React.FC = () => {
         <div
           className={`flex-1 overflow-hidden bg-white transition-all duration-300 ${
             sidebarOpen ? 'lg:ml-80' : 'lg:ml-0'
-          } w-full`}
+          } w-full relative`}
+          style={{ 
+            flexGrow: 1,
+            flexShrink: 1,
+            minWidth: 0
+          }}
         >
           {selectedUnit ? (
-            <div className="h-full flex flex-col">
-              {/* Header - Fixed at top */}
-              <div className="flex-shrink-0 bg-white border-b border-gray-200 shadow-sm z-10">
+            <div className="h-[calc(100vh-64px)] overflow-y-auto overflow-x-hidden relative">
+              {/* Header - Sticky within scroll container */}
+              <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
                 <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
                   <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                     <button
@@ -344,8 +367,17 @@ const StudentLearningPathDetail: React.FC = () => {
                         }-line text-lg sm:text-xl text-gray-700`}
                       ></i>
                     </button>
-                    <div className="flex-1 min-w-0">
-                      <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
+                    <div className="flex-1 min-w-0 overflow-hidden pr-2">
+                      <h1 
+                        className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate"
+                        style={{ 
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                        title={selectedModule ? selectedModule.title : learningPath.title}
+                      >
                         {selectedModule ? selectedModule.title : learningPath.title}
                       </h1>
                       {selectedModule ? (
@@ -398,7 +430,7 @@ const StudentLearningPathDetail: React.FC = () => {
               </div>
 
               {/* Content Area - Scrollable */}
-              <div className="flex-1 overflow-y-auto bg-white">
+              <div className="bg-white">
                 {selectedModule ? (
                   <div className="p-4 sm:p-6 lg:p-8">
                     <div className={`mx-auto ${sidebarOpen ? 'max-w-4xl' : 'max-w-6xl'}`}>

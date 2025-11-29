@@ -105,7 +105,7 @@ const StudentLearningPath: React.FC = () => {
       `}</style>
       
       {/* Promotional Banner - Matching Mentor Page Style */}
-      <div className="mb-8 rounded-2xl overflow-hidden shadow-lg" style={{ background: 'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)' }}>
+      <div className="mb-8 rounded-xl overflow-hidden bg-gradient-to-r from-teal-500 to-cyan-600 shadow-lg">
         <div className="flex flex-col lg:flex-row items-center justify-between p-4 lg:p-5">
           {/* Left Section - Text and Statistics */}
           <div className="flex-1 mb-4 lg:mb-0 lg:mr-6">
@@ -163,16 +163,14 @@ const StudentLearningPath: React.FC = () => {
       </div>
 
       {/* Learning Paths Grid */}
-      <div>
-        <div className="max-w-7xl mx-auto">
-          {learningPaths.length === 0 ? (
-            <Card className="p-12 text-center">
-              <i className="ri-route-line text-6xl text-gray-300 mb-4"></i>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Learning Paths Available</h3>
-              <p className="text-gray-500">Check back later for new learning paths.</p>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {learningPaths.length === 0 ? (
+        <Card className="p-12 text-center">
+          <i className="ri-route-line text-6xl text-gray-300 mb-4"></i>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">No Learning Paths Available</h3>
+          <p className="text-gray-500">Check back later for new learning paths.</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {learningPaths.map((path, index) => {
                 const cardColor = getCardColor(index);
                 
@@ -201,7 +199,7 @@ const StudentLearningPath: React.FC = () => {
                     </div>
             
                     {/* Learning Path Title */}
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
                       {path.title}
                     </h3>
 
@@ -245,10 +243,8 @@ const StudentLearningPath: React.FC = () => {
                   </Card>
                 );
               })}
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };
