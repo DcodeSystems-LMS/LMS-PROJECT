@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { authService } from '@/lib/auth';
 import Button from '@/components/base/Button';
 import Modal from '@/components/base/Modal';
 import AssessmentTaker from '@/pages/student/assessments/components/AssessmentTaker';
@@ -75,6 +76,9 @@ const StudentLearningPathDetail: React.FC = () => {
   const [showTestModal, setShowTestModal] = useState(false);
   const [showAssessmentTaker, setShowAssessmentTaker] = useState(false);
   const [selectedTest, setSelectedTest] = useState<Test | null>(null);
+  const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [savingProgress, setSavingProgress] = useState(false);
 
   useEffect(() => {
     if (pathId) {
@@ -195,16 +199,265 @@ const StudentLearningPathDetail: React.FC = () => {
 
         setLearningPath(transformedData);
 
-        // Show Course Introduction by default
-        setShowCourseIntroduction(true);
-        setSelectedUnit(null);
-        setSelectedModule(null);
+        // Load user progress and resume from last module
+        await loadProgress(id, transformedData);
       }
     } catch (error) {
       console.error('Error fetching learning path detail:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Load user progress from database
+  const loadProgress = async (pathId: string, path: LearningPath) => {
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user) {
+        console.log('No user found, showing course introduction');
+        setShowCourseIntroduction(true);
+        setSelectedUnit(null);
+        setSelectedModule(null);
+        return;
+      }
+
+      setCurrentUserId(user.id);
+
+      // Fetch completed modules for this learning path
+      const { data: progressData, error } = await supabase
+        .from('learning_path_progress')
+        .select('module_id, is_completed, completed_at')
+        .eq('student_id', user.id)
+        .eq('learning_path_id', pathId)
+        .eq('is_completed', true);
+
+      if (error) {
+        console.error('Error loading progress:', error);
+        // Continue without progress data
+        setShowCourseIntroduction(true);
+        setSelectedUnit(null);
+        setSelectedModule(null);
+        return;
+      }
+
+      // Mark modules as completed
+      if (progressData && progressData.length > 0) {
+        const completedIds = new Set(progressData.map((p: any) => p.module_id));
+        setCompletedModules(completedIds);
+
+        // Find the last completed module and resume from the next one
+        let lastCompletedModule: { unit: Unit; module: Module; index: number } | null = null;
+
+        for (const unit of path.units) {
+          for (let i = 0; i < unit.modules.length; i++) {
+            const module = unit.modules[i];
+            if (completedIds.has(module.id)) {
+              lastCompletedModule = { unit, module, index: i };
+            }
+          }
+        }
+
+        // Resume from next module after last completed
+        if (lastCompletedModule) {
+          const { unit, index } = lastCompletedModule;
+          const nextModuleIndex = index + 1;
+
+          if (nextModuleIndex < unit.modules.length) {
+            // Resume from next module in same unit
+            const nextModule = unit.modules[nextModuleIndex];
+            setSelectedUnit(unit);
+            setSelectedModule(nextModule);
+            setExpandedUnits(new Set([unit.id]));
+            setShowCourseIntroduction(false);
+            setSidebarOpen(false);
+            return;
+          } else {
+            // Move to next unit's first module
+            const currentUnitIndex = path.units.findIndex(u => u.id === unit.id);
+            if (currentUnitIndex < path.units.length - 1) {
+              const nextUnit = path.units[currentUnitIndex + 1];
+              if (nextUnit.modules.length > 0) {
+                setSelectedUnit(nextUnit);
+                setSelectedModule(nextUnit.modules[0]);
+                setExpandedUnits(new Set([nextUnit.id]));
+                setShowCourseIntroduction(false);
+                setSidebarOpen(false);
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      // No progress found or all modules completed - show introduction
+      setShowCourseIntroduction(true);
+      setSelectedUnit(null);
+      setSelectedModule(null);
+    } catch (error) {
+      console.error('Error loading progress:', error);
+      setShowCourseIntroduction(true);
+      setSelectedUnit(null);
+      setSelectedModule(null);
+    }
+  };
+
+  // Save module progress to database
+  const saveModuleProgress = async (moduleId: string, unitId: string) => {
+    if (!currentUserId || !pathId) {
+      console.error('Cannot save progress: Missing currentUserId or pathId', { currentUserId, pathId });
+      throw new Error('User not authenticated or learning path not found');
+    }
+
+    try {
+      setSavingProgress(true);
+      console.log('💾 Saving module progress:', { moduleId, unitId, currentUserId, pathId });
+
+      // Check if progress already exists
+      const { data: existing, error: checkError } = await (supabase
+        .from('learning_path_progress') as any)
+        .select('id')
+        .eq('student_id', currentUserId)
+        .eq('module_id', moduleId)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" which is OK
+        console.error('Error checking existing progress:', checkError);
+      }
+
+      const now = new Date().toISOString();
+      const progressData: any = {
+        student_id: currentUserId,
+        learning_path_id: pathId,
+        module_id: moduleId,
+        unit_id: unitId,
+        is_completed: true,
+        completed_at: now,
+        updated_at: now,
+      };
+
+      let error;
+      let result;
+      if (existing && !checkError) {
+        // Update existing record
+        console.log('📝 Updating existing progress record');
+        const { data: updateData, error: updateError } = await (supabase
+          .from('learning_path_progress') as any)
+          .update(progressData)
+          .eq('student_id', currentUserId)
+          .eq('module_id', moduleId)
+          .select();
+        error = updateError;
+        result = updateData;
+        if (!error) {
+          console.log('✅ Progress updated successfully:', updateData);
+        }
+      } else {
+        // Insert new record
+        console.log('➕ Inserting new progress record');
+        const { data: insertData, error: insertError } = await (supabase
+          .from('learning_path_progress') as any)
+          .insert(progressData)
+          .select();
+        error = insertError;
+        result = insertData;
+        if (!error) {
+          console.log('✅ Progress saved successfully:', insertData);
+        }
+      }
+
+      if (error) {
+        console.error('❌ Error saving progress:', error);
+        console.error('Error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
+
+      // Update local state
+      setCompletedModules(prev => new Set(prev).add(moduleId));
+      console.log('✅ Module marked as completed in local state');
+    } catch (error: any) {
+      console.error('❌ Error saving module progress:', error);
+      throw error;
+    } finally {
+      setSavingProgress(false);
+    }
+  };
+
+  // Handle mark as complete
+  const handleMarkAsComplete = async () => {
+    if (!selectedModule || !selectedUnit) {
+      console.error('Cannot mark as complete: Missing module or unit');
+      return;
+    }
+
+    if (!currentUserId) {
+      alert('Please sign in to save your progress.');
+      return;
+    }
+
+    try {
+      console.log('🔄 Mark as Complete button clicked');
+      await saveModuleProgress(selectedModule.id, selectedUnit.id);
+      console.log('✅ Module marked as complete successfully');
+      // Auto-advance to next module
+      handleNextModule();
+    } catch (error: any) {
+      console.error('❌ Error marking module as complete:', error);
+      const errorMessage = error?.message || 'Failed to mark module as complete. Please try again.';
+      alert(errorMessage);
+    }
+  };
+
+  // Handle next module navigation
+  const handleNextModule = () => {
+    if (!selectedModule || !selectedUnit || !learningPath) return;
+
+    // Find next module in current unit
+    const currentUnit = selectedUnit;
+    const currentModuleIndex = currentUnit.modules.findIndex(m => m.id === selectedModule.id);
+    const nextModuleIndex = currentModuleIndex + 1;
+
+    if (nextModuleIndex < currentUnit.modules.length) {
+      // Next module in same unit
+      const nextModule = currentUnit.modules[nextModuleIndex];
+      setSelectedModule(nextModule);
+      setSelectedUnitTest(null);
+      setExpandedUnits(new Set([currentUnit.id]));
+      setSidebarOpen(false);
+      return;
+    }
+
+    // This is the last module in the unit - check if unit has a test
+    if (currentUnit.test) {
+      // Navigate to unit test
+      console.log('📝 Navigating to unit test');
+      setSelectedUnitTest({ unitId: currentUnit.id, test: currentUnit.test });
+      setSelectedModule(null);
+      setExpandedUnits(new Set([currentUnit.id]));
+      setSidebarOpen(false);
+      return;
+    }
+
+    // No test in current unit - move to next unit
+    const currentUnitIndex = learningPath.units.findIndex(u => u.id === currentUnit.id);
+    if (currentUnitIndex < learningPath.units.length - 1) {
+      const nextUnit = learningPath.units[currentUnitIndex + 1];
+      if (nextUnit.modules.length > 0) {
+        setSelectedUnit(nextUnit);
+        setSelectedModule(nextUnit.modules[0]);
+        setSelectedUnitTest(null);
+        setExpandedUnits(new Set([nextUnit.id]));
+        setSidebarOpen(false);
+        return;
+      }
+    }
+
+    // All modules completed - show completion message
+    alert('Congratulations! You have completed all modules in this learning path.');
   };
 
   const toggleUnitExpansion = (unitId: string, e: React.MouseEvent) => {
@@ -480,7 +733,12 @@ const StudentLearningPathDetail: React.FC = () => {
                               style={{ width: '100%' }}
                             >
                               <div className="flex items-center justify-between w-full min-w-0">
-                                <span className="truncate flex-1 min-w-0">{module.title}</span>
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  {completedModules.has(module.id) && (
+                                    <i className="ri-checkbox-circle-fill text-green-600 flex-shrink-0"></i>
+                                  )}
+                                  <span className="truncate flex-1 min-w-0">{module.title}</span>
+                                </div>
                                 <i
                                   className={`ml-2 flex-shrink-0 ${
                                     module.content_type === 'Video'
@@ -714,6 +972,32 @@ const StudentLearningPathDetail: React.FC = () => {
                       ) : null}
                     </div>
                   </div>
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    {selectedModule && (
+                      <Button
+                        onClick={handleMarkAsComplete}
+                        disabled={savingProgress || completedModules.has(selectedModule.id)}
+                        className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium text-xs sm:text-sm flex-shrink-0 ${
+                          completedModules.has(selectedModule.id)
+                            ? 'bg-green-600 text-white cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                      >
+                        {completedModules.has(selectedModule.id) ? (
+                          <>
+                            <i className="ri-check-line text-sm sm:text-base"></i>
+                            <span className="hidden sm:inline">Completed</span>
+                          </>
+                        ) : (
+                          <>
+                            <i className="ri-check-line text-sm sm:text-base"></i>
+                            <span className="hidden sm:inline">Mark as Complete</span>
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Module Type Badge - Below title when module is selected */}
@@ -842,6 +1126,28 @@ const StudentLearningPathDetail: React.FC = () => {
                             Content will be displayed here. This module is currently being prepared.
                           </p>
                         )}
+                      </div>
+
+                      {/* Next Button - At the end of module content */}
+                      <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end">
+                        <Button
+                          onClick={async () => {
+                            // Mark as complete if not already completed
+                            if (!completedModules.has(selectedModule.id)) {
+                              try {
+                                await saveModuleProgress(selectedModule.id, selectedUnit!.id);
+                              } catch (error) {
+                                console.error('Error saving progress:', error);
+                              }
+                            }
+                            // Navigate to next module
+                            handleNextModule();
+                          }}
+                          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                        >
+                          <span>Next</span>
+                          <i className="ri-arrow-right-line"></i>
+                        </Button>
                       </div>
                     </div>
                   </div>
