@@ -177,6 +177,35 @@ export default function MyCourses() {
       .slice(0, 2);
   };
 
+  // Helper function to render star rating
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const decimal = rating % 1;
+    const hasHalfStar = decimal >= 0.25 && decimal < 0.75;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    
+    return (
+      <div className="flex items-center gap-0.5">
+        {[...Array(fullStars)].map((_, i) => (
+          <i key={i} className="ri-star-fill text-yellow-400 text-sm"></i>
+        ))}
+        {hasHalfStar && <i className="ri-star-half-fill text-yellow-400 text-sm"></i>}
+        {[...Array(emptyStars)].map((_, i) => (
+          <i key={`empty-${i}`} className="ri-star-line text-yellow-400 text-sm"></i>
+        ))}
+      </div>
+    );
+  };
+
+  // Calculate original price (for discount display)
+  const getOriginalPrice = (currentPrice: number) => {
+    // If price is low or free, assume it's already discounted
+    if (currentPrice < 1000) {
+      return currentPrice * 8.35; // Example: ₹399 -> ₹3,329
+    }
+    return currentPrice * 1.5; // Default 50% discount assumption
+  };
+
   const handleContinueCourse = (courseId: string) => {
     console.log('🎓 Continuing course:', courseId);
     navigate(`/student/course/${courseId}`);
@@ -317,111 +346,132 @@ export default function MyCourses() {
                 </Button>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {purchasedCourses.map((enrollment) => {
                   const course = enrollment.course;
                   if (!course) return null;
 
+                  // Mock rating data (you can get this from course data if available)
+                  const rating = 4.3;
+                  const reviewCount = 2724;
+                  const originalPrice = getOriginalPrice(course.price);
+                  const hasDiscount = course.price < originalPrice;
+                  const isPremium = (course.tags && course.tags.includes('Premium')) || false;
+                  const isBestseller = (course.tags && course.tags.includes('Bestseller')) || course.price === 0;
+
                   return (
-                    <Card key={enrollment.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      {/* Course Thumbnail */}
-                      <div className="aspect-video bg-gray-200 relative">
+                    <Card key={enrollment.id} className="overflow-hidden hover:shadow-xl transition-shadow flex flex-col h-full !p-0">
+                      {/* Course Thumbnail with Purple Gradient Background */}
+                      <div className="h-40 bg-gradient-to-br from-purple-600 via-purple-500 to-pink-400 relative flex-shrink-0">
                         {course.thumbnail ? (
-                          <img
-                            src={course.thumbnail}
-                    alt={course.title}
-                            className="w-full h-full object-cover"
-                          />
+                          <div className="relative w-full h-full">
+                            <img
+                              src={course.thumbnail}
+                              alt={course.title}
+                              className="w-full h-full object-cover mix-blend-overlay opacity-80"
+                            />
+                            {/* Overlay gradient */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-purple-500/80 to-pink-400/80"></div>
+                          </div>
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <i className="ri-book-open-line text-4xl text-gray-400"></i>
+                          <div className="w-full h-full relative">
+                            {/* Purple gradient background */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-500 to-pink-400"></div>
+                            {/* Decorative elements */}
+                            <div className="absolute left-4 top-4">
+                              <div className="text-white">
+                                <div className="w-16 h-0.5 bg-red-500 rounded-full mb-1"></div>
+                                <div className="text-3xl font-bold">ISTQB</div>
+                              </div>
+                            </div>
                           </div>
                         )}
-                        <div className="absolute top-3 left-3">
-                          <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
-                            {course.level}
-                          </span>
-                        </div>
+                        {/* Progress Badge */}
                         <div className="absolute top-3 right-3">
                           <span className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
-                            {enrollment.progress}% Complete
+                            {enrollment.progress}%
                           </span>
-                  </div>
-                </div>
-                
-                      {/* Course Content */}
-                      <div className="p-6">
-                        <div className="mb-3">
-                          <span className="text-sm text-blue-600 font-medium">{course.category}</span>
                         </div>
-                        
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {course.title}
-                    </h3>
-                        
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                          {course.description}
-                        </p>
+                      </div>
+
+                      {/* Course Content */}
+                      <div className="px-4 pt-3 pb-4 flex flex-col flex-grow">
+                        {/* Course Title */}
+                        <h3 className="text-lg font-bold text-gray-900 mb-1.5 line-clamp-2 leading-tight">
+                          {course.title}
+                        </h3>
 
                         {/* Instructor */}
-                        <div className="flex items-center mb-4">
-                          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-xs font-medium text-gray-600">
-                              {course.instructor ? getInitials(course.instructor.name) : 'M'}
-                    </span>
-                  </div>
-                    <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              by {course.instructor?.name || 'Mentor'}
-                            </p>
-                          </div>
+                        <p className="text-xs text-gray-700 mb-2">
+                          {course.instructor?.name || 'Mentor'}
+                        </p>
+
+                        {/* Rating */}
+                        <div className="flex items-center gap-1.5 mb-3">
+                          <span className="text-sm font-semibold text-gray-900">{rating}</span>
+                          {renderStars(rating)}
+                          <span className="text-xs text-gray-500">({reviewCount.toLocaleString()})</span>
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="mb-4">
-                          <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <div className="mb-3">
+                          <div className="flex justify-between text-xs text-gray-600 mb-1">
                             <span>Progress</span>
                             <span>{enrollment.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div
+                              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                               style={{ width: `${enrollment.progress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                        {/* Course Stats */}
-                        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                          <div className="flex items-center">
-                            <i className="ri-time-line mr-1"></i>
-                            <span>{course.duration_hours}h</span>
+                            ></div>
                           </div>
-                          <div className="flex items-center">
-                            <i className="ri-calendar-line mr-1"></i>
-                            <span>Enrolled {formatDate(enrollment.enrolled_at)}</span>
-                          </div>
-                    </div>
+                        </div>
 
-                        {/* Actions */}
-                        <div className="flex space-x-2">
+                        {/* Pricing */}
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-xl font-bold text-gray-900">
+                            {formatPrice(course.price)}
+                          </span>
+                          {hasDiscount && (
+                            <span className="text-sm text-gray-500 line-through">
+                              {formatPrice(originalPrice)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Action Buttons - Side by Side */}
+                        <div className="flex gap-2 mb-3">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1"
+                            className="flex-1 text-xs py-2"
                             onClick={() => setSelectedCourse(course)}
                           >
-                            <i className="ri-eye-line mr-1"></i>
-                            View Details
-                        </Button>
-                          <Button
+                            View
+                          </Button>
+                          <Button 
                             size="sm"
-                            className="flex-1"
+                            className="flex-1 text-xs py-2"
                             onClick={() => handleContinueCourse(course.id)}
                           >
-                            <i className="ri-play-line mr-1"></i>
+                            <i className="ri-play-line mr-1 text-xs"></i>
                             Continue
                           </Button>
+                        </div>
+
+                        {/* Badges at Bottom */}
+                        <div className="flex gap-1.5 flex-wrap mt-auto">
+                          {isPremium && (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded bg-purple-600 text-white text-[10px] font-medium">
+                              <i className="ri-check-line mr-1 text-xs"></i>
+                              Premium
+                            </span>
+                          )}
+                          {isBestseller && (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded bg-teal-300 text-gray-900 text-[10px] font-medium">
+                              Bestseller
+                            </span>
+                          )}
                         </div>
                       </div>
                     </Card>
@@ -450,121 +500,119 @@ export default function MyCourses() {
                 </Button>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableCourses.map((course) => (
-                  <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    {/* Course Thumbnail */}
-                    <div className="aspect-video bg-gray-200 relative">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {availableCourses.map((course) => {
+                  // Mock rating data (you can get this from course data if available)
+                  const rating = 4.3;
+                  const reviewCount = 2724;
+                  const originalPrice = getOriginalPrice(course.price);
+                  const hasDiscount = course.price < originalPrice;
+                  const isPremium = (course.tags && course.tags.includes('Premium')) || false;
+                  const isBestseller = (course.tags && course.tags.includes('Bestseller')) || course.price === 0;
+
+                  return (
+                  <Card key={course.id} className="overflow-hidden hover:shadow-xl transition-shadow flex flex-col h-full !p-0">
+                    {/* Course Thumbnail with Purple Gradient Background */}
+                    <div className="h-40 bg-gradient-to-br from-purple-600 via-purple-500 to-pink-400 relative flex-shrink-0">
                       {course.thumbnail ? (
-                        <img
-                          src={course.thumbnail}
-                    alt={course.title}
-                          className="w-full h-full object-cover"
-                        />
+                        <div className="relative w-full h-full">
+                          <img
+                            src={course.thumbnail}
+                            alt={course.title}
+                            className="w-full h-full object-cover mix-blend-overlay opacity-80"
+                          />
+                          {/* Overlay gradient */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-purple-500/80 to-pink-400/80"></div>
+                        </div>
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <i className="ri-book-open-line text-4xl text-gray-400"></i>
+                        <div className="w-full h-full relative">
+                          {/* Purple gradient background */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-500 to-pink-400"></div>
+                          {/* Decorative elements */}
+                          <div className="absolute left-4 top-4">
+                            <div className="text-white">
+                              <div className="w-16 h-0.5 bg-red-500 rounded-full mb-1"></div>
+                              <div className="text-3xl font-bold">ISTQB</div>
+                            </div>
+                          </div>
                         </div>
                       )}
-                      <div className="absolute top-3 left-3">
-                        <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
-                          {course.level}
-                    </span>
-                  </div>
                       {wishlist.includes(course.id) && (
                         <div className="absolute top-3 right-3">
-                          <i className="ri-heart-fill text-red-500 text-xl"></i>
+                          <i className="ri-heart-fill text-red-500 text-lg drop-shadow-lg"></i>
                         </div>
                       )}
                     </div>
 
                     {/* Course Content */}
-                    <div className="p-6">
-                      <div className="mb-3">
-                        <span className="text-sm text-blue-600 font-medium">{course.category}</span>
-                </div>
-                
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {course.title}
-                    </h3>
-
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {course.description}
-                  </p>
+                    <div className="px-4 pt-3 pb-4 flex flex-col flex-grow">
+                      {/* Course Title */}
+                      <h3 className="text-lg font-bold text-gray-900 mb-1.5 line-clamp-2 leading-tight">
+                        {course.title}
+                      </h3>
 
                       {/* Instructor */}
-                      <div className="flex items-center mb-4">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-xs font-medium text-gray-600">
-                            {course.instructor ? getInitials(course.instructor.name) : 'M'}
-                    </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            by {course.instructor?.name || 'Mentor'}
-                          </p>
-                        </div>
+                      <p className="text-xs text-gray-700 mb-2">
+                        {course.instructor?.name || 'Mentor'}
+                      </p>
+
+                      {/* Rating */}
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <span className="text-sm font-semibold text-gray-900">{rating}</span>
+                        {renderStars(rating)}
+                        <span className="text-xs text-gray-500">({reviewCount.toLocaleString()})</span>
                       </div>
 
-                      {/* Course Stats */}
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                        <div className="flex items-center">
-                          <i className="ri-time-line mr-1"></i>
-                          <span>{course.duration_hours}h</span>
-                        </div>
-                        <div className="flex items-center">
-                          <i className="ri-calendar-line mr-1"></i>
-                          <span>{formatDate(course.created_at)}</span>
-                        </div>
-                  </div>
-
-                      {/* Price and Actions */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="text-xl font-bold text-gray-900">
+                      {/* Pricing */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-xl font-bold text-gray-900">
                           {formatPrice(course.price)}
-                    </div>
-                  </div>
+                        </span>
+                        {hasDiscount && (
+                          <span className="text-sm text-gray-500 line-through">
+                            {formatPrice(originalPrice)}
+                          </span>
+                        )}
+                      </div>
 
-                      <div className="flex space-x-2">
+                      {/* Action Buttons - Side by Side */}
+                      <div className="flex gap-2 mb-3">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1"
+                          className="flex-1 text-xs py-2"
                           onClick={() => setSelectedCourse(course)}
                         >
-                          <i className="ri-eye-line mr-1"></i>
-                          View Details
+                          View
                         </Button>
-                    <Button 
-                      size="sm" 
-                      className="flex-1"
+                        <Button 
+                          size="sm"
+                          className="flex-1 text-xs py-2"
                           onClick={() => handleEnrollInCourse(course.id, course.title)}
-                    >
-                          <i className="ri-add-line mr-1"></i>
-                      Enroll Now
-                    </Button>
+                        >
+                          <i className="ri-add-line mr-1 text-xs"></i>
+                          Enroll
+                        </Button>
                       </div>
 
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                          className="w-full"
-                          onClick={() => {
-                            if (wishlist.includes(course.id)) {
-                              handleRemoveFromWishlist(course.id, course.title);
-                            } else {
-                              handleAddToWishlist(course.id, course.title);
-                            }
-                          }}
-                        >
-                          <i className={`ri-heart-${wishlist.includes(course.id) ? 'fill' : 'line'} mr-2`}></i>
-                          {wishlist.includes(course.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                      {/* Badges at Bottom */}
+                      <div className="flex gap-1.5 flex-wrap mt-auto">
+                        {isPremium && (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded bg-purple-600 text-white text-[10px] font-medium">
+                            <i className="ri-check-line mr-1 text-xs"></i>
+                            Premium
+                          </span>
+                        )}
+                        {isBestseller && (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded bg-teal-300 text-gray-900 text-[10px] font-medium">
+                            Bestseller
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                  );
+                })}
         </div>
           )}
         </div>

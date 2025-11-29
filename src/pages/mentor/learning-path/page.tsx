@@ -1153,15 +1153,13 @@ const MentorLearningPath: React.FC = () => {
 
                             {module.contentType === 'Text' && (
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Content
+                                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                                  Module {module.order} Description
                                 </label>
-                                <textarea
+                                <RichTextEditor
                                   value={module.content || ''}
-                                  onChange={(e) => updateModule(unit.id, module.id, 'content', e.target.value)}
-                                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                  rows={3}
-                                  placeholder="Enter text content"
+                                  onChange={(value) => updateModule(unit.id, module.id, 'content', value)}
+                                  placeholder="Enter module description..."
                                 />
                               </div>
                             )}
