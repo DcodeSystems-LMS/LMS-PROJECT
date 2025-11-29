@@ -32,6 +32,19 @@ export default function Header() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflowY = 'hidden';
+    } else {
+      document.body.style.overflowY = '';
+    }
+
+    return () => {
+      document.body.style.overflowY = '';
+    };
+  }, [isMenuOpen]);
+
   const navigation = [
     { name: 'Home', href: '/' },
     { name: 'Courses', href: '/courses' },
@@ -143,45 +156,102 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Mobile Navigation Menu */}
-          {isMenuOpen && (
-            <div className="md:hidden absolute top-full left-0 right-0 bg-theme-card-bg/95 backdrop-blur-md border-t border-theme-border shadow-lg animate-slide-down">
-              <div className="px-4 py-4 space-y-3">
+        </div>
+      </header>
+
+      {/* Mobile Navigation Drawer - Left Side */}
+      {isMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
+            onClick={() => setIsMenuOpen(false)}
+          />
+          
+          {/* Drawer */}
+          <div className={`md:hidden fixed left-0 top-0 h-full w-80 max-w-[85vw] bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto ${
+            isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}>
+            <div className="px-4 py-6">
+              {/* Logo */}
+              <div className="mb-8">
+                <Link to="/" className="flex items-center justify-center" onClick={() => setIsMenuOpen(false)}>
+                  <img 
+                    src="/DCODE LOGO.png" 
+                    alt="DCODE Systems" 
+                    className="h-10 w-auto"
+                  />
+                </Link>
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="space-y-2 mb-6">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="block py-3 px-2 text-theme-text-primary hover:text-brand-primary hover:bg-theme-hover-bg rounded-lg transition-all duration-200 font-medium"
+                    className="block py-3 px-3 text-gray-700 hover:text-brand-primary hover:bg-gray-100 rounded-lg transition-all duration-200 font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
                   </Link>
                 ))}
-                <div className="pt-4 border-t border-theme-border space-y-3">
-                  <Link
-                    to="/auth/signin"
-                    className="block"
-                    onClick={() => setIsMenuOpen(false)}
+              </nav>
+
+              {/* Divider */}
+              <div className="border-t border-gray-200 my-6"></div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <Link
+                  to="/auth/signin"
+                  className="block"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Button variant="brand-outline" size="sm" fullWidth>
+                    Sign In
+                  </Button>
+                </Link>
+                <Link
+                  to="/auth/signin"
+                  className="block"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Button variant="brand" size="sm" fullWidth>
+                    Get Started
+                  </Button>
+                </Link>
+                <Link
+                  to="/playground"
+                  className="block"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Button 
+                    size="sm" 
+                    fullWidth
+                    className="bg-gradient-to-r from-purple-600 to-orange-500 hover:from-purple-700 hover:to-orange-600 text-white border-0"
                   >
-                    <Button variant="brand-outline" size="sm" fullWidth>
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link
-                    to="/auth/signin"
-                    className="block"
-                    onClick={() => setIsMenuOpen(false)}
+                    <i className="ri-rocket-line mr-2"></i>
+                    Start Learning Now
+                  </Button>
+                </Link>
+                <Link
+                  to="/courses"
+                  className="block"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <button
+                    className="w-full px-4 py-2.5 text-sm font-bold bg-white text-gray-900 border-2 border-gray-900 hover:bg-gray-50 hover:border-gray-950 transition-all duration-300 rounded-lg flex items-center justify-center gap-2"
                   >
-                    <Button variant="brand" size="sm" fullWidth>
-                      Get Started
-                    </Button>
-                  </Link>
-                </div>
+                    <i className="ri-play-circle-line"></i>
+                    Explore Courses
+                  </button>
+                </Link>
               </div>
             </div>
-          )}
-        </div>
-      </header>
+          </div>
+        </>
+      )}
 
       {/* Global Search Modal */}
       <GlobalSearch 

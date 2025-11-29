@@ -43,9 +43,9 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="py-12 sm:py-16 md:py-20 relative overflow-hidden">
+    <section className="py-12 sm:py-16 md:py-20 relative overflow-hidden bg-white">
       {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      <div className="absolute inset-0 bg-white">
         {/* Animated Gradient Orbs */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
