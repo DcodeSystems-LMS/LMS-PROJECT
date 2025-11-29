@@ -1,0 +1,5 @@
+[33mf793ab5f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update student learning path: add Course Introduction, Unit Test items, fix test modal, and update URLs to dcodesys.in
+[33m479a2c1f[m Fix UI layout: remove glossy effects from headers, fix module header sticky behavior, align student page cards with banner
+[33m705a6e37[m Merge remote changes and resolve conflicts - integrate learningPathService with edit/delete functionality
+[33mc70b7c34[m Fix syntax errors and implement edit/delete functionality for learning paths
+[33m3c27aa2b[m Update student learning path: Add card view with mentor style, implement detail page with scrollable content, add sticky header
