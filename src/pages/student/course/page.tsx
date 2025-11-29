@@ -10,6 +10,7 @@ import { authService } from '@/lib/auth';
 import { bookmarkService } from '@/services/bookmarkService';
 import CustomVideoPlayer from '@/components/feature/CustomVideoPlayer';
 import HybridVideoPlayer from '@/components/feature/HybridVideoPlayer';
+import YouTubeEmbed from '@/components/feature/YouTubeEmbed';
 import { instantPreloadService } from '@/services/instantPreloadService';
 import { globalPreloader } from '@/services/globalPreloader';
 
@@ -403,6 +404,21 @@ const CourseLearningPage: React.FC = () => {
     }
   };
 
+  // Check if URL is a YouTube URL
+  const isYouTubeUrl = (url: string): boolean => {
+    if (!url) return false;
+    
+    const youtubePatterns = [
+      /youtube\.com\/watch\?v=/,
+      /youtube\.com\/embed\//,
+      /youtu\.be\//,
+      /youtube\.com\/v\//,
+      /youtube\.com\/.*[?&]v=/
+    ];
+    
+    return youtubePatterns.some(pattern => pattern.test(url));
+  };
+
   // Convert YouTube URL to embed URL
   const convertToEmbedUrl = (url: string) => {
     if (!url) return '';
@@ -515,28 +531,37 @@ const CourseLearningPage: React.FC = () => {
             {currentLesson && (
               <div className="space-y-4">
                 {currentLesson?.videoUrl ? (
-                  <CustomVideoPlayer
-                    videoUrl={currentLesson.videoUrl}
-                    title={currentLesson?.title ? String(currentLesson.title) : 'Lesson Video'}
-                    forceCustomPlayer={true}
-                    progressCheckpoints={[10, 30, 60, 120, 300]} // Example checkpoints at 10s, 30s, 1min, 2min, 5min
-                    onProgressCheckpoint={async (currentTime, checkpoint) => {
-                      console.log(`🎯 Checkpoint reached at ${currentTime}s (checkpoint: ${checkpoint}s)`);
-                      
-                      // Simulate data processing - replace with your actual logic
-                      // This could be saving progress, analyzing content, etc.
-                      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000)); // 2-5 second delay
-                      
-                      console.log(`✅ Data processing complete for checkpoint ${checkpoint}s`);
-                      
-                      // Return true to resume playback, false to keep paused
-                      return true;
-                    }}
-                    onTimeUpdate={(currentTime, duration) => {
-                      // You can save progress here if needed
-                      console.log(`Video progress: ${currentTime}/${duration}`);
-                    }}
-                  />
+                  isYouTubeUrl(currentLesson.videoUrl) ? (
+                    <YouTubeEmbed
+                      videoUrl={currentLesson.videoUrl}
+                      title={currentLesson?.title ? String(currentLesson.title) : 'Lesson Video'}
+                      controls={true}
+                      showFullscreen={false}
+                    />
+                  ) : (
+                    <CustomVideoPlayer
+                      videoUrl={currentLesson.videoUrl}
+                      title={currentLesson?.title ? String(currentLesson.title) : 'Lesson Video'}
+                      forceCustomPlayer={true}
+                      progressCheckpoints={[10, 30, 60, 120, 300]} // Example checkpoints at 10s, 30s, 1min, 2min, 5min
+                      onProgressCheckpoint={async (currentTime, checkpoint) => {
+                        console.log(`🎯 Checkpoint reached at ${currentTime}s (checkpoint: ${checkpoint}s)`);
+                        
+                        // Simulate data processing - replace with your actual logic
+                        // This could be saving progress, analyzing content, etc.
+                        await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000)); // 2-5 second delay
+                        
+                        console.log(`✅ Data processing complete for checkpoint ${checkpoint}s`);
+                        
+                        // Return true to resume playback, false to keep paused
+                        return true;
+                      }}
+                      onTimeUpdate={(currentTime, duration) => {
+                        // You can save progress here if needed
+                        console.log(`Video progress: ${currentTime}/${duration}`);
+                      }}
+                    />
+                  )
                 ) : (
                   <div className="relative bg-black rounded-lg overflow-hidden flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
                     <div className="text-center text-white">
