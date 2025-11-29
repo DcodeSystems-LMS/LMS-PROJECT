@@ -214,7 +214,7 @@ export default function AdminLayout() {
         isCollapsed ? 'lg:pl-16' : 'lg:pl-64'
       }`}>
         {/* Top bar - Fixed Height */}
-        <div className="fixed top-0 left-0 right-0 z-40 flex h-16 flex-shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 sm:gap-x-6 sm:px-6 lg:pl-24 lg:pr-8">
+        <div className="fixed top-0 left-0 right-0 z-40 flex h-16 flex-shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 sm:gap-x-6 sm:px-6 lg:pl-24 lg:pr-8" style={{ overflow: 'visible' }}>
           {/* Mobile menu button */}
           <button
             type="button"
