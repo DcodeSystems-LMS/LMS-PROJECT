@@ -316,6 +316,7 @@ const StudentLearningPathDetail: React.FC = () => {
       topics: [test.test_type === 'final' ? 'Final Test' : `Unit Test`],
       attempts: 0,
       maxAttempts: 3,
+      isLearningPathTest: true, // Flag to indicate this is a learning path test
     };
   };
 

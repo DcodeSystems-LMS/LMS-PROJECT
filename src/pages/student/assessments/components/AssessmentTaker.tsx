@@ -41,6 +41,7 @@ interface AssessmentTakerProps {
     duration: string;
     questions: number;
     type: string;
+    isLearningPathTest?: boolean; // Flag to indicate if this is a learning path test
   } | null;
   onComplete: (score: number, answers: Record<string, string>) => void;
 }
@@ -266,6 +267,14 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
   const startAssessmentAttempt = async () => {
     if (!assessment?.id) {
       console.warn('⚠️ No assessment ID available for attempt tracking');
+      return;
+    }
+    
+    // Skip attempt creation for learning path tests (they use learning_path_tests table, not assessments)
+    if (assessment.isLearningPathTest) {
+      console.log('📚 Learning path test detected, using temporary attempt ID');
+      const tempAttemptId = `lp_test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setAttemptId(tempAttemptId);
       return;
     }
     
@@ -829,8 +838,8 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
         answers: allAnswers
       });
       
-      // Complete assessment attempt in database
-      if (attemptId) {
+      // Complete assessment attempt in database (skip for learning path tests)
+      if (attemptId && !assessment.isLearningPathTest) {
         const timeSpent = Math.floor((assessment.duration ? parseInt(assessment.duration.match(/(\d+)/)?.[1] || '30') * 60 : 1800 - timeRemaining) / 60);
         
         console.log('💾 Saving attempt to database:', {
@@ -871,6 +880,8 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
         } else {
           console.log('✅ Assessment attempt completed successfully');
         }
+      } else if (assessment.isLearningPathTest) {
+        console.log('📚 Learning path test - skipping assessment_attempts table update');
       } else {
         console.warn('⚠️ No attempt ID found, cannot save to database');
       }
@@ -1074,7 +1085,53 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
 
   if (!assessment) return null;
   
-  // Safety check for current question
+  // Show loading state while questions are being fetched
+  if (loading) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} title={assessment.title} closeOnBackdropClick={false} closeOnEsc={false}>
+        <div className="text-center py-12">
+          <SimpleDCODESpinner size="lg" />
+          <p className="text-gray-600 mt-4">Loading questions...</p>
+        </div>
+      </Modal>
+    );
+  }
+  
+  // Show error state if questions failed to load
+  if (error) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} title="Assessment Error">
+        <div className="text-center py-8">
+          <div className="text-red-600 mb-4">
+            <i className="ri-error-warning-line text-4xl"></i>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Questions</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={onClose}>Close Assessment</Button>
+        </div>
+      </Modal>
+    );
+  }
+  
+  // Show error if no questions found after loading completes
+  if (questions.length === 0) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} title="Assessment Error">
+        <div className="text-center py-8">
+          <div className="text-yellow-600 mb-4">
+            <i className="ri-information-line text-4xl"></i>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Questions Found</h3>
+          <p className="text-gray-600 mb-4">
+            This assessment doesn't have any questions yet.
+          </p>
+          <Button onClick={onClose}>Close Assessment</Button>
+        </div>
+      </Modal>
+    );
+  }
+  
+  // Safety check for current question (should not happen if questions loaded correctly)
   if (!currentQuestion) {
     console.error('❌ Current question is undefined!', {
       currentQuestionIndex,
