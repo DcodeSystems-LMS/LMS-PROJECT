@@ -18,6 +18,7 @@ const navigation = [
   { name: 'Student Discussions', href: '/mentor/discussions', icon: 'ri-message-line' },
   { name: 'Sessions', href: '/mentor/sessions', icon: 'ri-calendar-check-line' },
   { name: 'My Courses', href: '/mentor/courses', icon: 'ri-book-open-line' },
+  { name: 'Learning Path', href: '/mentor/learning-path', icon: 'ri-roadmap-line' },
   { name: 'All Courses', href: '/mentor/all-courses', icon: 'ri-book-2-line' },
   { name: 'Upload Course', href: '/mentor/upload-course', icon: 'ri-upload-cloud-line' },
   { name: 'Course Materials', href: '/mentor/materials', icon: 'ri-file-line' },

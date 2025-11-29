@@ -28,6 +28,7 @@ const StudentDashboard = lazy(() => import('@/pages/student/dashboard/page'));
 const StudentMyCourses = lazy(() => import('@/pages/student/my-courses/page'));
 const StudentCourse = lazy(() => import('@/pages/student/course/page'));
 const StudentContinue = lazy(() => import('@/pages/student/continue/page'));
+const StudentLearningPath = lazy(() => import('@/pages/student/learning-path/page'));
 const StudentAssessments = lazy(() => import('@/pages/student/assessments/page'));
 const StudentDiscussions = lazy(() => import('@/pages/student/discussions/page'));
 const StudentAchievements = lazy(() => import('@/pages/student/achievements/page'));
@@ -45,6 +46,7 @@ const MentorDashboard = lazy(() => import('@/pages/mentor/dashboard/page'));
 const MentorStudents = lazy(() => import('@/pages/mentor/students/page'));
 const MentorCourses = lazy(() => import('@/pages/mentor/courses/page'));
 const MentorAllCourses = lazy(() => import('@/pages/mentor/all-courses/page'));
+const MentorLearningPath = lazy(() => import('@/pages/mentor/learning-path/page'));
 const MentorDiscussions = lazy(() => import('@/pages/mentor/discussions/page'));
 const MentorSessions = lazy(() => import('@/pages/mentor/sessions/page'));
 const MentorUploadCourse = lazy(() => import('@/pages/mentor/upload-course/page'));
@@ -61,6 +63,7 @@ const AdminDashboard = lazy(() => import('@/pages/admin/dashboard/page'));
 const AdminStudents = lazy(() => import('@/pages/admin/students/page'));
 const AdminMentors = lazy(() => import('@/pages/admin/mentors/page'));
 const AdminCourses = lazy(() => import('@/pages/admin/courses/page'));
+const AdminLearningPath = lazy(() => import('@/pages/admin/learning-path/page'));
 const AdminAssessments = lazy(() => import('@/pages/admin/assessments/page'));
 const AdminPlacements = lazy(() => import('@/pages/admin/placements/page'));
 const AdminPayments = lazy(() => import('@/pages/admin/payments/page'));
@@ -164,6 +167,10 @@ const routes: RouteObject[] = [
         element: <SuspenseWrapper><StudentContinue /></SuspenseWrapper>
       },
       {
+        path: 'learning-path',
+        element: <SuspenseWrapper><StudentLearningPath /></SuspenseWrapper>
+      },
+      {
         path: 'assessments',
         element: <SuspenseWrapper><StudentAssessments /></SuspenseWrapper>
       },
@@ -227,6 +234,10 @@ const routes: RouteObject[] = [
         element: <SuspenseWrapper><MentorAllCourses /></SuspenseWrapper>
       },
       {
+        path: 'learning-path',
+        element: <SuspenseWrapper><MentorLearningPath /></SuspenseWrapper>
+      },
+      {
         path: 'discussions',
         element: <SuspenseWrapper><MentorDiscussions /></SuspenseWrapper>
       },
@@ -284,6 +295,10 @@ const routes: RouteObject[] = [
       {
         path: 'courses',
         element: <SuspenseWrapper><AdminCourses /></SuspenseWrapper>
+      },
+      {
+        path: 'learning-path',
+        element: <SuspenseWrapper><AdminLearningPath /></SuspenseWrapper>
       },
       {
         path: 'assessments',
