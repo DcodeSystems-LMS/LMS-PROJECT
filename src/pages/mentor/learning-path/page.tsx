@@ -5,6 +5,7 @@ import Card from '@/components/base/Card';
 import Button from '@/components/base/Button';
 import Modal from '@/components/base/Modal';
 import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
+import RichTextEditor from '@/components/editor/RichTextEditor';
 import DataService from '@/services/dataService';
 import { authService } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -819,11 +820,9 @@ const MentorLearningPath: React.FC = () => {
                   <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1">
                     Course Description <span className="text-red-500">*</span>
                   </label>
-                  <textarea
-                    value={courseIntro.description}
-                    onChange={(e) => setCourseIntro({ ...courseIntro, description: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white resize-none"
-                    rows={4}
+                  <RichTextEditor
+                    value={courseIntro.description || ''}
+                    onChange={(value) => setCourseIntro({ ...courseIntro, description: value })}
                     placeholder="Describe what students will learn in this course..."
                   />
                 </div>
@@ -984,11 +983,9 @@ const MentorLearningPath: React.FC = () => {
                       <label className="block text-sm font-semibold text-gray-800 mb-2">
                         Unit Description
                       </label>
-                      <textarea
-                        value={unit.description}
-                        onChange={(e) => updateUnit(unit.id, 'description', e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white resize-none"
-                        rows={2}
+                      <RichTextEditor
+                        value={unit.description || ''}
+                        onChange={(value) => updateUnit(unit.id, 'description', value)}
                         placeholder="Brief description of what this unit covers..."
                       />
                     </div>

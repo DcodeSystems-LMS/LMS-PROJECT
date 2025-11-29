@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import Button from '@/components/base/Button';
 import Modal from '@/components/base/Modal';
 import AssessmentTaker from '@/pages/student/assessments/components/AssessmentTaker';
+import DOMPurify from 'dompurify';
 
 interface Module {
   id: string;
@@ -611,11 +612,11 @@ const StudentLearningPathDetail: React.FC = () => {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
                       <div 
-                        className="text-gray-700 leading-relaxed text-base"
-                        style={{ whiteSpace: 'pre-line', wordWrap: 'break-word', overflowWrap: 'break-word' }}
-                      >
-                        {learningPath.description || 'No description available.'}
-                      </div>
+                        className="text-gray-700 leading-relaxed text-base prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: DOMPurify.sanitize(learningPath.description || 'No description available.') 
+                        }}
+                      />
                     </div>
 
                     {/* Course Details */}
@@ -749,6 +750,19 @@ const StudentLearningPathDetail: React.FC = () => {
                 {selectedUnitTest ? (
                   <div>
                     <div className={`mx-auto ${sidebarOpen ? 'max-w-4xl' : 'max-w-6xl'}`}>
+                      {/* Unit Description - Show if unit has description */}
+                      {selectedUnit?.description && (
+                        <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3">Unit Description</h3>
+                          <div 
+                            className="text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ 
+                              __html: DOMPurify.sanitize(selectedUnit.description) 
+                            }}
+                          />
+                        </div>
+                      )}
+                      
                       {/* Unit Test Content */}
                       <div className="space-y-6">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
@@ -786,6 +800,18 @@ const StudentLearningPathDetail: React.FC = () => {
                 ) : selectedModule ? (
                   <div>
                     <div className={`mx-auto ${sidebarOpen ? 'max-w-4xl' : 'max-w-6xl'}`}>
+                      {/* Unit Description - Show if unit has description */}
+                      {selectedUnit?.description && (
+                        <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3">Unit Description</h3>
+                          <div 
+                            className="text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ 
+                              __html: DOMPurify.sanitize(selectedUnit.description) 
+                            }}
+                          />
+                        </div>
+                      )}
 
                       {/* Module Content */}
                       <div className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-gray-700">
