@@ -11,6 +11,7 @@ import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 interface Assessment {
   id: string; // Changed from number to string (UUID)
   title: string;
+  description?: string;
   course: string;
   type: 'quiz' | 'project' | 'assignment';
   questions: number;
@@ -559,12 +560,27 @@ const AdminAssessments: React.FC = () => {
       
       // Update local state immediately for instant UI feedback
       console.log('🔄 Updating local state immediately...');
+      const course = courses.find(c => c.id === assessmentData.course_id);
       setAssessments(prevAssessments => 
-        prevAssessments.map(assessment => 
-          assessment.id === updatedAssessmentId 
-            ? { ...assessment, ...assessmentData }
-            : assessment
-        )
+        prevAssessments.map(assessment => {
+          if (assessment.id === updatedAssessmentId) {
+            const transformedAssessmentData = {
+              title: assessmentData.title,
+              description: assessmentData.description,
+              course: course?.title || assessment.course,
+              type: assessmentData.type,
+              questions: Array.isArray(assessmentData.questions) ? assessmentData.questions.length : assessment.questions,
+              duration: assessmentData.time_limit_minutes ? `${assessmentData.time_limit_minutes} min` : assessment.duration,
+              attempts: assessment.attempts, // Keep existing attempts
+              avgScore: assessment.avgScore, // Keep existing avgScore
+              status: assessmentData.status,
+              created: assessment.created, // Keep existing created date
+              difficulty: assessmentData.difficulty
+            };
+            return { ...assessment, ...transformedAssessmentData };
+          }
+          return assessment;
+        })
       );
       
       // Refresh assessments data in background (no page reload)

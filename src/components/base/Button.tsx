@@ -9,9 +9,10 @@ interface ButtonProps {
   fullWidth?: boolean;
   disabled?: boolean;
   loading?: boolean;
-  onClick?: () => void;
+  onClick?: (e?: React.MouseEvent<HTMLButtonElement>) => void;
   type?: 'button' | 'submit' | 'reset';
   className?: string;
+  title?: string;
 }
 
 export default function Button({
@@ -23,7 +24,8 @@ export default function Button({
   loading = false,
   onClick,
   type = 'button',
-  className = ''
+  className = '',
+  title
 }: ButtonProps) {
   const baseClasses = 'interactive-element inline-flex items-center justify-center font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer';
   
@@ -51,6 +53,7 @@ export default function Button({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
+      title={title}
       className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${widthClass} ${transitionClass} ${className}`}
     >
       {loading && (

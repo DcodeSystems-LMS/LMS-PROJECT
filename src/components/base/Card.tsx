@@ -9,6 +9,7 @@ interface CardProps {
   interactive?: boolean;
   variant?: 'default' | 'stats' | 'feature' | 'testimonial' | 'dashboard';
   noPadding?: boolean;
+  onClick?: () => void;
 }
 
 export default function Card({ 
@@ -18,7 +19,8 @@ export default function Card({
   glass = false,
   interactive = false,
   variant = 'default',
-  noPadding = false
+  noPadding = false,
+  onClick
 }: CardProps) {
   const baseClasses = 'card-base';
   
@@ -34,7 +36,10 @@ export default function Card({
   const paddingClasses = noPadding ? '!p-0' : '';
   
   return (
-    <div className={`${baseClasses} ${variantClasses[variant]} ${interactiveClasses} ${paddingClasses} ${className}`}>
+    <div 
+      className={`${baseClasses} ${variantClasses[variant]} ${interactiveClasses} ${paddingClasses} ${className} ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       {children}
     </div>
   );

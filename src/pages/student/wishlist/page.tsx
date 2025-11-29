@@ -247,7 +247,7 @@ export default function Wishlist() {
               Start exploring courses and add them to your wishlist to save them for later!
             </p>
             <Link to="/student/my-courses">
-              <Button variant="neon">
+              <Button variant="brand">
                 <i className="ri-search-line mr-2"></i>
                 Browse Courses
               </Button>

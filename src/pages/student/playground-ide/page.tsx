@@ -36,8 +36,18 @@ export default function PlaygroundIDE() {
 
     checkAuth();
 
+    // Listen for navigation messages from iframe
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'navigate' && event.data.path) {
+        navigate(event.data.path);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
     // Cleanup: restore original styles when component unmounts
     return () => {
+      window.removeEventListener('message', handleMessage);
       document.body.style.margin = originalStyle.margin || '';
       document.body.style.padding = originalStyle.padding || '';
       document.body.style.overflow = originalStyle.overflow || '';

@@ -1,5 +1,8 @@
 // Notification Service for Assessment System
 import { supabase } from './supabase';
+import type { Database } from './supabase';
+
+type NotificationRow = Database['public']['Tables']['notifications']['Row'];
 
 export type NotificationType = 
   | 'assessment_published'
@@ -58,23 +61,22 @@ export class NotificationService {
         .from('notifications')
         .insert({
           user_id: userId,
-          type,
+          type: type as 'info' | 'success' | 'warning' | 'error',
           title,
-          message,
-          data,
+          message: message + (Object.keys(data).length > 0 ? ` | Data: ${JSON.stringify(data)}` : ''),
           scheduled_for: scheduledFor?.toISOString() || new Date().toISOString()
-        })
+        } as Database['public']['Tables']['notifications']['Insert'])
         .select()
         .single();
 
-      if (error) {
+      if (error || !notification) {
         console.error('Error creating notification:', error);
-        return { success: false, error: error.message };
+        return { success: false, error: error?.message || 'Failed to create notification' };
       }
 
       // Send email notification if configured
       if (this.shouldSendEmail(type)) {
-        await this.sendEmailNotification(notification);
+        await this.sendEmailNotification(notification as NotificationRow);
       }
 
       return { success: true, notificationId: notification.id };
@@ -103,7 +105,7 @@ export class NotificationService {
         return { notifications: [], error: error.message };
       }
 
-      return { notifications: data || [] };
+      return { notifications: (data || []) as Notification[] };
     } catch (error) {
       console.error('Error in getUserNotifications:', error);
       return { notifications: [], error: 'Failed to fetch notifications' };
@@ -234,7 +236,7 @@ export class NotificationService {
   }
 
   // Send email notification (placeholder - integrate with email service)
-  private async sendEmailNotification(notification: any): Promise<void> {
+  private async sendEmailNotification(notification: NotificationRow): Promise<void> {
     try {
       // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
       console.log('Email notification would be sent:', notification);
@@ -265,8 +267,9 @@ export class NotificationService {
         return;
       }
 
-      for (const notification of notifications || []) {
-        if (this.shouldSendEmail(notification.type)) {
+      const notificationList = (notifications || []) as NotificationRow[];
+      for (const notification of notificationList) {
+        if (notification.type && this.shouldSendEmail(notification.type as NotificationType)) {
           await this.sendEmailNotification(notification);
         }
       }
@@ -292,12 +295,14 @@ export class NotificationService {
         return { total: 0, unread: 0, byType: {} };
       }
 
-      const total = data?.length || 0;
-      const unread = data?.filter(n => !n.in_app_read).length || 0;
-      const byType = data?.reduce((acc, n) => {
-        acc[n.type] = (acc[n.type] || 0) + 1;
+      const notifications = (data || []) as Pick<NotificationRow, 'type' | 'in_app_read'>[];
+      const total = notifications.length;
+      const unread = notifications.filter(n => !n.in_app_read).length;
+      const byType = notifications.reduce((acc, n) => {
+        const type = n.type || 'info';
+        acc[type] = (acc[type] || 0) + 1;
         return acc;
-      }, {} as Record<string, number>) || {};
+      }, {} as Record<string, number>);
 
       return { total, unread, byType };
     } catch (error) {

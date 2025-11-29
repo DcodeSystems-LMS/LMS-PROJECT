@@ -37,11 +37,11 @@ class SupabaseAuthService {
         // If profile doesn't exist, create it automatically
         console.log('Profile not found, creating new profile...')
         
-        const newProfile = {
+        const newProfile: Database['public']['Tables']['profiles']['Insert'] = {
           id: authData.user.id,
           email: authData.user.email || email,
           name: authData.user.user_metadata?.name || 'User',
-          role: authData.user.user_metadata?.role || 'student',
+          role: (authData.user.user_metadata?.role || 'student') as 'student' | 'mentor' | 'admin',
           avatar_url: authData.user.user_metadata?.avatar_url || null,
           dark_mode: false, // Default to light mode
           created_at: new Date().toISOString(),
@@ -54,7 +54,7 @@ class SupabaseAuthService {
           .select()
           .single()
 
-        if (createError) {
+        if (createError || !createdProfile) {
           console.warn('Failed to create profile, using session data:', createError)
           const user: User = {
             id: authData.user.id,
@@ -68,29 +68,31 @@ class SupabaseAuthService {
           return user
         }
 
+        const profileRow = createdProfile as Database['public']['Tables']['profiles']['Row'];
         const user: User = {
-          id: createdProfile.id,
-          email: createdProfile.email,
-          name: createdProfile.name,
-          role: createdProfile.role,
-          avatar: createdProfile.avatar_url,
-          dark_mode: createdProfile.dark_mode || false,
-          created_at: createdProfile.created_at,
-          updated_at: createdProfile.updated_at,
+          id: profileRow.id,
+          email: profileRow.email,
+          name: profileRow.name,
+          role: profileRow.role,
+          avatar: profileRow.avatar_url,
+          dark_mode: profileRow.dark_mode || false,
+          created_at: profileRow.created_at,
+          updated_at: profileRow.updated_at,
         }
         this.currentUser = user
         return user
       }
 
+      const profileRow = profile as Database['public']['Tables']['profiles']['Row'];
       const user: User = {
-        id: profile.id,
-        email: profile.email,
-        name: profile.name,
-        role: profile.role,
-        avatar: profile.avatar_url,
-        dark_mode: profile.dark_mode || false,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
+        id: profileRow.id,
+        email: profileRow.email,
+        name: profileRow.name,
+        role: profileRow.role,
+        avatar: profileRow.avatar_url,
+        dark_mode: profileRow.dark_mode || false,
+        created_at: profileRow.created_at,
+        updated_at: profileRow.updated_at,
       }
 
       this.currentUser = user
@@ -201,11 +203,11 @@ class SupabaseAuthService {
         // If profile doesn't exist, create it automatically
         console.log('Profile not found, creating new profile...')
         
-        const newProfile = {
+        const newProfile: Database['public']['Tables']['profiles']['Insert'] = {
           id: session.user.id,
           email: session.user.email || '',
           name: session.user.user_metadata?.name || 'User',
-          role: session.user.user_metadata?.role || 'student',
+          role: (session.user.user_metadata?.role || 'student') as 'student' | 'mentor' | 'admin',
           avatar_url: session.user.user_metadata?.avatar_url || null,
           dark_mode: false, // Default to light mode
           created_at: new Date().toISOString(),
@@ -218,7 +220,7 @@ class SupabaseAuthService {
           .select()
           .single()
 
-        if (createError) {
+        if (createError || !createdProfile) {
           console.warn('Failed to create profile, using session data:', createError)
           const user: User = {
             id: session.user.id,
@@ -232,29 +234,31 @@ class SupabaseAuthService {
           return user
         }
 
+        const profileRow = createdProfile as Database['public']['Tables']['profiles']['Row'];
         const user: User = {
-          id: createdProfile.id,
-          email: createdProfile.email,
-          name: createdProfile.name,
-          role: createdProfile.role,
-          avatar: createdProfile.avatar_url,
-          dark_mode: createdProfile.dark_mode || false,
-          created_at: createdProfile.created_at,
-          updated_at: createdProfile.updated_at,
+          id: profileRow.id,
+          email: profileRow.email,
+          name: profileRow.name,
+          role: profileRow.role,
+          avatar: profileRow.avatar_url,
+          dark_mode: profileRow.dark_mode || false,
+          created_at: profileRow.created_at,
+          updated_at: profileRow.updated_at,
         }
         this.currentUser = user
         return user
       }
 
+      const profileRow = profile as Database['public']['Tables']['profiles']['Row'];
       const user: User = {
-        id: profile.id,
-        email: profile.email,
-        name: profile.name,
-        role: profile.role,
-        avatar: profile.avatar_url,
-        dark_mode: profile.dark_mode || false,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
+        id: profileRow.id,
+        email: profileRow.email,
+        name: profileRow.name,
+        role: profileRow.role,
+        avatar: profileRow.avatar_url,
+        dark_mode: profileRow.dark_mode || false,
+        created_at: profileRow.created_at,
+        updated_at: profileRow.updated_at,
       }
 
       this.currentUser = user
@@ -339,20 +343,21 @@ class SupabaseAuthService {
           name: updates.name,
           avatar_url: updates.avatar,
           updated_at: new Date().toISOString(),
-        })
+        } as Database['public']['Tables']['profiles']['Update'])
         .eq('id', this.currentUser.id)
         .select()
         .single()
 
-      if (error) {
-        throw new Error(error.message)
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to update profile')
       }
 
+      const profileRow = data as Database['public']['Tables']['profiles']['Row'];
       const updatedUser: User = {
         ...this.currentUser,
-        name: data.name,
-        avatar: data.avatar_url,
-        updated_at: data.updated_at,
+        name: profileRow.name,
+        avatar: profileRow.avatar_url,
+        updated_at: profileRow.updated_at,
       }
 
       this.currentUser = updatedUser
@@ -375,7 +380,7 @@ class SupabaseAuthService {
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
-        })
+        } as Database['public']['Tables']['profiles']['Update'])
         .eq('id', this.currentUser.id)
 
       if (error) {

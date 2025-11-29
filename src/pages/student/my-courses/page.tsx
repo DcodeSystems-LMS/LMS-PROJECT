@@ -310,7 +310,7 @@ export default function MyCourses() {
                 </p>
                 <Button
                   onClick={() => setActiveTab('available')}
-                  variant="neon"
+                  variant="brand"
                 >
                   <i className="ri-search-line mr-2"></i>
                   Browse Available Courses

@@ -1,5 +1,9 @@
 // Security and Audit Service
 import { supabase } from './supabase';
+import type { Database } from './supabase';
+
+type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'];
+type SecurityEventRow = Database['public']['Tables']['security_events']['Row'];
 
 export interface SecuritySettings {
   ipRestrictions: string[];
@@ -191,13 +195,14 @@ export class SecurityService {
       }
 
       // Check for unusual patterns
-      const actionCounts = recentLogs?.reduce((counts, log) => {
+      const logs = (recentLogs || []) as AuditLogRow[];
+      const actionCounts = logs.reduce((counts, log) => {
         counts[log.action] = (counts[log.action] || 0) + 1;
         return counts;
-      }, {});
+      }, {} as Record<string, number>);
 
       // If same action repeated more than 5 times in 5 minutes
-      if (actionCounts && Object.values(actionCounts).some(count => count > 5)) {
+      if (Object.values(actionCounts).some(count => count > 5)) {
         return true;
       }
 
@@ -221,7 +226,7 @@ export class SecurityService {
           ip_address: event.ipAddress,
           metadata: event.metadata,
           created_at: new Date().toISOString()
-        });
+        } as Database['public']['Tables']['security_events']['Insert']);
 
       if (error) {
         console.error('Error logging security event:', error);

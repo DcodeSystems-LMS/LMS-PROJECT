@@ -39,7 +39,7 @@ export interface ExtendedProfile extends Profile {
   earnings?: number | string;
 }
 
-export interface ExtendedCourse extends Course {
+export interface ExtendedCourse extends Omit<Course, 'thumbnail'> {
   instructor?: Profile;
   students?: number;
   completion?: number;
@@ -51,7 +51,7 @@ export interface ExtendedCourse extends Course {
   thumbnail?: File | null;
 }
 
-export interface ExtendedAssessment extends Assessment {
+export interface ExtendedAssessment extends Omit<Assessment, 'difficulty'> {
   course?: Course;
   instructor?: Profile;
   attempts?: number;
@@ -66,7 +66,7 @@ export interface ExtendedAssessment extends Assessment {
   feedback?: string;
 }
 
-export interface ExtendedSession extends Session {
+export interface ExtendedSession extends Omit<Session, 'status'> {
   mentor?: Profile;
   student?: Profile;
   subject?: string;
@@ -684,7 +684,7 @@ export class DataService {
         .eq('id', assessmentId)
         .single();
       
-      if (assessmentError) {
+      if (assessmentError || !assessment) {
         console.error('❌ Error fetching assessment:', assessmentError);
         return null;
       }
@@ -769,7 +769,7 @@ export class DataService {
   }
 
   // Get assessment results for mentor view
-  static async getAssessmentResults(assessmentId: string) {
+  static async getAssessmentResultsForMentor(assessmentId: string) {
     try {
       console.log('🔍 Fetching assessment results for mentor:', assessmentId);
       

@@ -93,6 +93,22 @@ class VideoExtractionService {
     return url;
   }
 
+  // Convert YouTube URL to embed URL
+  convertToEmbedUrl(url: string): string {
+    if (!url) return '';
+    
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    
+    const videoId = this.extractYouTubeVideoId(url);
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    return url;
+  }
+
   // Extract video ID from URL
   extractVideoId(url: string): string | null {
     return this.extractYouTubeVideoId(url);

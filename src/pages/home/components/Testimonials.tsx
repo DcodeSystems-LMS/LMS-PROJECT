@@ -27,47 +27,47 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section className="section-spacing section-padding relative">
+    <section className="py-12 sm:py-16 md:py-20 relative">
       {/* Background overlay for better contrast */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-purple-900/80 to-slate-900/80"></div>
       
-      <div className="container mx-auto px-6 lg:px-8 max-w-7xl relative z-10">
-        <div className="text-center mb-16">
-          <h2 className="heading-secondary text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-glow mb-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
+        <div className="text-center mb-10 sm:mb-12 md:mb-16 px-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4 md:mb-6">
             Success Stories
           </h2>
-          <p className="text-body text-lg sm:text-xl text-gray-100 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-gray-100 max-w-3xl mx-auto leading-relaxed">
             Hear from our graduates who are now working at top tech companies
           </p>
         </div>
         
-        <div className="grid-responsive">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {testimonials.map((testimonial, index) => (
             <Card 
               key={index} 
               variant="testimonial" 
               interactive
-              className={`animate-fade-in-up animate-delay-${index * 200} bg-white/95 backdrop-blur-sm border border-white/20 shadow-xl`}
+              className="bg-white/95 backdrop-blur-sm border border-white/20 shadow-xl"
             >
-              <div className="flex items-center mb-6">
+              <div className="flex items-center mb-4 sm:mb-6">
                 <img 
                   src={testimonial.image} 
                   alt={testimonial.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-blue-200 mr-4"
+                  className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full object-cover border-2 border-blue-200 mr-3 sm:mr-4 flex-shrink-0"
                 />
-                <div>
-                  <h4 className="heading-tertiary text-gray-900 mb-1 font-semibold">{testimonial.name}</h4>
-                  <p className="text-caption text-blue-600 font-medium">{testimonial.role}</p>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 truncate">{testimonial.name}</h4>
+                  <p className="text-xs sm:text-sm text-blue-600 font-medium truncate">{testimonial.role}</p>
                 </div>
               </div>
               
-              <div className="flex mb-4">
+              <div className="flex mb-3 sm:mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <i key={i} className="ri-star-fill text-yellow-500 text-lg"></i>
+                  <i key={i} className="ri-star-fill text-yellow-500 text-base sm:text-lg"></i>
                 ))}
               </div>
               
-              <p className="text-body text-gray-700 leading-relaxed italic">
+              <p className="text-sm sm:text-base text-gray-700 leading-relaxed italic">
                 "{testimonial.content}"
               </p>
             </Card>

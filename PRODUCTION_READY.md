@@ -9,11 +9,11 @@ Your production build has been successfully created in the `dist/` directory. He
 - **Entry Point**: `dist/index.html`
 - **Assets**: `dist/assets/` (CSS, JS, images)
 
-### 🌐 Deployment for app.dcodesys.in
+### 🌐 Deployment for dcodesys.in
 
 #### Option 1: Direct Upload (Recommended)
 1. **Upload Files**: Upload the entire contents of the `dist/` directory to your web server
-2. **Domain Setup**: Point `app.dcodesys.in` to the directory containing `index.html`
+2. **Domain Setup**: Point `dcodesys.in` to the directory containing `index.html`
 3. **SSL**: Ensure HTTPS is enabled for your domain
 
 #### Option 2: Using .htaccess (Apache)
@@ -34,7 +34,7 @@ Your production build has been successfully created in the `dist/` directory. He
    VITE_SUPABASE_URL=https://your-production-project-id.supabase.co
    VITE_SUPABASE_ANON_KEY=your-production-anon-key-here
    VITE_APP_ENV=production
-   VITE_APP_URL=https://app.dcodesys.in
+   VITE_APP_URL=https://dcodesys.in
    ```
 
 #### For Local Development:

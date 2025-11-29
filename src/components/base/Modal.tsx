@@ -7,9 +7,10 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   className?: string;
   zIndex?: number; // Allow custom z-index for nested modals
+  maxWidth?: string; // Allow custom max width
 }
 
-export default function Modal({ isOpen, onClose, title, children, size = 'md', className, zIndex = 50 }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, size = 'md', className, zIndex = 50, maxWidth }: ModalProps) {
   if (!isOpen) return null;
 
   const sizes = {
@@ -19,6 +20,8 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', c
     xl: 'max-w-xl mx-6 sm:max-w-4xl',
     full: 'max-w-none w-full h-full max-h-screen mx-0'
   };
+  
+  const widthClass = maxWidth ? `max-w-[${maxWidth}]` : sizes[size];
 
   return (
     <div className="fixed inset-0 overflow-y-auto" style={{ zIndex }}>
@@ -27,7 +30,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', c
           className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
           onClick={onClose}
         />
-        <div className={`relative bg-white shadow-2xl w-full ${className || sizes[size]} ${size === 'full' ? 'h-screen rounded-none' : 'rounded-xl'} animate-fade-in-scale flex flex-col`}>
+        <div className={`relative bg-white shadow-2xl w-full ${className || widthClass} ${size === 'full' ? 'h-screen rounded-none' : 'rounded-xl'} animate-fade-in-scale flex flex-col`}>
           {title && (
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 flex-shrink-0">
               <h3 className="heading-tertiary mb-0 text-gray-900 pr-4">{title}</h3>

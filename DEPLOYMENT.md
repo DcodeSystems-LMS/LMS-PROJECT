@@ -69,6 +69,7 @@ RewriteRule . /index.html [L]
 ```nginx
 server {
     listen 80;
+    listen [::]:80;
     server_name app.dcodesys.in;
     root /path/to/your/dist;
     index index.html;
@@ -79,7 +80,7 @@ server {
     }
 
     # Cache static assets
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
@@ -88,7 +89,63 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+    gzip_types text/plain text/html text/xml text/css text/javascript application/javascript application/xml+rss application/json application/xml;
+    
+    # Security headers
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+}
+
+# HTTPS Configuration (after SSL certificate is installed)
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name app.dcodesys.in;
+    root /path/to/your/dist;
+    index index.html;
+
+    # SSL certificate paths (update with your certificate paths)
+    ssl_certificate /path/to/ssl/certificate.crt;
+    ssl_certificate_key /path/to/ssl/private.key;
+
+    # SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Handle client-side routing
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Enable gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/html text/xml text/css text/javascript application/javascript application/xml+rss application/json application/xml;
+    
+    # Security headers
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+}
+
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name app.dcodesys.in;
+    return 301 https://app.dcodesys.in$request_uri;
 }
 ```
 
@@ -133,4 +190,8 @@ Ensure your domain has a valid SSL certificate. You can use:
 
 ## Domain Configuration
 
-Make sure your DNS is configured to point `app.dcodesys.in` to your server's IP address.
+Make sure your DNS is configured to point `app.dcodesys.in` to your server's IP address:
+
+### DNS Records
+- **A Record**: `app.dcodesys.in` → Your server IP address
+- **OR CNAME Record**: `app.dcodesys.in` → `dcodesys.in` (if main domain points to server)

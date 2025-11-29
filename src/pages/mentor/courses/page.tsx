@@ -555,7 +555,7 @@ const MentorCourses: React.FC = () => {
               </Button>
               <Button
                 onClick={() => window.location.href = '/mentor/upload-course'}
-                variant="neon"
+                variant="brand"
               >
                 <i className="ri-add-line mr-2"></i>
                 Create New Course
@@ -643,7 +643,7 @@ const MentorCourses: React.FC = () => {
             </p>
             <Button
               onClick={() => window.location.href = '/mentor/upload-course'}
-              variant="neon"
+              variant="brand"
             >
               <i className="ri-add-line mr-2"></i>
               Create Your First Course

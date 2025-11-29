@@ -38,7 +38,7 @@ export class RoleBasedAccess {
         .eq('user_id', userId)
         .single();
 
-      if (error) {
+      if (error || !data) {
         console.error('Error fetching user permissions:', error);
         return this.getDefaultPermissions('student');
       }
@@ -159,7 +159,7 @@ export class RoleBasedAccess {
           .eq('id', resourceId)
           .single();
 
-        return data?.mentor_id === userId;
+        return data?.mentor_id === userId || false;
       }
     }
 
@@ -181,7 +181,7 @@ export class RoleBasedAccess {
           role,
           permissions: permissions || {},
           updated_at: new Date().toISOString()
-        });
+        } as any);
 
       if (error) {
         console.error('Error updating user role:', error);

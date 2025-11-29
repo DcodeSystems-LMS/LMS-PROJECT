@@ -433,7 +433,6 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
                     ? '#ef4444' // Red when close to closing
                     : '#9ca3af' // Gray when dragging
                   : '#d1d5db', // Light gray when not dragging
-                transition: 'background-color 0.2s ease',
                 transform: isDragging && (dragCurrentY - dragStartY) > 80 ? 'scaleX(1.2)' : 'scaleX(1)',
                 transition: 'background-color 0.2s ease, transform 0.2s ease'
               }}

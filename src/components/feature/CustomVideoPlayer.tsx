@@ -1087,9 +1087,17 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
   };
 
   const preloadNextSegments = (currentTime: number, quality: string) => {
+    // Don't preload if video hasn't loaded metadata yet
+    if (!videoRef.current || !videoRef.current.duration || videoRef.current.duration === 0 || isNaN(videoRef.current.duration)) {
+      return;
+    }
+    
+    // Don't preload if video is stuck at 0 and not ready
+    if (currentTime === 0 && videoRef.current.readyState < 2) {
+      return;
+    }
+    
     if (preloadStrategy === 'aggressive') {
-      console.log(`⚡ Aggressive preloading for ${quality}...`);
-      
       // Quality-specific preload segments
       const preloadSegments = {
         '360p': 2, // Conservative preloading for lower quality
@@ -1107,38 +1115,45 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       
       nextSegments.forEach(segmentTime => {
         if (segmentTime < duration) {
-          console.log(`📥 Preloading ${quality} segment at ${segmentTime}s`);
+          // Only log occasionally to reduce console spam
+          if (Math.floor(currentTime) % 10 === 0) {
+            console.log(`📥 Preloading ${quality} segment at ${segmentTime}s`);
+          }
         }
       });
     } else if (preloadStrategy === 'balanced') {
-      console.log(`⚖️ Balanced preloading for ${quality}...`);
+      // Reduced logging - only log every 10 seconds
+      if (Math.floor(currentTime) % 10 === 0) {
+        console.log(`⚖️ Balanced preloading for ${quality}...`);
+      }
       
       // Preload next 2 segments for balanced approach
       const nextSegments = [currentTime + 10, currentTime + 20];
       
       nextSegments.forEach(segmentTime => {
         if (segmentTime < duration) {
-          console.log(`📥 Preloading ${quality} segment at ${segmentTime}s`);
+          // Silent preloading
         }
       });
     } else if (preloadStrategy === 'conservative') {
-      console.log(`🐌 Conservative preloading for ${quality}...`);
-      
       // Preload only next 1 segment for conservative approach
       const nextSegment = currentTime + 10;
       
       if (nextSegment < duration) {
-        console.log(`📥 Preloading ${quality} segment at ${nextSegment}s`);
+        // Silent preloading
       }
     }
   };
 
   const monitorQualityPerformance = () => {
-    if (highQualityOptimization) {
+    if (highQualityOptimization && videoRef.current && videoRef.current.duration > 0) {
       const bufferHealth = getSeekBufferHealth();
       const isBuffering = videoRef.current?.readyState < 3;
       
-      console.log(`📊 ${currentQuality} Performance: Buffer=${bufferHealth.toFixed(1)}s, Buffering=${isBuffering}`);
+      // Only log every 10 seconds to reduce console spam
+      if (Math.floor(videoRef.current.currentTime) % 10 === 0) {
+        console.log(`📊 ${currentQuality} Performance: Buffer=${bufferHealth.toFixed(1)}s, Buffering=${isBuffering}`);
+      }
       
       // Quality-specific buffer adjustments
       const qualityThresholds = {
@@ -1904,23 +1919,23 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
       // Enter fullscreen - make the container fullscreen, not just the video
       if (container.requestFullscreen) {
         container.requestFullscreen();
-      } else if (container.webkitRequestFullscreen) {
-        container.webkitRequestFullscreen();
-      } else if (container.mozRequestFullScreen) {
-        container.mozRequestFullScreen();
-      } else if (container.msRequestFullscreen) {
-        container.msRequestFullscreen();
+      } else if ((container as any).webkitRequestFullscreen) {
+        (container as any).webkitRequestFullscreen();
+      } else if ((container as any).mozRequestFullScreen) {
+        (container as any).mozRequestFullScreen();
+      } else if ((container as any).msRequestFullscreen) {
+        (container as any).msRequestFullscreen();
       }
     } else {
       // Exit fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      } else if (document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).mozCancelFullScreen) {
+        (document as any).mozCancelFullScreen();
+      } else if ((document as any).msExitFullscreen) {
+        (document as any).msExitFullscreen();
       }
     }
   };
@@ -2282,13 +2297,15 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
              crossOrigin="anonymous"
              onDoubleClick={handleDoubleTap}
              onLoadStart={() => {
+               console.log('🔄 Video load started, src:', directVideoUrl);
+               setIsLoading(true);
                if (directVideoUrl.includes('supabase')) {
                  console.log('🚀 Supabase video load started - Optimizing for fast playback...');
                  // Ensure aggressive preloading for Supabase videos
                  if (videoRef.current) {
                    videoRef.current.preload = 'auto';
-                   // Start buffering immediately
-                   videoRef.current.load();
+                   // Don't call load() here - it causes infinite reload loop
+                   // Video will load automatically when src is set
                  }
                }
              }}
@@ -2329,13 +2346,16 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
                 // Sync audio with video during playback
                 syncAudioWithVideo();
                 
-                // Monitor quality performance (reduced frequency)
-                if (Math.floor(videoRef.current.currentTime) % 2 === 0) {
+                // Monitor quality performance (reduced frequency - only every 5 seconds)
+                if (Math.floor(videoRef.current.currentTime) % 5 === 0 && Math.floor(videoRef.current.currentTime) > 0) {
                   monitorQualityPerformance();
                 }
                 
-                // Preload next segments for current quality (reduced frequency)
-                if (Math.floor(videoRef.current.currentTime) % 5 === 0) {
+                // Preload next segments for current quality (reduced frequency - only when video is playing)
+                if (Math.floor(videoRef.current.currentTime) % 10 === 0 && 
+                    !videoRef.current.paused && 
+                    videoRef.current.readyState >= 2 &&
+                    videoRef.current.duration > 0) {
                   preloadNextSegments(videoRef.current.currentTime, currentQuality);
                 }
                 
@@ -2431,10 +2451,6 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({
                 setDuration(videoRef.current.duration);
                 console.log('✅ Video can play through, duration set:', videoRef.current.duration);
               }
-            }}
-            onLoadStart={() => {
-              console.log('🔄 Video load started, src:', directVideoUrl);
-              setIsLoading(true);
             }}
             onLoadedData={() => setIsLoading(false)}
             onProgress={handleProgress}

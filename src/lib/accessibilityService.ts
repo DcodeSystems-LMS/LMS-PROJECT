@@ -91,7 +91,10 @@ export class AccessibilityService {
       switchControl: false,
       simplifiedUI: false,
       clearInstructions: true,
-      progressIndicators: true
+      progressIndicators: true,
+      visualAlerts: false,
+      captions: false,
+      transcripts: false
     };
   }
 

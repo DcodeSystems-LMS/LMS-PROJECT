@@ -271,7 +271,7 @@ export default function AdminIntegrationsPage() {
                   </Button>
                   
                   <Button
-                    variant={integration.status === 'active' ? 'danger-outline' : 'brand-outline'}
+                    variant={integration.status === 'active' ? 'outline' : 'brand-outline'}
                     size="sm"
                     onClick={() => toggleIntegrationStatus(integration.id)}
                     className="flex-1 sm:flex-none"
@@ -292,7 +292,7 @@ export default function AdminIntegrationsPage() {
                   </Button>
                   
                   <Button
-                    variant="danger-outline"
+                    variant="outline"
                     size="sm"
                     onClick={() => {
                       setSelectedIntegration(integration);
@@ -648,7 +648,7 @@ export default function AdminIntegrationsPage() {
               Cancel
             </Button>
             <Button
-              variant="danger"
+              variant="outline"
               onClick={() => selectedIntegration && deleteIntegration(selectedIntegration.id)}
               className="w-full sm:w-auto"
             >

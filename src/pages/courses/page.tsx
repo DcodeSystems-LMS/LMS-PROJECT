@@ -1,4 +1,4 @@
-
+import { useState } from 'react';
 import Header from '@/components/feature/Header';
 import Footer from '@/components/feature/Footer';
 import Card from '@/components/base/Card';

@@ -1,7 +1,7 @@
 import { videoExtractionService, VideoStream } from './videoExtractionService';
 
 class InstantPreloadService {
-  private preloadedStreams: Map<string, VideoStream[]> = new Map();
+  public preloadedStreams: Map<string, VideoStream[]> = new Map();
   private extractionPromises: Map<string, Promise<VideoStream[]>> = new Map();
   private localStorageKey = 'ultra_fast_streams_';
 
@@ -285,7 +285,7 @@ class InstantPreloadService {
             url: format.url,
             quality,
             type: 'combined',
-            size: format.filesize,
+            filesize: format.filesize,
             width: format.width,
             height: format.height
           });
