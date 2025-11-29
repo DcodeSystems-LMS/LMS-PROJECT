@@ -8,6 +8,7 @@ import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 import DataService from '@/services/dataService';
 import { authService } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { saveLearningPath, fetchLearningPaths as fetchLearningPathsFromSupabase, deleteLearningPath } from '@/services/learningPathService';
 
 // Learning Path Interfaces
 interface Question {
@@ -128,41 +129,12 @@ const MentorLearningPath: React.FC = () => {
 
   const fetchLearningPaths = async (mentorId: string) => {
     try {
-      // For now, we'll use mock data. Replace with actual API call later
-      const mockPaths: LearningPath[] = [
-        {
-          id: '1',
-          title: 'Full Stack Web Development',
-          description: 'Complete web development course from basics to advanced',
-          level: 'Intermediate',
-          duration: 120,
-          units: [],
-          finalTest: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          totalUnits: 5,
-          totalModules: 25,
-          totalTests: 6
-        },
-        {
-          id: '2',
-          title: 'Python Programming Mastery',
-          description: 'Learn Python from scratch to advanced level',
-          level: 'Beginner',
-          duration: 80,
-          units: [],
-          finalTest: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          totalUnits: 4,
-          totalModules: 20,
-          totalTests: 5
-        }
-      ];
-      
-      setLearningPaths(mockPaths);
+      // Fetch from Supabase
+      const paths = await fetchLearningPathsFromSupabase(mentorId);
+      setLearningPaths(paths);
     } catch (error) {
       console.error('Error fetching learning paths:', error);
+      setError('Failed to fetch learning paths');
     }
   };
 
@@ -375,48 +347,182 @@ const MentorLearningPath: React.FC = () => {
         return;
       }
 
+      if (!currentUser) {
+        setError('User not authenticated. Please sign in again.');
+        return;
+      }
+
       setUploadLoading(true);
       setError('');
 
       // Upload thumbnail if exists
       let thumbnailUrl = '';
       if (courseIntro.thumbnail) {
-        const fileExt = courseIntro.thumbnail.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `learning-paths/${fileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('course-thumbnails')
-          .upload(filePath, courseIntro.thumbnail);
-        
-        if (uploadError) throw uploadError;
-        
-        const { data } = supabase.storage
-          .from('course-thumbnails')
-          .getPublicUrl(filePath);
-        
-        thumbnailUrl = data.publicUrl;
+        try {
+          const fileExt = courseIntro.thumbnail.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `learning-paths/${fileName}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('course-thumbnails')
+            .upload(filePath, courseIntro.thumbnail, {
+              cacheControl: '3600',
+              upsert: false
+            });
+          
+          if (uploadError) {
+            // Check if bucket doesn't exist
+            if (uploadError.message?.includes('Bucket not found') || uploadError.message?.includes('does not exist')) {
+              throw new Error(
+                'Storage bucket "course-thumbnails" not found. ' +
+                'Please create it in Supabase Storage or run the SQL script: create-course-thumbnails-bucket.sql'
+              );
+            }
+            throw uploadError;
+          }
+          
+          const { data } = supabase.storage
+            .from('course-thumbnails')
+            .getPublicUrl(filePath);
+          
+          thumbnailUrl = data.publicUrl;
+        } catch (uploadErr: any) {
+          console.error('Thumbnail upload error:', uploadErr);
+          // If upload fails, continue without thumbnail but show warning
+          setError(
+            uploadErr.message || 
+            'Failed to upload thumbnail. Please ensure the "course-thumbnails" bucket exists in Supabase Storage.'
+          );
+          // Continue without thumbnail - don't block the entire form submission
+          // You can uncomment the next line to block submission if thumbnail is required
+          // throw uploadErr;
+        }
       }
+
+      // Upload module files first and preserve unit/module structure
+      const unitsWithUploadedFiles = await Promise.all(
+        units.map(async (unit) => {
+          const uploadedModules = await Promise.all(
+            unit.modules.map(async (module) => {
+              let moduleFileUrl = module.fileUrl || '';
+
+              // Upload file if it exists
+              if (module.file) {
+                try {
+                  console.log(`📤 Uploading file for module: ${module.title}`);
+                  const fileExt = module.file.name.split('.').pop();
+                  const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+                  const filePath = `learning-path-modules/${fileName}`;
+                  
+                  // Determine bucket based on content type
+                  const bucketName = 
+                    module.contentType === 'Video' ? 'course-videos' :
+                    module.contentType === 'PDF' ? 'course-materials' :
+                    'course-materials';
+                  
+                  const { error: uploadError } = await supabase.storage
+                    .from(bucketName)
+                    .upload(filePath, module.file, {
+                      cacheControl: '3600',
+                      upsert: false
+                    });
+
+                  if (uploadError) {
+                    console.error('Error uploading module file:', uploadError);
+                    throw new Error(`Failed to upload ${module.title}: ${uploadError.message}`);
+                  }
+
+                  const { data } = supabase.storage
+                    .from(bucketName)
+                    .getPublicUrl(filePath);
+
+                  moduleFileUrl = data.publicUrl;
+                  console.log(`✅ File uploaded successfully for module: ${module.title}`);
+                } catch (uploadErr: any) {
+                  console.error('Module file upload error:', uploadErr);
+                  throw new Error(`Failed to upload file for module "${module.title}": ${uploadErr.message}`);
+                }
+              }
+
+              return {
+                title: module.title,
+                contentType: module.contentType,
+                content: module.content || '',
+                fileUrl: moduleFileUrl,
+                duration: module.duration,
+                order: module.order,
+              };
+            })
+          );
+
+          return {
+            ...unit,
+            uploadedModules,
+          };
+        })
+      );
 
       // Calculate summary
       const summary = calculateSummary();
 
-      // Create learning path object
-      const learningPathData: Omit<LearningPath, 'id' | 'created_at' | 'updated_at'> = {
+      // Transform data to match saveLearningPath format
+      const learningPathData = {
         title: courseIntro.title,
         description: courseIntro.description,
         thumbnail: thumbnailUrl,
         level: courseIntro.level,
         duration: parseInt(courseIntro.duration) || summary.estimatedDuration,
-        units: units,
-        finalTest: finalTest,
-        totalUnits: summary.totalUnits,
-        totalModules: summary.totalModules,
-        totalTests: summary.totalTests
+        mentorId: currentUser.id,
+        units: unitsWithUploadedFiles.map(unit => ({
+          title: unit.title,
+          description: unit.description,
+          order: unit.order,
+          modules: unit.uploadedModules,
+          test: unit.test ? {
+            name: unit.test.name,
+            questions: unit.test.questions.map(q => ({
+              type: q.type,
+              question: q.question,
+              options: q.options,
+              correctAnswer: q.correctAnswer,
+              points: q.points,
+              explanation: q.explanation,
+            })),
+            passPercentage: unit.test.passPercentage,
+            totalMarks: unit.test.totalMarks,
+          } : null,
+        })),
+        finalTest: finalTest ? {
+          name: finalTest.name,
+          questions: finalTest.questions.map(q => ({
+            type: q.type,
+            question: q.question,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            points: q.points,
+            explanation: q.explanation,
+          })),
+          passPercentage: finalTest.passPercentage,
+          totalMarks: finalTest.totalMarks,
+        } : null,
       };
 
-      // TODO: Save to database
-      console.log('Learning Path Data:', learningPathData);
+      // Save to Supabase
+      console.log('💾 Saving learning path to Supabase:', {
+        title: learningPathData.title,
+        unitsCount: learningPathData.units.length,
+        totalModules: learningPathData.units.reduce((sum, u) => sum + u.modules.length, 0),
+        mentorId: learningPathData.mentorId
+      });
+
+      const result = await saveLearningPath(learningPathData);
+
+      if (!result.success) {
+        console.error('❌ Failed to save learning path:', result.error);
+        throw new Error(result.error || 'Failed to save learning path');
+      }
+
+      console.log('✅ Learning path saved successfully with ID:', result.learningPathId);
 
       // Reset form
       setCourseIntro({
@@ -432,9 +538,7 @@ const MentorLearningPath: React.FC = () => {
       setShowUploadModal(false);
 
       // Refresh list
-      if (currentUser) {
-        await fetchLearningPaths(currentUser.id);
-      }
+      await fetchLearningPaths(currentUser.id);
 
       alert('Learning Path created successfully!');
     } catch (error: any) {
@@ -451,8 +555,18 @@ const MentorLearningPath: React.FC = () => {
       return;
     }
 
+    if (!currentUser) {
+      setError('User not authenticated');
+      return;
+    }
+
     try {
-      // TODO: Delete from database
+      const result = await deleteLearningPath(pathId, currentUser.id);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete learning path');
+      }
+
       setLearningPaths(learningPaths.filter(p => p.id !== pathId));
       alert('Learning Path deleted successfully!');
     } catch (error: any) {

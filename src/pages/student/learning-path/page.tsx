@@ -1,319 +1,250 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DataService from '@/services/dataService';
+import { supabase } from '@/lib/supabase';
+import Lottie from 'lottie-react';
+import Card from '@/components/base/Card';
+import Button from '@/components/base/Button';
 
-interface Topic {
+interface LearningPath {
   id: string;
   title: string;
-  description?: string;
-  content?: string;
-  order: number;
-  completed?: boolean;
-}
-
-interface Unit {
-  id: string;
-  title: string;
-  description?: string;
-  order: number;
-  topics: Topic[];
-  completed?: boolean;
+  description: string;
+  thumbnail_url?: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  duration: number;
+  total_units: number;
+  total_modules: number;
+  total_tests: number;
+  created_at: string;
 }
 
 const StudentLearningPath: React.FC = () => {
   const navigate = useNavigate();
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Open by default
-  const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
+  const [lottieAnimationData, setLottieAnimationData] = useState<any>(null);
 
   useEffect(() => {
-    fetchLearningPath();
+    fetchLearningPaths();
   }, []);
 
-  const fetchLearningPath = async () => {
+  // Load Lottie animation
+  useEffect(() => {
+    fetch('/Learningpath.json')
+      .then(response => response.json())
+      .then(data => setLottieAnimationData(data))
+      .catch(error => console.error('Error loading Lottie animation:', error));
+  }, []);
+
+  const fetchLearningPaths = async () => {
     try {
       setLoading(true);
-      // Fetch courses or learning path data
-      const courses = await DataService.getCourses();
       
-      // For now, create mock units structure - you can replace this with actual API call
-      const mockUnits: Unit[] = [
-        {
-          id: '1',
-          title: 'Unit 1: Introduction to Python 3',
-          description: 'Get started with Python programming',
-          order: 1,
-          topics: [
-            { id: '1.1', title: '1.1: Introduction to Python 3', order: 1, content: 'Python is a high-level programming language...' },
-            { id: '1.2', title: '1.2: Accessing the Repl.it IDE', order: 2, content: 'Learn how to access and use the Repl.it IDE...' },
-            { id: '1.3', title: '1.3: Python 3 Data Types: int and float', order: 3, content: 'Understanding integers and floating-point numbers...' },
-            { id: '1.4', title: '1.4: Variable Assignment', order: 4, content: 'Learn how to assign values to variables...' },
-            { id: '1.5', title: '1.5: Basic Python Output Using the print Function', order: 5, content: 'Display output using the print function...' },
-            { id: '1.6', title: '1.6: More Python 3 Data Types: str', order: 6, content: 'Working with string data types...' },
-          ]
-        },
-        {
-          id: '2',
-          title: 'Unit 2: Operators',
-          description: 'Learn about Python operators',
-          order: 2,
-          topics: [
-            { id: '2.1', title: '2.1: Arithmetic Operators', order: 1, content: 'Basic arithmetic operations...' },
-            { id: '2.2', title: '2.2: Comparison Operators', order: 2, content: 'Compare values using operators...' },
-            { id: '2.3', title: '2.3: Logical Operators', order: 3, content: 'Working with logical operations...' },
-          ]
-        },
-        {
-          id: '3',
-          title: 'Unit 3: Input and Flow Control',
-          description: 'Control program flow',
-          order: 3,
-          topics: [
-            { id: '3.1', title: '3.1: User Input', order: 1, content: 'Get input from users...' },
-            { id: '3.2', title: '3.2: Conditional Statements', order: 2, content: 'Using if, elif, else...' },
-            { id: '3.3', title: '3.3: Loops', order: 3, content: 'For and while loops...' },
-          ]
-        },
-      ];
+      // Fetch all learning paths from Supabase (students can view all)
+      const { data, error } = await supabase
+        .from('learning_paths')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      setUnits(mockUnits);
-      if (mockUnits.length > 0) {
-        setSelectedUnit(mockUnits[0]);
-        // Expand the first unit by default
-        setExpandedUnits(new Set([mockUnits[0].id]));
-        if (mockUnits[0].topics.length > 0) {
-          setSelectedTopic(mockUnits[0].topics[0]);
-        }
+      if (error) {
+        console.error('Error fetching learning paths:', error);
+        throw error;
       }
+
+      setLearningPaths(data || []);
     } catch (error) {
-      console.error('Error fetching learning path:', error);
+      console.error('Error fetching learning paths:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleUnitExpansion = (unitId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedUnits(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(unitId)) {
-        newSet.delete(unitId);
-      } else {
-        newSet.add(unitId);
-      }
-      return newSet;
-    });
+  const handleCardClick = (pathId: string) => {
+    navigate(`/student/learning-path/${pathId}`);
   };
 
-  const handleUnitSelect = (unit: Unit) => {
-    setSelectedUnit(unit);
-    // Always expand the unit when clicking on it
-    setExpandedUnits(prev => {
-      const newSet = new Set(prev);
-      newSet.add(unit.id);
-      return newSet;
-    });
-    if (unit.topics.length > 0) {
-      setSelectedTopic(unit.topics[0]);
-    } else {
-      setSelectedTopic(null);
-    }
-  };
-
-  const handleTopicSelect = (topic: Topic, unit: Unit) => {
-    setSelectedTopic(topic);
-    setSelectedUnit(unit);
-    // Collapse sidebar when topic is selected to focus on content
-    setSidebarOpen(false);
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const handleTestClick = (unit: Unit) => {
-    // Navigate to assessments filtered by unit
-    navigate(`/student/assessments?unit=${unit.id}`);
+  const getCardColor = (index: number) => {
+    const colors = [
+      { bg: 'bg-yellow-500', hex: '#FCD34D' },
+      { bg: 'bg-pink-500', hex: '#EC4899' },
+      { bg: 'bg-green-500', hex: '#10B981' },
+      { bg: 'bg-blue-500', hex: '#3B82F6' },
+      { bg: 'bg-purple-500', hex: '#8B5CF6' },
+      { bg: 'bg-orange-500', hex: '#F97316' }
+    ];
+    return colors[index % colors.length];
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-theme-bg-secondary flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary mx-auto mb-4"></div>
-          <p className="text-theme-text-secondary">Loading Learning Path...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading Learning Paths...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-theme-bg-secondary">
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] relative">
-        {/* Left Sidebar - Units List - Positioned at content area start (after main sidebar) */}
-        <div
-          className={`fixed lg:absolute inset-y-0 left-0 z-20 w-[280px] sm:w-80 bg-gray-50 border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-          style={{ top: '4rem', bottom: 0 }}
-        >
-          <div className="h-full flex flex-col overflow-hidden">
-            {/* Header - Fixed */}
-            <div className="flex-shrink-0 pl-3 pr-2 py-2 sm:py-1.5 border-b border-gray-200">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-xs sm:text-sm font-semibold text-gray-900">Course Units</h2>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="p-1 sm:p-0.5 hover:bg-gray-200 rounded"
-                  aria-label="Close sidebar"
-                >
-                  <i className="ri-close-line text-base sm:text-lg"></i>
-                </button>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <style>{`
+        @keyframes slideInFromLeft {
+          0% {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          100% {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-in-left {
+          animation: slideInFromLeft 0.8s ease-out forwards;
+        }
+      `}</style>
+      
+      {/* Promotional Banner - Matching Mentor Page Style */}
+      <div className="mb-8 rounded-2xl overflow-hidden shadow-lg" style={{ background: 'linear-gradient(135deg, #14B8A6 0%, #0D9488 100%)' }}>
+        <div className="flex flex-col lg:flex-row items-center justify-between p-4 lg:p-5">
+          {/* Left Section - Text and Statistics */}
+          <div className="flex-1 mb-4 lg:mb-0 lg:mr-6">
+            <h2 className="text-xl lg:text-2xl font-bold text-white mb-2">
+              Learn Effectively With Us!
+            </h2>
+            <p className="text-base lg:text-lg text-white/90 mb-4">
+              Get 30% off every course on January.
+            </p>
             
-            {/* Units List - Scrollable */}
-            <div className="flex-1 overflow-y-auto pl-2 sm:pl-3 pr-2 pb-6">
-              <div className="space-y-1">
-                {units.map((unit) => {
-                const isExpanded = expandedUnits.has(unit.id);
-                const isSelected = selectedUnit?.id === unit.id;
-                
-                return (
-                  <div
-                    key={unit.id}
-                    className={`rounded-lg border transition-all ${
-                      isSelected
-                        ? 'bg-blue-50 border-blue-500'
-                        : 'bg-white border-gray-200'
-                    }`}
-                  >
-                    {/* Unit Header */}
-                    <div className="flex items-center justify-between px-2 py-2 sm:py-2.5">
-                      <button
-                        onClick={() => handleUnitSelect(unit)}
-                        className="flex-1 text-left hover:bg-gray-50 rounded-lg transition-all"
-                      >
-                        <span className="font-medium text-gray-900 text-xs sm:text-sm truncate">{unit.title}</span>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          toggleUnitExpansion(unit.id, e);
-                        }}
-                        className="ml-2 p-1 hover:bg-gray-200 rounded transition-all flex-shrink-0 z-10"
-                        aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                        type="button"
-                      >
-                        <i className={`ri-arrow-${isExpanded ? 'down' : 'right'}-s-line text-gray-400 transition-transform text-lg`}></i>
-                      </button>
-                    </div>
-                    
-                    {/* Topics Dropdown - Visible when expanded */}
-                    {isExpanded && unit.topics && unit.topics.length > 0 && (
-                      <div className="pl-2 pr-2 pb-3 space-y-1">
-                        {unit.topics.map((topic) => (
-                          <button
-                            key={topic.id}
-                            onClick={() => handleTopicSelect(topic, unit)}
-                            className={`w-full text-left px-2 py-1.5 sm:py-2 rounded transition-all text-xs sm:text-sm ${
-                              selectedTopic?.id === topic.id && isSelected
-                                ? 'bg-blue-100 text-blue-900 font-medium'
-                                : 'text-gray-700 hover:bg-gray-100'
-                            }`}
-                          >
-                            <div className="flex items-center">
-                              <span className="truncate">{topic.title}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            {/* Statistics Badges */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Students Badge */}
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
+                  <i className="ri-graduation-cap-line text-xl text-white"></i>
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-base">Students</p>
+                  <p className="text-white/90 text-xs">75,000+</p>
+                </div>
+              </div>
+              
+              {/* Expert Mentors Badge */}
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+                  <i className="ri-user-star-line text-xl text-white"></i>
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-base">Expert Mentors</p>
+                  <p className="text-white/90 text-xs">200+</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Overlay for mobile when sidebar is open */}
-        {sidebarOpen && (
-          <div
-            className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-10"
-            onClick={() => setSidebarOpen(false)}
-            style={{ top: '4rem' }}
-          ></div>
-        )}
-
-        {/* Main Content Area */}
-        <div className={`flex-1 overflow-hidden bg-white transition-all duration-300 ${
-          sidebarOpen ? 'lg:ml-80' : 'lg:ml-0'
-        } w-full`}>
-          {selectedUnit ? (
-            <div className="h-full flex flex-col">
-              {/* Unit Header with Hamburger and Test Button */}
-              <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-sm flex-shrink-0">
-                <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-                  {/* Hamburger button - always visible */}
-                  <button
-                    onClick={toggleSidebar}
-                    className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-                    aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-                  >
-                    <i className={`ri-${sidebarOpen ? 'menu-fold' : 'menu-unfold'}-line text-lg sm:text-xl text-gray-700`}></i>
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{selectedUnit.title}</h1>
-                    {selectedUnit.description && (
-                      <p className="text-gray-600 mt-0.5 sm:mt-1 text-xs sm:text-sm truncate hidden sm:block">{selectedUnit.description}</p>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleTestClick(selectedUnit)}
-                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs sm:text-sm flex-shrink-0 ml-2"
-                >
-                  <i className="ri-file-list-line text-sm sm:text-base"></i>
-                  <span className="hidden sm:inline">Test</span>
-                </button>
+          {/* Right Section - Lottie Animation */}
+          <div className="flex-shrink-0 relative w-full lg:w-auto flex justify-center lg:justify-end lg:pr-10 lg:mr-8">
+            {lottieAnimationData ? (
+              <div className="w-full max-w-xs lg:w-64 lg:h-64 h-48 flex items-center justify-center animate-slide-in-left">
+                <Lottie 
+                  animationData={lottieAnimationData} 
+                  loop={true}
+                  autoplay={true}
+                  className="w-full h-full"
+                />
               </div>
+            ) : (
+              <div className="w-full max-w-xs lg:w-64 lg:h-64 h-48 bg-white/10 rounded-lg flex items-center justify-center">
+                <div className="text-white/50 text-sm">Loading animation...</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-              {/* Content Area - Full Width */}
-              <div className="flex-1 overflow-y-auto bg-white">
-                {selectedTopic ? (
-                  <div className="h-full p-4 sm:p-6 lg:p-8">
-                    <div className={`mx-auto ${sidebarOpen ? 'max-w-4xl' : 'max-w-6xl'}`}>
-                      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">{selectedTopic.title}</h2>
-                      <div className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-gray-700">
-                        <div className="whitespace-pre-wrap leading-relaxed text-sm sm:text-base">
-                          {selectedTopic.content || (
-                            <p>This topic content will be displayed here. You can add rich text, code examples, and interactive elements.</p>
-                          )}
-                        </div>
+      {/* Learning Paths Grid */}
+      <div>
+        <div className="max-w-7xl mx-auto">
+          {learningPaths.length === 0 ? (
+            <Card className="p-12 text-center">
+              <i className="ri-route-line text-6xl text-gray-300 mb-4"></i>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Learning Paths Available</h3>
+              <p className="text-gray-500">Check back later for new learning paths.</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {learningPaths.map((path, index) => {
+                const cardColor = getCardColor(index);
+                
+                return (
+                  <Card
+                    key={path.id}
+                    className="p-6 hover:shadow-xl transition-all duration-200 cursor-pointer border border-gray-100"
+                    onClick={() => handleCardClick(path.id)}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      {/* Lottie Animation */}
+                      <div className="w-16 h-16 flex items-center justify-center">
+                        {lottieAnimationData ? (
+                          <Lottie 
+                            animationData={lottieAnimationData} 
+                            loop={true}
+                            autoplay={true}
+                            className="w-full h-full"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 rounded-lg animate-pulse flex items-center justify-center">
+                            <i className="ri-route-line text-2xl text-gray-400"></i>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full px-4">
-                    <div className="text-center">
-                      <i className="ri-file-text-line text-4xl sm:text-6xl text-gray-300 mb-4"></i>
-                      <p className="text-gray-600 text-sm sm:text-base">Select a topic from the sidebar to view content</p>
+            
+                    {/* Learning Path Title */}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {path.title}
+                    </h3>
+
+                    {/* Stats */}
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-1">
+                        {path.total_units || 0} Units
+                      </p>
+                      <p className="text-sm font-medium text-gray-700">
+                        {path.total_modules || 0} Modules
+                      </p>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full px-4">
-              <div className="text-center">
-                <i className="ri-book-open-line text-4xl sm:text-6xl text-gray-300 mb-4"></i>
-                <p className="text-gray-600 text-sm sm:text-base">Select a unit to start learning</p>
-              </div>
+
+                    {/* Action Button */}
+                    <button
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        handleCardClick(path.id);
+                      }}
+                      className="w-full px-4 py-2.5 rounded-lg font-semibold text-sm text-white transition-all duration-200 hover:opacity-90 hover:shadow-md active:scale-95"
+                      style={{
+                        backgroundColor: cardColor.hex
+                      }}
+                    >
+                      View Learning Path
+                    </button>
+
+                    {/* Additional Info */}
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <span className="text-xs text-gray-500">
+                        {new Date(path.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        path.level === 'Beginner' ? 'bg-green-100 text-green-700' :
+                        path.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {path.level}
+                      </span>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>

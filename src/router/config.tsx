@@ -29,6 +29,7 @@ const StudentMyCourses = lazy(() => import('@/pages/student/my-courses/page'));
 const StudentCourse = lazy(() => import('@/pages/student/course/page'));
 const StudentContinue = lazy(() => import('@/pages/student/continue/page'));
 const StudentLearningPath = lazy(() => import('@/pages/student/learning-path/page'));
+const StudentLearningPathDetail = lazy(() => import('@/pages/student/learning-path/detail/page'));
 const StudentAssessments = lazy(() => import('@/pages/student/assessments/page'));
 const StudentDiscussions = lazy(() => import('@/pages/student/discussions/page'));
 const StudentAchievements = lazy(() => import('@/pages/student/achievements/page'));
@@ -169,6 +170,10 @@ const routes: RouteObject[] = [
       {
         path: 'learning-path',
         element: <SuspenseWrapper><StudentLearningPath /></SuspenseWrapper>
+      },
+      {
+        path: 'learning-path/:pathId',
+        element: <SuspenseWrapper><StudentLearningPathDetail /></SuspenseWrapper>
       },
       {
         path: 'assessments',
