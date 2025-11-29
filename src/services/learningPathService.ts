@@ -52,6 +52,18 @@ export interface QuestionData {
  */
 export async function saveLearningPath(data: LearningPathData) {
   try {
+    // Verify user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      throw new Error('User not authenticated. Please sign in again.');
+    }
+
+    // Verify mentor_id matches authenticated user
+    if (session.user.id !== data.mentorId) {
+      throw new Error('Mismatch: mentor_id does not match authenticated user');
+    }
+
     // 1. Insert learning path
     const { data: learningPath, error: pathError } = await supabase
       .from('learning_paths')

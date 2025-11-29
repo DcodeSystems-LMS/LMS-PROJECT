@@ -8,6 +8,7 @@ import { authService } from '@/lib/auth';
 import { bookmarkService } from '@/services/bookmarkService';
 import CustomVideoPlayer from '@/components/feature/CustomVideoPlayer';
 import HybridVideoPlayer from '@/components/feature/HybridVideoPlayer';
+import YouTubeEmbed from '@/components/feature/YouTubeEmbed';
 import { instantPreloadService } from '@/services/instantPreloadService';
 import { globalPreloader } from '@/services/globalPreloader';
 
@@ -143,6 +144,21 @@ const StudentContinue: React.FC = () => {
       case 'c': return 'ri-code-line';
       default: return 'ri-file-line';
     }
+  };
+
+  // Check if URL is a YouTube URL
+  const isYouTubeUrl = (url: string): boolean => {
+    if (!url) return false;
+    
+    const youtubePatterns = [
+      /youtube\.com\/watch\?v=/,
+      /youtube\.com\/embed\//,
+      /youtu\.be\//,
+      /youtube\.com\/v\//,
+      /youtube\.com\/.*[?&]v=/
+    ];
+    
+    return youtubePatterns.some(pattern => pattern.test(url));
   };
 
   const formatFileSize = (bytes: number) => {
@@ -353,25 +369,34 @@ const StudentContinue: React.FC = () => {
         <div className="lg:col-span-2">
           <Card className="p-0 overflow-hidden">
             <div className="relative">
-              <CustomVideoPlayer
-                videoUrl={currentLesson.videoUrl}
-                title={currentLesson.lessonTitle}
-                progressCheckpoints={[15, 45, 90, 180]} // Example checkpoints for continue page
-                onProgressCheckpoint={async (currentTime, checkpoint) => {
-                  console.log(`🎯 Continue page checkpoint reached at ${currentTime}s`);
-                  
-                  // Simulate saving progress or other data processing
-                  await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 2000)); // 1.5-3.5 second delay
-                  
-                  console.log(`✅ Progress saved for checkpoint ${checkpoint}s`);
-                  return true; // Resume playback
-                }}
-                onTimeUpdate={(currentTime, duration) => {
-                  // Save progress for resume functionality
-                  const progressPercent = (currentTime / duration) * 100;
-                  console.log(`Video progress: ${progressPercent.toFixed(1)}%`);
-                }}
-              />
+              {isYouTubeUrl(currentLesson.videoUrl) ? (
+                <YouTubeEmbed
+                  videoUrl={currentLesson.videoUrl}
+                  title={currentLesson.lessonTitle}
+                  controls={true}
+                  showFullscreen={false}
+                />
+              ) : (
+                <CustomVideoPlayer
+                  videoUrl={currentLesson.videoUrl}
+                  title={currentLesson.lessonTitle}
+                  progressCheckpoints={[15, 45, 90, 180]} // Example checkpoints for continue page
+                  onProgressCheckpoint={async (currentTime, checkpoint) => {
+                    console.log(`🎯 Continue page checkpoint reached at ${currentTime}s`);
+                    
+                    // Simulate saving progress or other data processing
+                    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 2000)); // 1.5-3.5 second delay
+                    
+                    console.log(`✅ Progress saved for checkpoint ${checkpoint}s`);
+                    return true; // Resume playback
+                  }}
+                  onTimeUpdate={(currentTime, duration) => {
+                    // Save progress for resume functionality
+                    const progressPercent = (currentTime / duration) * 100;
+                    console.log(`Video progress: ${progressPercent.toFixed(1)}%`);
+                  }}
+                />
+              )}
               <div className="absolute bottom-4 left-4 bg-black/75 text-white px-3 py-2 rounded-lg text-sm font-medium">
                 Resume at {currentLesson.lastWatched}
               </div>

@@ -365,11 +365,11 @@ export default function MyCourses() {
                       <div className="h-40 bg-gradient-to-br from-purple-600 via-purple-500 to-pink-400 relative flex-shrink-0">
                         {course.thumbnail ? (
                           <div className="relative w-full h-full">
-                            <img
-                              src={course.thumbnail}
-                              alt={course.title}
+                          <img
+                            src={course.thumbnail}
+                    alt={course.title}
                               className="w-full h-full object-cover mix-blend-overlay opacity-80"
-                            />
+                          />
                             {/* Overlay gradient */}
                             <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-purple-500/80 to-pink-400/80"></div>
                           </div>
@@ -391,15 +391,15 @@ export default function MyCourses() {
                           <span className="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
                             {enrollment.progress}%
                           </span>
-                        </div>
-                      </div>
+                  </div>
+                </div>
 
                       {/* Course Content */}
                       <div className="px-4 pt-3 pb-4 flex flex-col flex-grow">
                         {/* Course Title */}
                         <h3 className="text-lg font-bold text-gray-900 mb-1.5 line-clamp-2 leading-tight">
-                          {course.title}
-                        </h3>
+                      {course.title}
+                    </h3>
 
                         {/* Instructor */}
                         <p className="text-xs text-gray-700 mb-2">
@@ -418,14 +418,14 @@ export default function MyCourses() {
                           <div className="flex justify-between text-xs text-gray-600 mb-1">
                             <span>Progress</span>
                             <span>{enrollment.progress}%</span>
-                          </div>
+                      </div>
                           <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div
+                        <div
                               className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                               style={{ width: `${enrollment.progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
+                        ></div>
+                      </div>
+                    </div>
 
                         {/* Pricing */}
                         <div className="flex items-center gap-2 mb-4">
@@ -437,7 +437,7 @@ export default function MyCourses() {
                               {formatPrice(originalPrice)}
                             </span>
                           )}
-                        </div>
+                    </div>
 
                         {/* Action Buttons - Side by Side */}
                         <div className="flex gap-2 mb-3">
@@ -448,8 +448,8 @@ export default function MyCourses() {
                             onClick={() => setSelectedCourse(course)}
                           >
                             View
-                          </Button>
-                          <Button 
+                        </Button>
+                          <Button
                             size="sm"
                             className="flex-1 text-xs py-2"
                             onClick={() => handleContinueCourse(course.id)}
@@ -516,11 +516,11 @@ export default function MyCourses() {
                     <div className="h-40 bg-gradient-to-br from-purple-600 via-purple-500 to-pink-400 relative flex-shrink-0">
                       {course.thumbnail ? (
                         <div className="relative w-full h-full">
-                          <img
-                            src={course.thumbnail}
-                            alt={course.title}
+                        <img
+                          src={course.thumbnail}
+                    alt={course.title}
                             className="w-full h-full object-cover mix-blend-overlay opacity-80"
-                          />
+                        />
                           {/* Overlay gradient */}
                           <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-purple-500/80 to-pink-400/80"></div>
                         </div>
@@ -548,8 +548,8 @@ export default function MyCourses() {
                     <div className="px-4 pt-3 pb-4 flex flex-col flex-grow">
                       {/* Course Title */}
                       <h3 className="text-lg font-bold text-gray-900 mb-1.5 line-clamp-2 leading-tight">
-                        {course.title}
-                      </h3>
+                      {course.title}
+                    </h3>
 
                       {/* Instructor */}
                       <p className="text-xs text-gray-700 mb-2">
@@ -573,7 +573,7 @@ export default function MyCourses() {
                             {formatPrice(originalPrice)}
                           </span>
                         )}
-                      </div>
+                  </div>
 
                       {/* Action Buttons - Side by Side */}
                       <div className="flex gap-2 mb-3">
@@ -585,14 +585,14 @@ export default function MyCourses() {
                         >
                           View
                         </Button>
-                        <Button 
-                          size="sm"
+                    <Button 
+                      size="sm" 
                           className="flex-1 text-xs py-2"
                           onClick={() => handleEnrollInCourse(course.id, course.title)}
-                        >
+                    >
                           <i className="ri-add-line mr-1 text-xs"></i>
-                          Enroll
-                        </Button>
+                      Enroll
+                    </Button>
                       </div>
 
                       {/* Badges at Bottom */}
@@ -608,9 +608,9 @@ export default function MyCourses() {
                             Bestseller
                           </span>
                         )}
-                      </div>
-                    </div>
-                  </Card>
+                  </div>
+                </div>
+              </Card>
                   );
                 })}
         </div>

@@ -834,9 +834,12 @@ const StudentLearningPathDetail: React.FC = () => {
                             ></iframe>
                           </div>
                         ) : selectedModule.content ? (
-                          <div className="whitespace-pre-wrap leading-relaxed text-sm sm:text-base">
-                            {selectedModule.content}
-                          </div>
+                          <div 
+                            className="text-gray-700 leading-relaxed prose prose-sm sm:prose-base max-w-none"
+                            dangerouslySetInnerHTML={{ 
+                              __html: DOMPurify.sanitize(selectedModule.content) 
+                            }}
+                          />
                         ) : (
                           <p className="text-gray-500 italic">
                             Content will be displayed here. This module is currently being prepared.
