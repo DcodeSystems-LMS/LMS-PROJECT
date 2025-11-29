@@ -14,6 +14,12 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = 524288000,
   allowed_mime_types = ARRAY['video/mp4', 'video/webm', 'video/avi', 'video/mov'];
 
+-- Drop existing policies if they exist (to avoid conflicts)
+DROP POLICY IF EXISTS "Users can upload course videos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view course videos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own course videos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own course videos" ON storage.objects;
+
 -- Create RLS policies for course videos bucket
 CREATE POLICY "Users can upload course videos" ON storage.objects
 FOR INSERT WITH CHECK (

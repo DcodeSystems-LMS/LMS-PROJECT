@@ -27,6 +27,12 @@ ON CONFLICT (id) DO UPDATE SET
   file_size_limit = 52428800,
   allowed_mime_types = ARRAY['application/pdf', 'image/jpeg', 'image/png', 'image/gif'];
 
+-- Drop existing policies for course-videos if they exist
+DROP POLICY IF EXISTS "Users can upload course videos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view course videos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own course videos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own course videos" ON storage.objects;
+
 -- Create RLS policies for course videos bucket
 CREATE POLICY "Users can upload course videos" ON storage.objects
 FOR INSERT WITH CHECK (
@@ -50,6 +56,12 @@ FOR DELETE USING (
   bucket_id = 'course-videos' AND
   auth.role() = 'authenticated'
 );
+
+-- Drop existing policies for course-materials if they exist
+DROP POLICY IF EXISTS "Users can upload course materials" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view course materials" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own course materials" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own course materials" ON storage.objects;
 
 -- Create RLS policies for course materials bucket
 CREATE POLICY "Users can upload course materials" ON storage.objects
