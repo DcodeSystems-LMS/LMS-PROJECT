@@ -1,3 +1,4 @@
+import React from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,9 +9,11 @@ interface ModalProps {
   className?: string;
   zIndex?: number; // Allow custom z-index for nested modals
   maxWidth?: string; // Allow custom max width
+  closeOnBackdropClick?: boolean; // Allow disabling backdrop click to close
+  closeOnEsc?: boolean; // Allow disabling ESC key to close
 }
 
-export default function Modal({ isOpen, onClose, title, children, size = 'md', className, zIndex = 50, maxWidth }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, size = 'md', className, zIndex = 50, maxWidth, closeOnBackdropClick = true, closeOnEsc = true }: ModalProps) {
   if (!isOpen) return null;
 
   const sizes = {
@@ -23,12 +26,33 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', c
   
   const widthClass = maxWidth ? `max-w-[${maxWidth}]` : sizes[size];
 
+  // Handle ESC key
+  React.useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && closeOnEsc) {
+        onClose();
+      }
+    };
+
+    if (closeOnEsc) {
+      document.addEventListener('keydown', handleEsc);
+    }
+
+    return () => {
+      if (closeOnEsc) {
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+  }, [isOpen, closeOnEsc, onClose]);
+
   return (
     <div className="fixed inset-0 overflow-y-auto" style={{ zIndex }}>
       <div className={`flex items-center justify-center min-h-screen ${size === 'full' ? 'p-0' : 'p-6'}`}>
         <div 
           className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
-          onClick={onClose}
+          onClick={closeOnBackdropClick ? onClose : undefined}
         />
         <div className={`relative bg-white shadow-2xl w-full ${className || widthClass} ${size === 'full' ? 'h-screen rounded-none' : 'rounded-xl'} animate-fade-in-scale flex flex-col`}>
           {title && (

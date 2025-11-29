@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import Button from '@/components/base/Button';
+import Modal from '@/components/base/Modal';
+import AssessmentTaker from '@/pages/student/assessments/components/AssessmentTaker';
 
 interface Module {
   id: string;
@@ -13,12 +15,34 @@ interface Module {
   order_number: number;
 }
 
+interface Test {
+  id: string;
+  name: string;
+  test_type: 'unit' | 'final';
+  unit_id?: string;
+  unit_title?: string;
+  questions: Question[];
+  pass_percentage: number;
+  total_marks: number;
+}
+
+interface Question {
+  id: string;
+  question_type: 'multiple-choice' | 'true-false' | 'fill-blanks' | 'coding';
+  question: string;
+  options?: string[];
+  correct_answer?: string | string[];
+  points: number;
+  explanation?: string;
+}
+
 interface Unit {
   id: string;
   title: string;
   description?: string;
   order_number: number;
   modules: Module[];
+  test?: Test | null;
 }
 
 interface LearningPath {
@@ -33,6 +57,7 @@ interface LearningPath {
   total_tests: number;
   created_at?: string;
   units: Unit[];
+  finalTest?: Test | null;
 }
 
 const StudentLearningPathDetail: React.FC = () => {
@@ -41,9 +66,14 @@ const StudentLearningPathDetail: React.FC = () => {
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  const [selectedUnitTest, setSelectedUnitTest] = useState<{ unitId: string; test: Test } | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
+  const [showCourseIntroduction, setShowCourseIntroduction] = useState(false);
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [showAssessmentTaker, setShowAssessmentTaker] = useState(false);
+  const [selectedTest, setSelectedTest] = useState<Test | null>(null);
 
   useEffect(() => {
     if (pathId) {
@@ -51,18 +81,34 @@ const StudentLearningPathDetail: React.FC = () => {
     }
   }, [pathId]);
 
+  // Prevent body scrolling
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   const fetchLearningPathDetail = async (id: string) => {
     try {
       setLoading(true);
 
-      // Fetch learning path with units, modules
+      // Fetch learning path with units, modules, and tests
       const { data, error } = await supabase
         .from('learning_paths')
         .select(`
           *,
           learning_path_units (
             *,
-            learning_path_modules (*)
+            learning_path_modules (*),
+            learning_path_tests (
+              *,
+              learning_path_questions (*)
+            )
+          ),
+          learning_path_tests (
+            *,
+            learning_path_questions (*)
           )
         `)
         .eq('id', id)
@@ -104,22 +150,54 @@ const StudentLearningPathDetail: React.FC = () => {
                   file_url: module.file_url,
                   duration: module.duration,
                   order_number: module.order_number,
-                }))
-            }))
+                })),
+              test: unit.learning_path_tests?.[0] ? {
+                id: unit.learning_path_tests[0].id,
+                name: unit.learning_path_tests[0].name,
+                test_type: 'unit' as const,
+                unit_id: unit.id,
+                unit_title: unit.title,
+                questions: (unit.learning_path_tests[0].learning_path_questions || [])
+                  .sort((a: any, b: any) => a.order_number - b.order_number)
+                  .map((q: any) => ({
+                    id: q.id,
+                    question_type: q.question_type,
+                    question: q.question,
+                    options: q.options,
+                    correct_answer: q.correct_answer,
+                    points: q.points,
+                    explanation: q.explanation,
+                  })),
+                pass_percentage: unit.learning_path_tests[0].pass_percentage,
+                total_marks: unit.learning_path_tests[0].total_marks,
+              } : null,
+            })),
+          finalTest: dbData.learning_path_tests?.find((t: any) => t.test_type === 'final') ? {
+            id: dbData.learning_path_tests.find((t: any) => t.test_type === 'final').id,
+            name: dbData.learning_path_tests.find((t: any) => t.test_type === 'final').name,
+            test_type: 'final' as const,
+            questions: (dbData.learning_path_tests.find((t: any) => t.test_type === 'final').learning_path_questions || [])
+              .sort((a: any, b: any) => a.order_number - b.order_number)
+              .map((q: any) => ({
+                id: q.id,
+                question_type: q.question_type,
+                question: q.question,
+                options: q.options,
+                correct_answer: q.correct_answer,
+                points: q.points,
+                explanation: q.explanation,
+              })),
+            pass_percentage: dbData.learning_path_tests.find((t: any) => t.test_type === 'final').pass_percentage,
+            total_marks: dbData.learning_path_tests.find((t: any) => t.test_type === 'final').total_marks,
+          } : null
         };
 
         setLearningPath(transformedData);
 
-        // Select first unit and first module by default
-        if (transformedData.units.length > 0) {
-          const firstUnit = transformedData.units[0];
-          setSelectedUnit(firstUnit);
-          setExpandedUnits(new Set([firstUnit.id]));
-
-          if (firstUnit.modules.length > 0) {
-            setSelectedModule(firstUnit.modules[0]);
-          }
-        }
+        // Show Course Introduction by default
+        setShowCourseIntroduction(true);
+        setSelectedUnit(null);
+        setSelectedModule(null);
       }
     } catch (error) {
       console.error('Error fetching learning path detail:', error);
@@ -141,8 +219,18 @@ const StudentLearningPathDetail: React.FC = () => {
     });
   };
 
+  const handleCourseIntroductionClick = () => {
+    setShowCourseIntroduction(true);
+    setSelectedUnit(null);
+    setSelectedModule(null);
+    setSelectedUnitTest(null);
+    setSidebarOpen(false);
+  };
+
   const handleUnitSelect = (unit: Unit) => {
+    setShowCourseIntroduction(false);
     setSelectedUnit(unit);
+    setSelectedUnitTest(null);
     setExpandedUnits(prev => {
       const newSet = new Set(prev);
       newSet.add(unit.id);
@@ -156,8 +244,19 @@ const StudentLearningPathDetail: React.FC = () => {
   };
 
   const handleModuleSelect = (module: Module, unit: Unit) => {
+    setShowCourseIntroduction(false);
     setSelectedModule(module);
     setSelectedUnit(unit);
+    setSelectedUnitTest(null);
+    setSidebarOpen(false);
+  };
+
+  const handleUnitTestSelect = (unit: Unit) => {
+    if (!unit.test) return;
+    setShowCourseIntroduction(false);
+    setSelectedModule(null);
+    setSelectedUnit(unit);
+    setSelectedUnitTest({ unitId: unit.id, test: unit.test });
     setSidebarOpen(false);
   };
 
@@ -166,9 +265,58 @@ const StudentLearningPathDetail: React.FC = () => {
   };
 
   const handleTestClick = () => {
-    if (pathId) {
-      navigate(`/student/assessments?learning_path=${pathId}`);
+    // Show test selection modal
+    setShowTestModal(true);
+  };
+
+  const getAvailableTests = (): Test[] => {
+    const tests: Test[] = [];
+    
+    // Add unit tests
+    if (learningPath?.units) {
+      learningPath.units.forEach(unit => {
+        if (unit.test) {
+          tests.push(unit.test);
+        }
+      });
     }
+    
+    // Add final test
+    if (learningPath?.finalTest) {
+      tests.push(learningPath.finalTest);
+    }
+    
+    return tests;
+  };
+
+  const handleStartTest = (test: Test) => {
+    setSelectedTest(test);
+    setShowTestModal(false);
+    setShowAssessmentTaker(true);
+  };
+
+  const handleTestComplete = (score: number) => {
+    setShowAssessmentTaker(false);
+    setSelectedTest(null);
+    // You can add logic here to save test results
+    console.log('Test completed with score:', score);
+  };
+
+  const convertTestToAssessment = (test: Test) => {
+    return {
+      id: test.id,
+      title: test.name,
+      course: learningPath?.title || 'Learning Path',
+      courseId: learningPath?.id || '',
+      type: 'Test' as const,
+      duration: '30 mins',
+      questions: test.questions.length,
+      status: 'upcoming' as const,
+      difficulty: 'Medium' as const,
+      topics: [test.test_type === 'final' ? 'Final Test' : `Unit Test`],
+      attempts: 0,
+      maxAttempts: 3,
+    };
   };
 
   if (loading) {
@@ -198,7 +346,7 @@ const StudentLearningPathDetail: React.FC = () => {
   }
 
   return (
-    <div className="h-screen bg-white overflow-hidden" style={{ display: 'flex', height: '100vh' }}>
+    <div className="bg-white overflow-hidden" style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
       <div className="flex flex-col lg:flex-row h-full w-full relative">
         {/* Left Sidebar - Units List */}
         <div
@@ -243,6 +391,33 @@ const StudentLearningPathDetail: React.FC = () => {
               }}
             >
               <div className="space-y-1 w-full">
+                {/* Course Introduction Card */}
+                <div
+                  className={`rounded-lg border transition-all w-full ${
+                    showCourseIntroduction && !selectedUnit
+                      ? 'bg-blue-50 border-blue-500'
+                      : 'bg-white border-gray-200'
+                  }`}
+                  style={{ width: '100%' }}
+                >
+                  <div className="flex items-center justify-between px-2 py-2 sm:py-2.5 w-full">
+                    <button
+                      onClick={handleCourseIntroductionClick}
+                      className="flex-1 text-left hover:bg-gray-50 rounded-lg transition-all min-w-0"
+                      style={{ width: '100%' }}
+                    >
+                      <span className="font-medium text-gray-900 text-xs sm:text-sm truncate block w-full">
+                        Course Introduction
+                      </span>
+                      <span className="text-[10px] text-gray-500 truncate block w-full mt-0.5">
+                        {learningPath.title}
+                      </span>
+                    </button>
+                    <i className="ri-arrow-right-s-line text-gray-400 text-lg ml-2 flex-shrink-0"></i>
+                  </div>
+                </div>
+
+                {/* Units */}
                 {learningPath.units.map((unit) => {
                   const isExpanded = expandedUnits.has(unit.id);
                   const isSelected = selectedUnit?.id === unit.id;
@@ -320,6 +495,24 @@ const StudentLearningPathDetail: React.FC = () => {
                               </div>
                             </button>
                           ))}
+                          
+                          {/* Unit Test Item */}
+                          {unit.test && (
+                            <button
+                              onClick={() => handleUnitTestSelect(unit)}
+                              className={`w-full text-left px-2 py-1.5 sm:py-2 rounded transition-all text-xs sm:text-sm ${
+                                selectedUnitTest?.unitId === unit.id && isSelected
+                                  ? 'bg-blue-100 text-blue-900 font-medium'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                              style={{ width: '100%' }}
+                            >
+                              <div className="flex items-center justify-between w-full min-w-0">
+                                <span className="truncate flex-1 min-w-0">Unit Test</span>
+                                <i className="ri-questionnaire-line ml-2 flex-shrink-0 text-xs"></i>
+                              </div>
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -347,14 +540,17 @@ const StudentLearningPathDetail: React.FC = () => {
           style={{ 
             flexGrow: 1,
             flexShrink: 1,
-            minWidth: 0
+            minWidth: 0,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
-          {selectedUnit ? (
-            <div className="h-[calc(100vh-64px)] overflow-y-auto overflow-x-hidden relative">
+          {showCourseIntroduction ? (
+            <div className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{ height: '100%' }}>
               {/* Header - Sticky within scroll container */}
-              <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
-                <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+              <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                     <button
                       onClick={toggleSidebar}
@@ -376,11 +572,136 @@ const StudentLearningPathDetail: React.FC = () => {
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
                         }}
-                        title={selectedModule ? selectedModule.title : learningPath.title}
+                        title="Course Introduction"
                       >
-                        {selectedModule ? selectedModule.title : learningPath.title}
+                        Course Introduction
                       </h1>
-                      {selectedModule ? (
+                      <p className="text-gray-600 mt-0.5 sm:mt-1 text-xs sm:text-sm truncate hidden sm:block">
+                        {learningPath.title}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Course Introduction Content */}
+              <div className="bg-white px-6 py-4">
+                <div className={`mx-auto ${sidebarOpen ? 'max-w-4xl' : 'max-w-6xl'}`}>
+                  <div className="space-y-6">
+                    {/* Thumbnail */}
+                    {learningPath.thumbnail_url && (
+                      <div className="w-full max-w-md h-48 bg-gray-200 rounded-lg mb-4 relative mx-auto">
+                        <img
+                          src={learningPath.thumbnail_url}
+                          alt={learningPath.title}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+
+                    {/* Course Title */}
+                    <div>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                        {learningPath.title}
+                      </h2>
+                    </div>
+
+                    {/* Course Description */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
+                      <div 
+                        className="text-gray-700 leading-relaxed text-base"
+                        style={{ whiteSpace: 'pre-line', wordWrap: 'break-word', overflowWrap: 'break-word' }}
+                      >
+                        {learningPath.description || 'No description available.'}
+                      </div>
+                    </div>
+
+                    {/* Course Details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <i className="ri-bar-chart-line text-blue-600"></i>
+                          <span className="text-sm font-medium text-gray-700">Difficulty Level</span>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium inline-block mt-2 ${
+                          learningPath.level === 'Beginner' ? 'bg-green-100 text-green-700' :
+                          learningPath.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {learningPath.level}
+                        </span>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <i className="ri-time-line text-blue-600"></i>
+                          <span className="text-sm font-medium text-gray-700">Duration</span>
+                        </div>
+                        <p className="text-lg font-semibold text-gray-900 mt-2">
+                          {learningPath.duration} hours
+                        </p>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <i className="ri-book-open-line text-blue-600"></i>
+                          <span className="text-sm font-medium text-gray-700">Total Units</span>
+                        </div>
+                        <p className="text-lg font-semibold text-gray-900 mt-2">
+                          {learningPath.total_units}
+                        </p>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <i className="ri-file-list-3-line text-blue-600"></i>
+                          <span className="text-sm font-medium text-gray-700">Total Modules</span>
+                        </div>
+                        <p className="text-lg font-semibold text-gray-900 mt-2">
+                          {learningPath.total_modules}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : selectedUnit ? (
+            <div className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{ height: '100%' }}>
+              {/* Header - Sticky within scroll container */}
+              <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                    <button
+                      onClick={toggleSidebar}
+                      className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                      aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+                    >
+                      <i
+                        className={`ri-${
+                          sidebarOpen ? 'menu-fold' : 'menu-unfold'
+                        }-line text-lg sm:text-xl text-gray-700`}
+                      ></i>
+                    </button>
+                    <div className="flex-1 min-w-0 overflow-hidden pr-2">
+                      <h1 
+                        className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate"
+                        style={{ 
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}
+                        title={selectedUnitTest ? selectedUnitTest.test.name : selectedModule ? selectedModule.title : learningPath.title}
+                      >
+                        {selectedUnitTest ? selectedUnitTest.test.name : selectedModule ? selectedModule.title : learningPath.title}
+                      </h1>
+                      {selectedUnitTest ? (
+                        <p className="text-gray-600 mt-0.5 sm:mt-1 text-xs sm:text-sm truncate hidden sm:block">
+                          Unit Test - {selectedUnit?.title}
+                        </p>
+                      ) : selectedModule ? (
                         <p className="text-gray-600 mt-0.5 sm:mt-1 text-xs sm:text-sm truncate hidden sm:block">
                           {selectedUnit.description || learningPath.description}
                         </p>
@@ -391,18 +712,11 @@ const StudentLearningPathDetail: React.FC = () => {
                       ) : null}
                     </div>
                   </div>
-                  <button
-                    onClick={handleTestClick}
-                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs sm:text-sm flex-shrink-0 ml-2"
-                  >
-                    <i className="ri-file-list-line text-sm sm:text-base"></i>
-                    <span className="hidden sm:inline">Test</span>
-                  </button>
                 </div>
                 
                 {/* Module Type Badge - Below title when module is selected */}
                 {selectedModule && (
-                  <div className="px-3 sm:px-6 pb-3 sm:pb-4 border-b border-gray-100">
+                  <div className="px-6 pb-4 border-b border-gray-100">
                     <div className="flex items-center gap-2">
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${
@@ -430,9 +744,46 @@ const StudentLearningPathDetail: React.FC = () => {
               </div>
 
               {/* Content Area - Scrollable */}
-              <div className="bg-white">
-                {selectedModule ? (
-                  <div className="p-4 sm:p-6 lg:p-8">
+              <div className="bg-white px-6 py-4">
+                {selectedUnitTest ? (
+                  <div>
+                    <div className={`mx-auto ${sidebarOpen ? 'max-w-4xl' : 'max-w-6xl'}`}>
+                      {/* Unit Test Content */}
+                      <div className="space-y-6">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                            {selectedUnitTest.test.name}
+                          </h2>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                            <span className="flex items-center gap-1">
+                              <i className="ri-file-list-3-line"></i>
+                              {selectedUnitTest.test.questions.length} Questions
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <i className="ri-star-line"></i>
+                              {selectedUnitTest.test.total_marks} Marks
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <i className="ri-checkbox-circle-line"></i>
+                              Pass: {selectedUnitTest.test.pass_percentage}%
+                            </span>
+                          </div>
+                          <Button
+                            onClick={() => {
+                              setSelectedTest(selectedUnitTest.test);
+                              setShowAssessmentTaker(true);
+                            }}
+                            className="w-full sm:w-auto"
+                          >
+                            <i className="ri-play-line mr-2"></i>
+                            Start Test
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : selectedModule ? (
+                  <div>
                     <div className={`mx-auto ${sidebarOpen ? 'max-w-4xl' : 'max-w-6xl'}`}>
 
                       {/* Module Content */}
@@ -491,6 +842,89 @@ const StudentLearningPathDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Test Selection Modal */}
+      <Modal
+        isOpen={showTestModal}
+        onClose={() => setShowTestModal(false)}
+        title="Available Tests"
+        size="lg"
+      >
+        <div className="space-y-4">
+          {getAvailableTests().length === 0 ? (
+            <div className="text-center py-8">
+              <i className="ri-file-list-line text-4xl text-gray-300 mb-4"></i>
+              <p className="text-gray-600">No tests available for this learning path yet.</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-gray-600 text-sm mb-4">
+                Select a test to start. Make sure you've completed the relevant units before taking the test.
+              </p>
+              <div className="space-y-3">
+                {getAvailableTests().map((test) => (
+                  <div
+                    key={test.id}
+                    className="border border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900">{test.name}</h3>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            test.test_type === 'final'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {test.test_type === 'final' ? 'Final Test' : `Unit ${learningPath?.units.find(u => u.test?.id === test.id)?.order_number || ''} Test`}
+                          </span>
+                        </div>
+                        {test.unit_title && (
+                          <p className="text-sm text-gray-600 mb-2">Unit: {test.unit_title}</p>
+                        )}
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <span className="flex items-center gap-1">
+                            <i className="ri-file-list-3-line"></i>
+                            {test.questions.length} Questions
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <i className="ri-star-line"></i>
+                            {test.total_marks} Marks
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <i className="ri-checkbox-circle-line"></i>
+                            Pass: {test.pass_percentage}%
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => handleStartTest(test)}
+                        className="ml-4"
+                      >
+                        <i className="ri-play-line mr-2"></i>
+                        Start Test
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Test Taker - Using AssessmentTaker with converted format */}
+      {selectedTest && (
+        <AssessmentTaker
+          isOpen={showAssessmentTaker}
+          onClose={() => {
+            setShowAssessmentTaker(false);
+            setSelectedTest(null);
+          }}
+          assessment={convertTestToAssessment(selectedTest)}
+          onComplete={handleTestComplete}
+        />
+      )}
     </div>
   );
 };

@@ -1102,6 +1102,8 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
+        closeOnBackdropClick={false}
+        closeOnEsc={false}
         title={`${assessment.title} - ${assessment.type}`}
         size="xl"
       >
@@ -1674,6 +1676,8 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
         isOpen={showConfirmSubmit}
         onClose={() => setShowConfirmSubmit(false)}
         title="Submit Assessment"
+        closeOnBackdropClick={false}
+        closeOnEsc={false}
       >
         <div className="space-y-4">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

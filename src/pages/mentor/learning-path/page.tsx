@@ -732,7 +732,7 @@ const MentorLearningPath: React.FC = () => {
         </div>
       )}
 
-      {/* Upload Form - Show in main content area instead of modal */}
+      {/* Upload Form or View Learning Path - Show in main content area */}
       {showUploadModal ? (
         <div className="bg-white rounded-lg shadow-sm">
           {/* Header with Back Button */}
@@ -1841,7 +1841,7 @@ const MentorLearningPath: React.FC = () => {
             </Button>
           </div>
         </div>
-      ) : (
+      ) : !viewingPath ? (
         <React.Fragment>
           {/* Banner - Only show when not in upload mode */}
           <div className="mb-8 rounded-xl overflow-hidden bg-gradient-to-r from-teal-500 to-cyan-600 shadow-lg">
@@ -2027,23 +2027,28 @@ const MentorLearningPath: React.FC = () => {
             </div>
           )}
         </React.Fragment>
-      )}
+      ) : viewingPath ? (
+        <div className="bg-white rounded-lg shadow-sm">
+          {/* Header with Back Button */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => {
+                  setViewingPath(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Back to Learning Paths"
+              >
+                <i className="ri-arrow-left-line text-xl text-gray-600"></i>
+              </button>
+              <h2 className="text-2xl font-bold text-gray-900">Learning Path Details</h2>
+            </div>
+          </div>
 
-      {/* View Learning Path Modal */}
-      <Modal
-        isOpen={!!viewingPath}
-        onClose={() => {
-          setViewingPath(null);
-        }}
-        title="Learning Path Details"
-        size="full"
-        maxWidth="90vw"
-      >
-        {viewingPath && (
-          <div className="max-h-[85vh] overflow-y-auto">
+          <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-6 py-4">
             {/* Header Section */}
             <div className="mb-6">
-              <div className="aspect-video bg-gray-200 rounded-lg mb-4 relative">
+              <div className="w-full max-w-md h-48 bg-gray-200 rounded-lg mb-4 relative mx-auto">
                 {viewingPath.thumbnail ? (
                   <img
                     src={viewingPath.thumbnail}
@@ -2052,7 +2057,7 @@ const MentorLearningPath: React.FC = () => {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <i className="ri-route-line text-6xl text-gray-400"></i>
+                    <i className="ri-route-line text-4xl text-gray-400"></i>
                   </div>
                 )}
                 <div className="absolute top-4 left-4">
@@ -2063,8 +2068,8 @@ const MentorLearningPath: React.FC = () => {
                   }`}>
                     {viewingPath.level}
                   </span>
-        </div>
-      </div>
+                </div>
+              </div>
               
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{viewingPath.title}</h1>
               <p className="text-gray-600 text-lg mb-4">{viewingPath.description}</p>
@@ -2223,9 +2228,7 @@ const MentorLearningPath: React.FC = () => {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setViewingPath(null);
-                  // TODO: Implement edit functionality
-                  setShowUploadModal(true);
+                  handleEdit(viewingPath);
                 }}
               >
                 <i className="ri-edit-line mr-2"></i>
@@ -2243,8 +2246,8 @@ const MentorLearningPath: React.FC = () => {
               </Button>
             </div>
           </div>
-        )}
-      </Modal>
+        </div>
+      ) : null}
     </div>
   );
 };

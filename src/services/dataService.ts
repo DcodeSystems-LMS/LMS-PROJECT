@@ -479,6 +479,43 @@ export class DataService {
     try {
       console.log('🔍 Fetching questions for assessment:', assessmentId);
       
+      // First check if this is a learning path test
+      const { data: learningPathTest, error: testCheckError } = await supabase
+        .from('learning_path_tests')
+        .select('id')
+        .eq('id', assessmentId)
+        .single();
+      
+      if (!testCheckError && learningPathTest) {
+        // This is a learning path test, fetch from learning_path_questions
+        console.log('📚 Fetching learning path test questions');
+        const { data: questionsData, error: questionsError } = await supabase
+          .from('learning_path_questions')
+          .select('*')
+          .eq('test_id', assessmentId)
+          .order('order_number');
+        
+        if (questionsError) {
+          console.error('❌ Error fetching learning path questions:', questionsError);
+          return [];
+        }
+        
+        // Transform learning path questions to match assessment question format
+        return (questionsData || []).map((q: any) => ({
+          id: q.id,
+          question_text: q.question,
+          question: q.question,
+          question_type: q.question_type,
+          type: q.question_type,
+          options: q.options,
+          correct_answer: q.correct_answer,
+          correct_answers: Array.isArray(q.correct_answer) ? q.correct_answer : undefined,
+          explanation: q.explanation,
+          points: q.points,
+          order_index: q.order_number,
+        }));
+      }
+      
       // First try to get questions from questions table
       const { data: questionsData, error: questionsError } = await supabase
         .from('questions')
