@@ -28,10 +28,10 @@ const features = [
     color: 'text-brand-accent'
   },
   {
-    icon: 'ri-certificate-line',
+    icon: 'ri-award-line',
     title: 'Industry Certifications',
     description: 'Earn recognized certifications that validate your skills and boost your professional credibility.',
-    color: 'text-brand-primary'
+    color: 'text-purple-600'
   },
   {
     icon: 'ri-rocket-line',
@@ -162,24 +162,32 @@ export default function Features() {
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {features.map((feature, index) => (
-            <Card
-              key={index}
-              variant="feature"
-              className="text-center group cursor-pointer"
-              hover
-            >
-              <div className={`w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center group-hover:from-purple-100 group-hover:to-orange-100 transition-all duration-300`}>
-                <i className={`${feature.icon} text-2xl ${feature.color} group-hover:scale-110 transition-transform duration-300`}></i>
-              </div>
-              <h3 className="heading-tertiary text-gray-900 mb-4 group-hover:text-brand-primary transition-colors duration-300">
-                {feature.title}
-              </h3>
-              <p className="text-body text-gray-600 group-hover:text-gray-700 transition-colors duration-300">
-                {feature.description}
-              </p>
-            </Card>
-          ))}
+          {features.map((feature, index) => {
+            // Special styling for Industry Certifications
+            const isCertification = feature.title === 'Industry Certifications';
+            return (
+              <Card
+                key={index}
+                variant="feature"
+                className="text-center group cursor-pointer"
+                hover
+              >
+                <div className={`w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  isCertification 
+                    ? 'bg-gradient-to-br from-purple-200 via-pink-200 to-orange-200 group-hover:from-purple-300 group-hover:via-pink-300 group-hover:to-orange-300' 
+                    : 'bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-purple-100 group-hover:to-orange-100'
+                }`}>
+                  <i className={`${feature.icon} text-2xl ${feature.color} group-hover:scale-110 transition-transform duration-300`}></i>
+                </div>
+                <h3 className="heading-tertiary text-gray-900 mb-4 group-hover:text-brand-primary transition-colors duration-300">
+                  {feature.title}
+                </h3>
+                <p className="text-body text-gray-600 group-hover:text-gray-700 transition-colors duration-300">
+                  {feature.description}
+                </p>
+              </Card>
+            );
+          })}
         </div>
 
         {/* CTA Section */}
