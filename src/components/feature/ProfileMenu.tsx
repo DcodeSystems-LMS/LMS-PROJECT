@@ -186,9 +186,12 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
   const handleLogout = async () => {
     try {
       await authService.signOut();
-      navigate('/auth/signin');
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.warn('Logout warning (non-critical):', error);
+      // Continue with logout even if there's an error
+    } finally {
+      // Always navigate to signin page regardless of errors
+      navigate('/auth/signin');
     }
   };
 

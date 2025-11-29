@@ -7,6 +7,7 @@ import SimpleDCODESpinner from '@/components/base/SimpleDCODESpinner';
 import { authService } from '@/lib/auth';
 import DataService from '@/services/dataService';
 import type { ExtendedSession } from '@/services/dataService';
+import Lottie from 'lottie-react';
 
 const StudentDashboard: React.FC = () => {
   const [liveSessions, setLiveSessions] = useState<ExtendedSession[]>([]);
@@ -14,6 +15,7 @@ const StudentDashboard: React.FC = () => {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [bannerAnimationData, setBannerAnimationData] = useState<any>(null);
 
   // Safely retrieve the current user; fall back to null if the service fails
   let currentUser = null;
@@ -44,6 +46,14 @@ const StudentDashboard: React.FC = () => {
 
     fetchLiveSessions();
   }, [currentUser?.id]);
+
+  // Load Lottie animation for banner
+  useEffect(() => {
+    fetch('/Programming Computer.json')
+      .then(response => response.json())
+      .then(data => setBannerAnimationData(data))
+      .catch(error => console.error('Error loading banner animation:', error));
+  }, []);
 
   const handleJoinSession = (session: any) => {
     setSelectedSession(session);
@@ -79,25 +89,42 @@ const StudentDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile-optimized container */}
-      <div className="px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
+      <div className="py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">
-          {/* Welcome Section - Mobile Optimized */}
-          <div className="mb-4 sm:mb-6 lg:mb-8">
+          {/* Welcome Banner with Lottie Animation - Mobile Optimized */}
+          <div className="mb-4 sm:mb-6">
             <Card variant="dashboard" className="gradient-bg text-white relative overflow-hidden">
-              <div className="relative z-10 p-4 sm:p-6 lg:p-8">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-black dark:text-white mb-2 lg:mb-4">
-                  Welcome back, {currentUser?.name || 'Student'}!
-                </h1>
-                <p className="text-sm sm:text-base lg:text-lg xl:text-xl opacity-90 text-black dark:text-white">
-                  Ready to continue your coding journey? Let's make today productive!
-                </p>
+              <div className="relative z-10 p-3 sm:p-4 lg:p-5">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 lg:gap-4">
+                  {/* Left Section - Welcome Text */}
+                  <div className="flex-1">
+                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-black dark:text-white mb-1 lg:mb-2">
+                      Welcome back, {currentUser?.name || 'Student'}!
+                    </h1>
+                    <p className="text-xs sm:text-sm lg:text-base opacity-90 text-black dark:text-white">
+                      Ready to continue your coding journey? Let's make today productive!
+                    </p>
+                  </div>
+
+                  {/* Right Section - Lottie Animation */}
+                  {bannerAnimationData && (
+                    <div className="flex-shrink-0 w-full sm:w-32 md:w-40 lg:w-48 h-24 sm:h-28 md:h-32 lg:h-36 flex items-center justify-center">
+                      <Lottie 
+                        animationData={bannerAnimationData} 
+                        loop={true}
+                        autoplay={true}
+                        className="w-full h-full"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Floating background elements - hidden on small screens */}
-              <div className="absolute top-4 right-4 floating-icon hidden sm:block">
+              <div className="absolute top-4 right-4 floating-icon hidden sm:block opacity-20">
                 <i className="ri-code-s-slash-line text-4xl lg:text-6xl"></i>
               </div>
-              <div className="absolute bottom-4 right-20 floating-icon hidden lg:block">
+              <div className="absolute bottom-4 right-20 floating-icon hidden lg:block opacity-20">
                 <i className="ri-book-open-line text-3xl lg:text-4xl"></i>
               </div>
             </Card>

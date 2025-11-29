@@ -165,15 +165,41 @@ class SupabaseAuthService {
   }
 
   async signOut(): Promise<void> {
+    // Always clear local state first
+    this.currentUser = null
+    
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        throw new Error(error.message)
+      // Check if there's an active session before trying to sign out
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.warn('Error checking session (non-critical):', sessionError)
+        // Continue anyway - local state is already cleared
+        return
       }
-      this.currentUser = null
+      
+      if (session) {
+        // Only call signOut if there's an active session
+        try {
+          const { error } = await supabase.auth.signOut({ scope: 'local' })
+          if (error) {
+            // Handle 403 and other errors gracefully
+            if (error.message.includes('session') || error.message.includes('403')) {
+              console.log('Session already invalid, local state cleared')
+            } else {
+              console.warn('Sign out error (non-critical):', error)
+            }
+          }
+        } catch (signOutError) {
+          // Catch any unexpected errors during signOut
+          console.warn('Sign out exception (non-critical):', signOutError)
+        }
+      } else {
+        console.log('No active session found, local state already cleared')
+      }
     } catch (error) {
-      console.error('Sign out error:', error)
-      throw new Error(error instanceof Error ? error.message : 'Sign out failed')
+      console.warn('Sign out error (non-critical):', error)
+      // Local state is already cleared, so we're good
     }
   }
 
