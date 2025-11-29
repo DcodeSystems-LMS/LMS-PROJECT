@@ -939,7 +939,7 @@ const MentorLearningPath: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <SimpleDCODESpinner size="lg" className="mb-4" />
-          <p className="text-gray-600">Loading Learning Paths...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
