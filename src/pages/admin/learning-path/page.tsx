@@ -26,7 +26,7 @@ const AdminLearningPath: React.FC = () => {
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Open by default
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -110,22 +110,28 @@ const AdminLearningPath: React.FC = () => {
 
   const handleUnitSelect = (unit: Unit) => {
     setSelectedUnit(unit);
-    // Expand the unit when selected
-    if (!expandedUnits.has(unit.id)) {
-      setExpandedUnits(prev => new Set(prev).add(unit.id));
-    }
+    // Always expand the unit when clicking on it
+    setExpandedUnits(prev => {
+      const newSet = new Set(prev);
+      newSet.add(unit.id);
+      return newSet;
+    });
     if (unit.topics.length > 0) {
       setSelectedTopic(unit.topics[0]);
     } else {
       setSelectedTopic(null);
     }
-    setSidebarOpen(false);
   };
 
   const handleTopicSelect = (topic: Topic, unit: Unit) => {
     setSelectedTopic(topic);
     setSelectedUnit(unit);
+    // Collapse sidebar when topic is selected to focus on content
     setSidebarOpen(false);
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
   const handleTestClick = (unit: Unit) => {
@@ -147,34 +153,32 @@ const AdminLearningPath: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
-        {/* Mobile Sidebar Toggle */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="lg:hidden fixed top-20 left-4 z-30 p-2 bg-white border border-gray-200 rounded-lg shadow-md"
-        >
-          <i className="ri-menu-line text-xl text-gray-700"></i>
-        </button>
-
-        {/* Left Sidebar - Units List */}
+        {/* Left Sidebar - Units List - Positioned at content area start (after main sidebar) */}
         <div
-          className={`fixed lg:static inset-y-0 left-0 z-20 w-80 bg-gray-50 border-r border-gray-200 overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          className={`fixed lg:absolute inset-y-0 left-0 z-20 w-[280px] sm:w-80 bg-gray-50 border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
-          style={{ top: '4rem' }}
+          style={{ top: '4rem', bottom: 0 }}
         >
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Course Units</h2>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="lg:hidden p-1 hover:bg-gray-200 rounded"
-              >
-                <i className="ri-close-line text-xl"></i>
-              </button>
+          <div className="h-full flex flex-col overflow-hidden">
+            {/* Header - Fixed */}
+            <div className="flex-shrink-0 pl-3 pr-2 py-2 sm:py-1.5 border-b border-gray-200">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-xs sm:text-sm font-semibold text-gray-900">Course Units</h2>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-1 sm:p-0.5 hover:bg-gray-200 rounded"
+                  aria-label="Close sidebar"
+                >
+                  <i className="ri-close-line text-base sm:text-lg"></i>
+                </button>
+              </div>
             </div>
             
-            <div className="space-y-1">
-              {units.map((unit) => {
+            {/* Units List - Scrollable */}
+            <div className="flex-1 overflow-y-auto pl-2 sm:pl-3 pr-2 pb-6">
+              <div className="space-y-1">
+                {units.map((unit) => {
                 const isExpanded = expandedUnits.has(unit.id);
                 const isSelected = selectedUnit?.id === unit.id;
                 
@@ -188,37 +192,46 @@ const AdminLearningPath: React.FC = () => {
                     }`}
                   >
                     {/* Unit Header */}
-                    <button
-                      onClick={() => handleUnitSelect(unit)}
-                      className="w-full text-left p-3 rounded-lg transition-all hover:bg-gray-50"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900 flex-1 text-sm">{unit.title}</span>
-                        <button
-                          onClick={(e) => toggleUnitExpansion(unit.id, e)}
-                          className="ml-2 p-1 hover:bg-gray-200 rounded transition-all"
-                          aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                        >
-                          <i className={`ri-arrow-${isExpanded ? 'down' : 'right'}-s-line text-gray-400 transition-transform`}></i>
-                        </button>
-                      </div>
-                    </button>
+                    <div className="flex items-center justify-between px-2 py-2 sm:py-2.5">
+                      <button
+                        onClick={() => handleUnitSelect(unit)}
+                        className="flex-1 text-left hover:bg-gray-50 rounded-lg transition-all"
+                      >
+                        <span className="font-medium text-gray-900 text-xs sm:text-sm truncate">{unit.title}</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          toggleUnitExpansion(unit.id, e);
+                          // Also select unit when expanding
+                          if (!expandedUnits.has(unit.id)) {
+                            setTimeout(() => handleUnitSelect(unit), 0);
+                          }
+                        }}
+                        className="ml-2 p-1 hover:bg-gray-200 rounded transition-all flex-shrink-0 z-10"
+                        aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                        type="button"
+                      >
+                        <i className={`ri-arrow-${isExpanded ? 'down' : 'right'}-s-line text-gray-400 transition-transform text-lg`}></i>
+                      </button>
+                    </div>
                     
-                    {/* Topics Dropdown */}
-                    {isExpanded && unit.topics.length > 0 && (
-                      <div className="px-3 pb-2 space-y-1">
+                    {/* Topics Dropdown - Visible when expanded */}
+                    {isExpanded && unit.topics && unit.topics.length > 0 && (
+                      <div className="pl-2 pr-2 pb-3 space-y-1">
                         {unit.topics.map((topic) => (
                           <button
                             key={topic.id}
                             onClick={() => handleTopicSelect(topic, unit)}
-                            className={`w-full text-left px-3 py-2 rounded transition-all text-sm ${
+                            className={`w-full text-left px-2 py-1.5 sm:py-2 rounded transition-all text-xs sm:text-sm ${
                               selectedTopic?.id === topic.id && isSelected
                                 ? 'bg-blue-100 text-blue-900 font-medium'
                                 : 'text-gray-700 hover:bg-gray-100'
                             }`}
                           >
                             <div className="flex items-center">
-                              <span>{topic.title}</span>
+                              <span className="truncate">{topic.title}</span>
                             </div>
                           </button>
                         ))}
@@ -227,11 +240,12 @@ const AdminLearningPath: React.FC = () => {
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Overlay for mobile */}
+        {/* Overlay for mobile when sidebar is open */}
         {sidebarOpen && (
           <div
             className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-10"
@@ -241,73 +255,68 @@ const AdminLearningPath: React.FC = () => {
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto bg-white">
+        <div className={`flex-1 overflow-hidden bg-white transition-all duration-300 ${
+          sidebarOpen ? 'lg:ml-80' : 'lg:ml-0'
+        } w-full`}>
           {selectedUnit ? (
-            <div className="h-full">
-              {/* Unit Header with Test Button */}
-              <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{selectedUnit.title}</h1>
-                  {selectedUnit.description && (
-                    <p className="text-gray-600 mt-1">{selectedUnit.description}</p>
-                  )}
+            <div className="h-full flex flex-col">
+              {/* Unit Header with Hamburger and Test Button */}
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-sm flex-shrink-0">
+                <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                  {/* Hamburger button - always visible */}
+                  <button
+                    onClick={toggleSidebar}
+                    className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+                    aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+                  >
+                    <i className={`ri-${sidebarOpen ? 'menu-fold' : 'menu-unfold'}-line text-lg sm:text-xl text-gray-700`}></i>
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{selectedUnit.title}</h1>
+                    {selectedUnit.description && (
+                      <p className="text-gray-600 mt-0.5 sm:mt-1 text-xs sm:text-sm truncate hidden sm:block">{selectedUnit.description}</p>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => handleTestClick(selectedUnit)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-xs sm:text-sm flex-shrink-0 ml-2"
                 >
-                  <i className="ri-file-list-line"></i>
-                  Test
+                  <i className="ri-file-list-line text-sm sm:text-base"></i>
+                  <span className="hidden sm:inline">Test</span>
                 </button>
               </div>
 
-              {/* Topics List */}
-              <div className="p-6">
-                <div className="space-y-1">
-                  {selectedUnit.topics.map((topic) => (
-                    <button
-                      key={topic.id}
-                      onClick={() => handleTopicSelect(topic)}
-                      className={`w-full text-left p-3 rounded-lg transition-all ${
-                        selectedTopic?.id === topic.id
-                          ? 'bg-blue-50'
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">{topic.title}</span>
-                        <div
-                          className={`flex items-center justify-center w-6 h-6 rounded-full ${
-                            selectedTopic?.id === topic.id
-                              ? 'bg-blue-600 text-white'
-                              : 'text-gray-400'
-                          }`}
-                        >
-                          <i className="ri-arrow-right-s-line"></i>
+              {/* Content Area - Full Width */}
+              <div className="flex-1 overflow-y-auto bg-white">
+                {selectedTopic ? (
+                  <div className="h-full p-4 sm:p-6 lg:p-8">
+                    <div className={`mx-auto ${sidebarOpen ? 'max-w-4xl' : 'max-w-6xl'}`}>
+                      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">{selectedTopic.title}</h2>
+                      <div className="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-gray-700">
+                        <div className="whitespace-pre-wrap leading-relaxed text-sm sm:text-base">
+                          {selectedTopic.content || (
+                            <p>This topic content will be displayed here. You can add rich text, code examples, and interactive elements.</p>
+                          )}
                         </div>
                       </div>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Topic Content */}
-                {selectedTopic && (
-                  <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
-                    <h2 className="text-xl font-bold text-gray-900 mb-4">{selectedTopic.title}</h2>
-                    <div className="prose max-w-none text-gray-700">
-                      {selectedTopic.content || (
-                        <p>This topic content will be displayed here. You can add rich text, code examples, and interactive elements.</p>
-                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full px-4">
+                    <div className="text-center">
+                      <i className="ri-file-text-line text-4xl sm:text-6xl text-gray-300 mb-4"></i>
+                      <p className="text-gray-600 text-sm sm:text-base">Select a topic from the sidebar to view content</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full px-4">
               <div className="text-center">
-                <i className="ri-book-open-line text-6xl text-gray-300 mb-4"></i>
-                <p className="text-gray-600">Select a unit to start learning</p>
+                <i className="ri-book-open-line text-4xl sm:text-6xl text-gray-300 mb-4"></i>
+                <p className="text-gray-600 text-sm sm:text-base">Select a unit to start learning</p>
               </div>
             </div>
           )}

@@ -30,22 +30,22 @@ export default function Hero() {
         
         {/* Feature Highlights - Top Section on Mobile, Center on Desktop */}
         <div className="w-full max-w-4xl mb-8 md:mb-0 md:absolute md:top-[60%] md:left-1/2 md:transform md:-translate-x-1/2 md:mb-0">
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 text-xs sm:text-sm md:text-base px-2">
-            <div className="flex items-center text-blue-600 font-medium bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
-              <i className="ri-code-line mr-1.5 sm:mr-2 text-base sm:text-lg"></i>
-              <span className="whitespace-nowrap">Live Coding</span>
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 px-2">
+            <div className="flex items-center text-blue-600 font-medium bg-white/80 backdrop-blur-sm px-4 py-2 sm:px-3 sm:py-1.5 rounded-full">
+              <i className="ri-code-line mr-2 text-lg sm:text-base"></i>
+              <span className="whitespace-nowrap text-sm sm:text-sm md:text-base">Live Coding</span>
             </div>
-            <div className="flex items-center text-purple-600 font-medium bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
-              <i className="ri-user-star-line mr-1.5 sm:mr-2 text-base sm:text-lg"></i>
-              <span className="whitespace-nowrap">Expert Mentors</span>
+            <div className="flex items-center text-purple-600 font-medium bg-white/80 backdrop-blur-sm px-4 py-2 sm:px-3 sm:py-1.5 rounded-full">
+              <i className="ri-user-star-line mr-2 text-lg sm:text-base"></i>
+              <span className="whitespace-nowrap text-sm sm:text-sm md:text-base">Expert Mentors</span>
             </div>
-            <div className="flex items-center text-orange-600 font-medium bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
-              <i className="ri-trophy-line mr-1.5 sm:mr-2 text-base sm:text-lg"></i>
-              <span className="whitespace-nowrap">Real Projects</span>
+            <div className="flex items-center text-orange-600 font-medium bg-white/80 backdrop-blur-sm px-4 py-2 sm:px-3 sm:py-1.5 rounded-full">
+              <i className="ri-trophy-line mr-2 text-lg sm:text-base"></i>
+              <span className="whitespace-nowrap text-sm sm:text-sm md:text-base">Real Projects</span>
             </div>
-            <div className="flex items-center text-green-600 font-medium bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
-              <i className="ri-briefcase-line mr-1.5 sm:mr-2 text-base sm:text-lg"></i>
-              <span className="whitespace-nowrap">Job Placement</span>
+            <div className="flex items-center text-green-600 font-medium bg-white/80 backdrop-blur-sm px-4 py-2 sm:px-3 sm:py-1.5 rounded-full">
+              <i className="ri-briefcase-line mr-2 text-lg sm:text-base"></i>
+              <span className="whitespace-nowrap text-sm sm:text-sm md:text-base">Job Placement</span>
             </div>
           </div>
         </div>
