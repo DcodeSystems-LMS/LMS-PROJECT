@@ -21,7 +21,9 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
   const [dragCurrentY, setDragCurrentY] = useState(0);
   const [dragVelocity, setDragVelocity] = useState(0);
   const [isClosing, setIsClosing] = useState(false);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
   const { theme, setTheme } = useUserTheme();
 
@@ -118,10 +120,39 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
     }
   }, [user.role, theme, setTheme]);
 
+  // Calculate dropdown position for desktop
+  useEffect(() => {
+    if (isOpen && !isMobile && buttonRef.current) {
+      const updatePosition = () => {
+        if (buttonRef.current) {
+          const rect = buttonRef.current.getBoundingClientRect();
+          setTriggerRect(rect);
+        }
+      };
+      
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    } else {
+      setTriggerRect(null);
+    }
+  }, [isOpen, isMobile]);
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        menuRef.current && 
+        !menuRef.current.contains(target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -311,9 +342,10 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
 
   return (
     <>
-      <div className="relative" ref={menuRef}>
+      <div className="relative z-[10000]">
         {/* Avatar Button */}
         <button
+          ref={buttonRef}
           onClick={() => {
             console.log('🔍 Profile button clicked:', { isMobile, isOpen });
             setIsOpen(!isOpen);
@@ -332,9 +364,29 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
           )}
         </button>
 
-        {/* Desktop Menu */}
-        {isOpen && !isMobile && (
-          <div className="profile-menu animate-slide-down">
+      </div>
+
+      {/* Desktop Menu - Rendered as Portal */}
+      {isOpen && !isMobile && triggerRect && createPortal(
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-transparent z-[9998]"
+            onClick={() => setIsOpen(false)}
+            style={{ cursor: 'default' }}
+          />
+
+          {/* Dropdown Menu */}
+          <div
+            ref={menuRef}
+            className="profile-menu animate-slide-down"
+            style={{
+              position: 'fixed',
+              top: `${triggerRect.bottom + 8}px`,
+              right: `${window.innerWidth - triggerRect.right}px`,
+              zIndex: 9999,
+            }}
+          >
             {/* User Info Header */}
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
@@ -371,8 +423,9 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </>,
+        document.body
+      )}
 
       {/* Mobile Menu - Rendered as Portal */}
       {console.log('🔍 Mobile menu render check:', { isMobile, isOpen })}

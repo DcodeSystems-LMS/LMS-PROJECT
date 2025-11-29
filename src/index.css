@@ -810,18 +810,26 @@ html, body {
 
 /* Profile Menu Styles */
 .profile-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
+  position: fixed !important;
   width: 280px;
-  margin-top: 0.5rem;
   background: var(--theme-card-bg);
   backdrop-filter: blur(20px);
   border: 1px solid var(--theme-card-border);
   border-radius: 1rem;
   box-shadow: var(--shadow-strong);
-  z-index: 50;
+  z-index: 9999 !important;
   overflow: hidden;
+}
+
+/* Ensure dropdown menu appears above all content */
+.dropdown-menu {
+  position: absolute !important;
+  z-index: 9999 !important;
+}
+
+/* Prevent content from clipping dropdown */
+.main-content, .content-wrapper, .unit-box, .description-container {
+  overflow: visible !important;
 }
 
 .dark .profile-menu {
