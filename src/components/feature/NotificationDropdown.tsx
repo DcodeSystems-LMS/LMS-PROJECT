@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import Card from '@/components/base/Card';
 
@@ -74,18 +75,54 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ children })
   ]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Calculate dropdown position
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const updatePosition = () => {
+        if (triggerRef.current) {
+          const rect = triggerRef.current.getBoundingClientRect();
+          setTriggerRect(rect);
+        }
+      };
+      
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    } else {
+      setTriggerRect(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(target) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const markAsRead = (notificationId: string) => {
     setNotifications(prev =>
@@ -163,120 +200,143 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ children })
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className="cursor-pointer relative"
-      >
-        {children}
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
+    <>
+      <div className="relative z-[10000]">
+        <div
+          ref={triggerRef}
+          onClick={() => setIsOpen(!isOpen)}
+          className="cursor-pointer relative"
+        >
+          {children}
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </div>
       </div>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 max-w-sm z-50">
-          <Card className="shadow-xl border-0 bg-theme-card-bg/95 backdrop-blur-md">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-theme-border">
-              <div className="flex items-center">
-                <h3 className="text-lg font-semibold text-theme-text-primary">Notifications</h3>
+      {/* Dropdown Menu - Rendered as Portal */}
+      {isOpen && triggerRect && createPortal(
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-transparent z-[9998]"
+            onClick={() => setIsOpen(false)}
+            style={{ cursor: 'default' }}
+          />
+
+          {/* Dropdown Menu */}
+          <div
+            ref={dropdownRef}
+            className="fixed w-96 max-w-sm"
+            style={{
+              top: `${triggerRect.bottom + 8}px`,
+              right: `${window.innerWidth - triggerRect.right}px`,
+              zIndex: 9999,
+            }}
+          >
+            <Card className="shadow-xl border-0 bg-theme-card-bg/95 backdrop-blur-md">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-theme-border">
+                <div className="flex items-center">
+                  <h3 className="text-lg font-semibold text-theme-text-primary">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
                 {unreadCount > 0 && (
-                  <span className="ml-2 px-2 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-full">
-                    {unreadCount} new
-                  </span>
+                  <button
+                    onClick={markAllAsRead}
+                    className="text-xs text-brand-primary hover:text-brand-secondary font-medium transition-colors duration-200"
+                  >
+                    Mark all read
+                  </button>
                 )}
               </div>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  className="text-xs text-brand-primary hover:text-brand-secondary font-medium transition-colors duration-200"
-                >
-                  Mark all read
-                </button>
-              )}
-            </div>
 
-            {/* Notifications List */}
-            <div className="max-h-96 overflow-y-auto">
-              {notifications.length === 0 ? (
-                <div className="p-6 text-center">
-                  <i className="ri-notification-off-line text-3xl text-theme-text-tertiary mb-3"></i>
-                  <p className="text-theme-text-secondary">No notifications yet</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-theme-border">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-4 hover:bg-theme-hover-bg transition-colors duration-200 ${
-                        !notification.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
-                      }`}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          getNotificationColor(notification.color)
-                        }`}>
-                          <i className={`${notification.icon} text-sm`}></i>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <p className={`text-sm font-medium text-theme-text-primary ${
-                              !notification.read ? 'font-semibold' : ''
-                            }`}>
-                              {notification.title}
-                            </p>
-                            <div className="flex items-center space-x-2 ml-2">
-                              {!notification.read && (
-                                <button
-                                  onClick={() => markAsRead(notification.id)}
-                                  className="text-brand-primary hover:text-brand-secondary transition-colors duration-200"
-                                  title="Mark as read"
-                                >
-                                  <i className="ri-check-line text-sm"></i>
-                                </button>
-                              )}
-                              <button
-                                onClick={() => deleteNotification(notification.id)}
-                                className="text-theme-text-tertiary hover:text-red-500 transition-colors duration-200"
-                                title="Delete notification"
-                              >
-                                <i className="ri-close-line text-sm"></i>
-                              </button>
-                            </div>
+              {/* Notifications List */}
+              <div className="max-h-96 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <i className="ri-notification-off-line text-3xl text-theme-text-tertiary mb-3"></i>
+                    <p className="text-theme-text-secondary">No notifications yet</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-theme-border">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-4 hover:bg-theme-hover-bg transition-colors duration-200 ${
+                          !notification.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
+                        }`}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            getNotificationColor(notification.color)
+                          }`}>
+                            <i className={`${notification.icon} text-sm`}></i>
                           </div>
-                          <p className="text-sm text-theme-text-secondary mt-1 line-clamp-2">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-theme-text-tertiary mt-2">
-                            {formatTimestamp(notification.timestamp)}
-                          </p>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <p className={`text-sm font-medium text-theme-text-primary ${
+                                !notification.read ? 'font-semibold' : ''
+                              }`}>
+                                {notification.title}
+                              </p>
+                              <div className="flex items-center space-x-2 ml-2">
+                                {!notification.read && (
+                                  <button
+                                    onClick={() => markAsRead(notification.id)}
+                                    className="text-brand-primary hover:text-brand-secondary transition-colors duration-200"
+                                    title="Mark as read"
+                                  >
+                                    <i className="ri-check-line text-sm"></i>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => deleteNotification(notification.id)}
+                                  className="text-theme-text-tertiary hover:text-red-500 transition-colors duration-200"
+                                  title="Delete notification"
+                                >
+                                  <i className="ri-close-line text-sm"></i>
+                                </button>
+                              </div>
+                            </div>
+                            <p className="text-sm text-theme-text-secondary mt-1 line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-theme-text-tertiary mt-2">
+                              {formatTimestamp(notification.timestamp)}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              {notifications.length > 0 && (
+                <div className="p-3 border-t border-theme-border">
+                  <button 
+                    onClick={handleViewAllNotifications}
+                    className="w-full text-center text-sm text-brand-primary hover:text-brand-secondary font-medium transition-colors duration-200"
+                  >
+                    View all notifications
+                  </button>
                 </div>
               )}
-            </div>
-
-            {/* Footer */}
-            {notifications.length > 0 && (
-              <div className="p-3 border-t border-theme-border">
-                <button 
-                  onClick={handleViewAllNotifications}
-                  className="w-full text-center text-sm text-brand-primary hover:text-brand-secondary font-medium transition-colors duration-200"
-                >
-                  View all notifications
-                </button>
-              </div>
-            )}
-          </Card>
-        </div>
+            </Card>
+          </div>
+        </>,
+        document.body
       )}
-    </div>
+    </>
   );
 };
 

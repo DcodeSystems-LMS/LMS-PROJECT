@@ -827,6 +827,12 @@ html, body {
   z-index: 9999 !important;
 }
 
+/* Notifications dropdown styles */
+.notification-dropdown {
+  position: fixed !important;
+  z-index: 9999 !important;
+}
+
 /* Prevent content from clipping dropdown */
 .main-content, .content-wrapper, .unit-box, .description-container {
   overflow: visible !important;
