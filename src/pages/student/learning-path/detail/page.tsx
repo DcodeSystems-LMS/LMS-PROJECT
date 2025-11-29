@@ -80,6 +80,25 @@ const StudentLearningPathDetail: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [savingProgress, setSavingProgress] = useState(false);
 
+  // Helper function to unescape HTML entities (like &lt; becomes <, &gt; becomes >)
+  const unescapeHtml = (html: string): string => {
+    if (!html) return '';
+    // Unescape HTML entities
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = html;
+    let unescaped = textarea.value;
+    // If still contains escaped entities, do manual replacement
+    if (unescaped.includes('&lt;') || unescaped.includes('&gt;')) {
+      unescaped = unescaped
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+    }
+    return unescaped;
+  };
+
   useEffect(() => {
     if (pathId) {
       fetchLearningPathDetail(pathId);
@@ -549,11 +568,80 @@ const StudentLearningPathDetail: React.FC = () => {
     setShowAssessmentTaker(true);
   };
 
-  const handleTestComplete = (score: number) => {
-    setShowAssessmentTaker(false);
-    setSelectedTest(null);
-    // You can add logic here to save test results
-    console.log('Test completed with score:', score);
+  const handleTestComplete = async (score: number, answers: Record<string, string>) => {
+    try {
+      if (!selectedTest || !learningPath) {
+        console.error('Missing test or learning path data');
+        return;
+      }
+
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        console.error('User not authenticated');
+        return;
+      }
+
+      // Calculate total points from test questions
+      const totalPoints = selectedTest.questions.reduce((sum, q) => sum + q.points, 0);
+      const earnedPoints = Math.round((score / 100) * totalPoints);
+
+      // Determine learning_path_id and unit_id
+      const learningPathId = learningPath.id;
+      let unitId = null;
+      
+      if (selectedTest.test_type === 'unit' && selectedTest.unit_id) {
+        unitId = selectedTest.unit_id;
+      }
+
+      // Get next attempt number
+      const { data: existingAttempts } = await supabase
+        .from('learning_path_test_results')
+        .select('attempt_number')
+        .eq('test_id', selectedTest.id)
+        .eq('student_id', session.user.id)
+        .order('attempt_number', { ascending: false })
+        .limit(1);
+
+      const attemptNumber = existingAttempts && existingAttempts.length > 0
+        ? existingAttempts[0].attempt_number + 1
+        : 1;
+
+      // Save test result to database
+      const { data, error } = await supabase
+        .from('learning_path_test_results')
+        .insert({
+          test_id: selectedTest.id,
+          student_id: session.user.id,
+          learning_path_id: learningPathId,
+          unit_id: unitId,
+          test_type: selectedTest.test_type || 'unit',
+          score: Math.round(score),
+          total_points: totalPoints,
+          earned_points: earnedPoints,
+          answers: answers as any,
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          attempt_number: attemptNumber
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving test result:', error);
+        alert('Failed to save test result. Please try again.');
+        return;
+      }
+
+      console.log('✅ Test result saved successfully:', data);
+      
+      // Close modal and reset
+      setShowAssessmentTaker(false);
+      setSelectedTest(null);
+    } catch (error) {
+      console.error('Error in handleTestComplete:', error);
+      alert('An error occurred while saving your test result.');
+    }
   };
 
   const convertTestToAssessment = (test: Test) => {
@@ -732,26 +820,28 @@ const StudentLearningPathDetail: React.FC = () => {
                               }`}
                               style={{ width: '100%' }}
                             >
-                              <div className="flex items-center justify-between w-full min-w-0">
+                              <div className="flex items-center justify-between w-full min-w-0 gap-2">
                                 <div className="flex items-center gap-2 flex-1 min-w-0">
                                   {completedModules.has(module.id) && (
                                     <i className="ri-checkbox-circle-fill text-green-600 flex-shrink-0"></i>
                                   )}
                                   <span className="truncate flex-1 min-w-0">{module.title}</span>
                                 </div>
-                                <i
-                                  className={`ml-2 flex-shrink-0 ${
+                                <span
+                                  className={`px-2 py-1 rounded text-xs font-medium flex-shrink-0 ${
                                     module.content_type === 'Video'
-                                      ? 'ri-video-line'
+                                      ? 'bg-red-100 text-red-700'
                                       : module.content_type === 'PDF'
-                                      ? 'ri-file-pdf-line'
+                                      ? 'bg-orange-100 text-orange-700'
                                       : module.content_type === 'Quiz'
-                                      ? 'ri-questionnaire-line'
+                                      ? 'bg-purple-100 text-purple-700'
                                       : module.content_type === 'Assignment'
-                                      ? 'ri-task-line'
-                                      : 'ri-file-text-line'
-                                  } text-xs`}
-                                ></i>
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}
+                                >
+                                  {module.content_type || 'Text'}
+                                </span>
                               </div>
                             </button>
                           ))}
@@ -961,14 +1051,6 @@ const StudentLearningPathDetail: React.FC = () => {
                         <p className="text-gray-600 mt-0.5 sm:mt-1 text-xs sm:text-sm truncate hidden sm:block">
                           Unit Test - {selectedUnit?.title}
                         </p>
-                      ) : selectedModule ? (
-                        <p className="text-gray-600 mt-0.5 sm:mt-1 text-xs sm:text-sm truncate hidden sm:block">
-                          {selectedUnit.description || learningPath.description}
-                        </p>
-                      ) : selectedUnit.description ? (
-                        <p className="text-gray-600 mt-0.5 sm:mt-1 text-xs sm:text-sm truncate hidden sm:block">
-                          {selectedUnit.description}
-                        </p>
                       ) : null}
                     </div>
                   </div>
@@ -999,34 +1081,6 @@ const StudentLearningPathDetail: React.FC = () => {
                     )}
                   </div>
                 </div>
-                
-                {/* Module Type Badge - Below title when module is selected */}
-                {selectedModule && (
-                  <div className="px-6 pb-4 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          selectedModule.content_type === 'Video'
-                            ? 'bg-red-100 text-red-700'
-                            : selectedModule.content_type === 'PDF'
-                            ? 'bg-orange-100 text-orange-700'
-                            : selectedModule.content_type === 'Quiz'
-                            ? 'bg-purple-100 text-purple-700'
-                            : selectedModule.content_type === 'Assignment'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {selectedModule.content_type}
-                      </span>
-                      {selectedModule.duration > 0 && (
-                        <span className="text-xs sm:text-sm text-gray-500">
-                          {selectedModule.duration} min
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Content Area - Scrollable */}

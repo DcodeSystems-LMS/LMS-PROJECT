@@ -77,6 +77,11 @@ const MentorLearningPath: React.FC = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  
+  // Test Completions Modal States
+  const [showTestCompletionsModal, setShowTestCompletionsModal] = useState(false);
+  const [testCompletions, setTestCompletions] = useState<any[]>([]);
+  const [loadingTestCompletions, setLoadingTestCompletions] = useState(false);
   const [lottieAnimationData, setLottieAnimationData] = useState<any>(null);
   const [viewingPath, setViewingPath] = useState<LearningPath | null>(null);
   const [editingPath, setEditingPath] = useState<LearningPath | null>(null);
@@ -145,6 +150,252 @@ const MentorLearningPath: React.FC = () => {
     } catch (error) {
       console.error('Error fetching learning paths:', error);
       setError('Failed to fetch learning paths');
+    }
+  };
+
+  // Fetch Test Completions
+  const fetchTestCompletions = async () => {
+    try {
+      setLoadingTestCompletions(true);
+      if (!currentUser) return;
+
+      // Get all learning paths created by this mentor
+      const mentorPaths = await fetchLearningPathsFromSupabase(currentUser.id);
+      
+      if (!mentorPaths || mentorPaths.length === 0) {
+        setTestCompletions([]);
+        return;
+      }
+
+      const pathIds = mentorPaths.map((p: any) => p.id);
+      
+      // Fetch all unit IDs for these learning paths
+      const { data: unitsData } = await supabase
+        .from('learning_path_units')
+        .select('id, learning_path_id')
+        .in('learning_path_id', pathIds);
+      
+      const unitIds = unitsData ? unitsData.map((u: any) => u.id) : [];
+      
+      // Create a map for quick lookup of unit_id to learning_path_id
+      const unitToPathMap = new Map();
+      if (unitsData) {
+        unitsData.forEach((unit: any) => {
+          unitToPathMap.set(unit.id, unit.learning_path_id);
+        });
+      }
+      
+      // Fetch final tests (test_type = 'final')
+      const { data: finalTestsData } = await supabase
+        .from('learning_path_tests')
+        .select(`
+          *,
+          learning_paths!inner(id, title)
+        `)
+        .in('learning_path_id', pathIds)
+        .eq('test_type', 'final');
+      
+      // Fetch unit tests (test_type = 'unit')
+      let unitTestsData = null;
+      if (unitIds.length > 0) {
+        const { data } = await supabase
+          .from('learning_path_tests')
+          .select('*')
+          .in('unit_id', unitIds)
+          .eq('test_type', 'unit');
+        unitTestsData = data;
+      }
+      
+      console.log(`📊 Found ${finalTestsData?.length || 0} final tests and ${unitTestsData?.length || 0} unit tests`);
+      
+      // Combine both types of tests
+      const allTests: any[] = [];
+      
+      // Add final tests
+      if (finalTestsData && finalTestsData.length > 0) {
+        finalTestsData.forEach((test: any) => {
+          allTests.push({
+            ...test,
+            learning_path_id: test.learning_paths?.id || test.learning_path_id,
+            learning_path_title: test.learning_paths?.title || mentorPaths.find((p: any) => p.id === test.learning_path_id)?.title || 'Unknown Path'
+          });
+        });
+      }
+      
+      // Add unit tests
+      if (unitTestsData && unitTestsData.length > 0) {
+        unitTestsData.forEach((test: any) => {
+          const pathId = unitToPathMap.get(test.unit_id);
+          const path = mentorPaths.find((p: any) => p.id === pathId);
+          allTests.push({
+            ...test,
+            learning_path_id: pathId,
+            learning_path_title: path?.title || 'Unknown Path'
+          });
+        });
+      }
+      
+      const testsData = allTests;
+
+      if (!testsData || testsData.length === 0) {
+        console.log('No tests found for learning paths');
+        setTestCompletions([]);
+        return;
+      }
+
+      console.log(`✅ Found ${testsData.length} tests across ${mentorPaths.length} learning paths`);
+      console.log(`   - Final tests: ${testsData.filter((t: any) => t.test_type === 'final').length}`);
+      console.log(`   - Unit tests: ${testsData.filter((t: any) => t.test_type === 'unit').length}`);
+
+      const testIds = testsData.map((t: any) => t.id);
+      console.log(`🔍 Searching for completions for ${testIds.length} test IDs`);
+      let completions: any[] = [];
+
+      // First, try to fetch from learning_path_test_results table (primary source)
+      try {
+        const { data: testResultsData, error: testResultsError } = await supabase
+          .from('learning_path_test_results')
+          .select(`
+            *,
+            profiles!learning_path_test_results_student_id_fkey(id, name, email)
+          `)
+          .in('test_id', testIds)
+          .eq('status', 'completed')
+          .order('completed_at', { ascending: false });
+
+        if (!testResultsError && testResultsData && testResultsData.length > 0) {
+          console.log(`✅ Found ${testResultsData.length} completions in learning_path_test_results`);
+          completions = testResultsData.map((result: any) => {
+            const test = testsData.find((t: any) => t.id === result.test_id);
+            if (!test) return null;
+            return {
+              id: result.id,
+              testId: test.id,
+              testName: test.name || 'Unknown Test',
+              testType: result.test_type || test.test_type || 'unknown',
+              learningPathId: result.learning_path_id,
+              learningPathTitle: test.learning_path_title || 'Unknown Path',
+              studentId: result.student_id,
+              studentName: result.profiles?.name || 'Unknown Student',
+              studentEmail: result.profiles?.email || '',
+              score: result.score || 0,
+              totalPoints: result.total_points || 0,
+              completedAt: result.completed_at || result.created_at,
+              status: result.status || 'completed',
+              attemptNumber: result.attempt_number || 1
+            };
+          }).filter((c: any) => c !== null);
+        }
+      } catch (err) {
+        console.log('learning_path_test_results table not available, trying other sources...', err);
+      }
+
+      // Try to fetch from assessment_results (fallback - for old data)
+      try {
+        const { data: resultsData, error: resultsError } = await supabase
+          .from('assessment_results')
+          .select(`
+            *,
+            profiles!assessment_results_student_id_fkey(id, name, email)
+          `)
+          .in('assessment_id', testIds)
+          .order('completed_at', { ascending: false });
+
+        if (!resultsError && resultsData && resultsData.length > 0) {
+          // Avoid duplicates - check if we already have this completion from learning_path_test_results
+          const newCompletions = (resultsData as any[]).map((result: any) => {
+            const test = testsData.find((t: any) => t.id === result.assessment_id);
+            if (!test) return null;
+            
+            // Check if already in completions array
+            if (completions.find((c: any) => c.testId === test.id && c.studentId === result.student_id)) {
+              return null;
+            }
+            
+            return {
+              id: result.id,
+              testId: test.id,
+              testName: test.name || 'Unknown Test',
+              testType: test.test_type || 'unknown',
+              learningPathId: test.learning_path_id,
+              learningPathTitle: test.learning_path_title || 'Unknown Path',
+              studentId: result.student_id,
+              studentName: result.profiles?.name || 'Unknown Student',
+              studentEmail: result.profiles?.email || '',
+              score: result.score || 0,
+              totalPoints: result.total_points || 0,
+              completedAt: result.completed_at || result.created_at,
+              status: 'completed'
+            };
+          }).filter((c: any) => c !== null);
+          
+          completions.push(...newCompletions);
+        }
+      } catch (err) {
+        console.log('Assessment results not available, trying assessment_attempts...');
+      }
+
+      // Also try assessment_attempts table
+      try {
+        const { data: attemptsData, error: attemptsError } = await supabase
+          .from('assessment_attempts')
+          .select(`
+            *,
+            profiles!assessment_attempts_student_id_fkey(id, name, email)
+          `)
+          .in('assessment_id', testIds)
+          .in('status', ['completed', 'submitted', 'graded'])
+          .order('completed_at', { ascending: false });
+
+        if (!attemptsError && attemptsData && attemptsData.length > 0) {
+          (attemptsData as any[]).forEach((attempt: any) => {
+            // Avoid duplicates - check both learning_path_test_results and assessment_results
+            if (!completions.find((c: any) => c.testId === attempt.assessment_id && c.studentId === attempt.student_id)) {
+              const test = testsData.find((t: any) => t.id === attempt.assessment_id);
+              if (!test) return;
+              completions.push({
+                id: attempt.id,
+                testId: test.id,
+                testName: test.name || 'Unknown Test',
+                testType: test.test_type || 'unknown',
+                learningPathId: test.learning_path_id,
+                learningPathTitle: test.learning_path_title || 'Unknown Path',
+                studentId: attempt.student_id,
+                studentName: attempt.profiles?.name || 'Unknown Student',
+                studentEmail: attempt.profiles?.email || '',
+                score: attempt.final_score || attempt.auto_score || attempt.total_score || attempt.percentage || 0,
+                totalPoints: attempt.total_points || attempt.max_score || 100,
+                completedAt: attempt.completed_at || attempt.submitted_at || attempt.created_at,
+                status: attempt.status || 'completed'
+              });
+            }
+          });
+        }
+      } catch (err) {
+        console.log('Assessment attempts not available:', err);
+      }
+
+      // Sort by completion date (newest first)
+      completions.sort((a, b) => {
+        const dateA = new Date(a.completedAt).getTime();
+        const dateB = new Date(b.completedAt).getTime();
+        return dateB - dateA;
+      });
+
+      // Log completion breakdown
+      const finalCompletions = completions.filter((c: any) => c.testType === 'final');
+      const unitCompletions = completions.filter((c: any) => c.testType === 'unit');
+      
+      console.log(`✅ Found ${completions.length} test completions total:`);
+      console.log(`   - Final test completions: ${finalCompletions.length}`);
+      console.log(`   - Unit test completions: ${unitCompletions.length}`);
+      
+      setTestCompletions(completions);
+    } catch (error) {
+      console.error('Error fetching test completions:', error);
+      setTestCompletions([]);
+    } finally {
+      setLoadingTestCompletions(false);
     }
   };
 
@@ -714,15 +965,28 @@ const MentorLearningPath: React.FC = () => {
       {/* Top Bar */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Learning Path</h1>
-        {!showUploadModal && (
-          <Button
-            variant="primary"
-            onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2"
-          >
-            <i className="ri-upload-cloud-line"></i>
-            Upload New Learning Path +
-          </Button>
+        {!showUploadModal && !showTestCompletionsModal && (
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowTestCompletionsModal(true);
+                fetchTestCompletions();
+              }}
+              className="flex items-center gap-2"
+            >
+              <i className="ri-file-list-3-line"></i>
+              Test Completions
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => setShowUploadModal(true)}
+              className="flex items-center gap-2"
+            >
+              <i className="ri-upload-cloud-line"></i>
+              Upload New Learning Path +
+            </Button>
+          </div>
         )}
       </div>
 
@@ -1834,6 +2098,139 @@ const MentorLearningPath: React.FC = () => {
               <i className={editingPath ? "ri-save-line mr-2" : "ri-upload-cloud-line mr-2"}></i>
               {editingPath ? 'Update Learning Path' : 'Upload Learning Path'}
             </Button>
+          </div>
+        </div>
+      ) : showTestCompletionsModal ? (
+        <div className="bg-white rounded-lg shadow-sm">
+          {/* Header with Back Button */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => {
+                  setShowTestCompletionsModal(false);
+                  setTestCompletions([]);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <i className="ri-arrow-left-line text-xl text-gray-700"></i>
+              </button>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Test Completions</h2>
+                <p className="text-sm text-gray-500">View all completed tests from your learning paths</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Test Completions Content */}
+          <div className="p-6">
+            {loadingTestCompletions ? (
+              <div className="flex items-center justify-center py-12">
+                <SimpleDCODESpinner />
+              </div>
+            ) : testCompletions.length === 0 ? (
+              <div className="text-center py-12">
+                <i className="ri-file-list-3-line text-6xl text-gray-300 mb-4"></i>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Test Completions Yet</h3>
+                <p className="text-gray-600">Students haven't completed any tests from your learning paths yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Total Completions</p>
+                        <p className="text-2xl font-bold text-gray-900">{testCompletions.length}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i className="ri-file-list-3-line text-blue-600 text-xl"></i>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Unique Students</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {new Set(testCompletions.map(t => t.studentId)).size}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i className="ri-user-line text-green-600 text-xl"></i>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Learning Paths</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {new Set(testCompletions.map(t => t.learningPathId)).size}
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <i className="ri-book-open-line text-purple-600 text-xl"></i>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Completions List */}
+                <div className="space-y-3">
+                  {testCompletions.map((completion) => (
+                    <Card key={completion.id} className="p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900">{completion.testName}</h3>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              completion.testType === 'final'
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {completion.testType === 'final' ? 'Final Test' : 'Unit Test'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">
+                            <i className="ri-book-open-line mr-1"></i>
+                            {completion.learningPathTitle}
+                          </p>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span className="flex items-center gap-1">
+                              <i className="ri-user-line"></i>
+                              {completion.studentName}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <i className="ri-time-line"></i>
+                              {new Date(completion.completedAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-2xl font-bold text-gray-900 mb-1">
+                            {completion.totalPoints > 0
+                              ? `${Math.round((completion.score / completion.totalPoints) * 100)}%`
+                              : 'N/A'}
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {completion.totalPoints > 0
+                              ? `${completion.score} / ${completion.totalPoints} points`
+                              : 'Score not available'}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : !viewingPath ? (

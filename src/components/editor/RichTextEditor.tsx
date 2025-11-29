@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -15,6 +15,27 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   placeholder = 'Enter description...',
   className = ''
 }) => {
+  // Ensure value is properly formatted HTML
+  const [formattedValue, setFormattedValue] = useState(value);
+
+  useEffect(() => {
+    // ReactQuill automatically renders HTML content
+    // But if HTML is escaped (like &lt;p&gt;), we need to unescape it first
+    if (value && typeof value === 'string') {
+      // Check if HTML is escaped (contains &lt; or &gt;)
+      if (value.includes('&lt;') || value.includes('&gt;')) {
+        // Unescape HTML entities
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = value;
+        setFormattedValue(tempDiv.innerHTML);
+      } else {
+        // Already proper HTML, use as-is
+        setFormattedValue(value);
+      }
+    } else {
+      setFormattedValue('');
+    }
+  }, [value]);
   const modules = useMemo(() => ({
     toolbar: {
       container: [
@@ -80,14 +101,32 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           color: #9ca3af;
           font-style: normal;
         }
+        .rich-text-editor .ql-editor {
+          white-space: normal;
+        }
+        .rich-text-editor .ql-editor p {
+          margin: 0 0 1em 0;
+          display: block;
+        }
+        .rich-text-editor .ql-editor p:last-child {
+          margin-bottom: 0;
+        }
+        /* Ensure HTML tags are rendered, not shown as text */
+        .rich-text-editor .ql-editor * {
+          display: inherit;
+        }
       `}</style>
       <ReactQuill
         theme="snow"
-        value={value}
-        onChange={onChange}
+        value={formattedValue}
+        onChange={(content) => {
+          setFormattedValue(content);
+          onChange(content);
+        }}
         modules={modules}
         formats={formats}
         placeholder={placeholder}
+        preserveWhitespace={false}
       />
     </div>
   );

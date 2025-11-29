@@ -377,25 +377,25 @@ const StudentContinue: React.FC = () => {
                   showFullscreen={false}
                 />
               ) : (
-                <CustomVideoPlayer
-                  videoUrl={currentLesson.videoUrl}
-                  title={currentLesson.lessonTitle}
-                  progressCheckpoints={[15, 45, 90, 180]} // Example checkpoints for continue page
-                  onProgressCheckpoint={async (currentTime, checkpoint) => {
-                    console.log(`🎯 Continue page checkpoint reached at ${currentTime}s`);
-                    
-                    // Simulate saving progress or other data processing
-                    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 2000)); // 1.5-3.5 second delay
-                    
-                    console.log(`✅ Progress saved for checkpoint ${checkpoint}s`);
-                    return true; // Resume playback
-                  }}
-                  onTimeUpdate={(currentTime, duration) => {
-                    // Save progress for resume functionality
-                    const progressPercent = (currentTime / duration) * 100;
-                    console.log(`Video progress: ${progressPercent.toFixed(1)}%`);
-                  }}
-                />
+              <CustomVideoPlayer
+                videoUrl={currentLesson.videoUrl}
+                title={currentLesson.lessonTitle}
+                progressCheckpoints={[15, 45, 90, 180]} // Example checkpoints for continue page
+                onProgressCheckpoint={async (currentTime, checkpoint) => {
+                  console.log(`🎯 Continue page checkpoint reached at ${currentTime}s`);
+                  
+                  // Simulate saving progress or other data processing
+                  await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 2000)); // 1.5-3.5 second delay
+                  
+                  console.log(`✅ Progress saved for checkpoint ${checkpoint}s`);
+                  return true; // Resume playback
+                }}
+                onTimeUpdate={(currentTime, duration) => {
+                  // Save progress for resume functionality
+                  const progressPercent = (currentTime / duration) * 100;
+                  console.log(`Video progress: ${progressPercent.toFixed(1)}%`);
+                }}
+              />
               )}
               <div className="absolute bottom-4 left-4 bg-black/75 text-white px-3 py-2 rounded-lg text-sm font-medium">
                 Resume at {currentLesson.lastWatched}
