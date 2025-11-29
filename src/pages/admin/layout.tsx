@@ -14,7 +14,7 @@ const navigation = [
   { name: 'Students', href: '/admin/students', icon: 'ri-group-line' },
   { name: 'Mentors', href: '/admin/mentors', icon: 'ri-user-star-line' },
   { name: 'Courses', href: '/admin/courses', icon: 'ri-book-line' },
-  { name: 'Learning Path', href: '/admin/learning-path', icon: 'ri-roadmap-line' },
+  { name: 'Learning Path', href: '/admin/learning-path', icon: 'ri-route-line' },
   { name: 'Assessments', href: '/admin/assessments', icon: 'ri-file-list-line' },
   { name: 'Placements', href: '/admin/placements', icon: 'ri-briefcase-line' },
   { name: 'Payments', href: '/admin/payments', icon: 'ri-money-dollar-circle-line' },

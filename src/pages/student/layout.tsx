@@ -15,7 +15,7 @@ import { useSidebarSettings } from '@/contexts/SidebarSettingsContext';
 const navigation = [
   { name: 'Dashboard', href: '/student/dashboard', icon: 'ri-dashboard-line' },
   { name: 'My Courses', href: '/student/my-courses', icon: 'ri-book-line' },
-  { name: 'Learning Path', href: '/student/learning-path', icon: 'ri-roadmap-line' },
+  { name: 'Learning Path', href: '/student/learning-path', icon: 'ri-route-line' },
   { name: 'Continue Learning', href: '/student/continue', icon: 'ri-play-circle-line' },
   { name: 'Assessments', href: '/student/assessments', icon: 'ri-file-list-line' },
   { name: 'Code Playground', href: '/playground', icon: 'ri-code-line' },
