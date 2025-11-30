@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '@/lib/auth';
 import Button from '@/components/base/Button';
 
@@ -17,6 +17,17 @@ const SignInPage: React.FC = () => {
   const [resetSuccess, setResetSuccess] = useState('');
   
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check for verification success message from callback
+  useEffect(() => {
+    const state = location.state as { verified?: boolean; message?: string } | null;
+    if (state?.verified && state?.message) {
+      setSuccess(state.message);
+      // Clear state to prevent showing message on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,12 +65,12 @@ const SignInPage: React.FC = () => {
 
     try {
       await authService.resetPassword(resetEmail);
-      setResetSuccess('Password reset email sent! Check your inbox and spam folder.');
+      setResetSuccess(`Password reset email sent to ${resetEmail}! Check your inbox and spam folder. The email will be from contact@dcodesys.in`);
       setTimeout(() => {
         setShowForgotPassword(false);
         setResetEmail('');
         setResetSuccess('');
-      }, 3000);
+      }, 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send reset email');
     } finally {

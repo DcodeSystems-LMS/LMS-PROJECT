@@ -10,6 +10,7 @@ import DataService from '@/services/dataService';
 import { authService } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { saveLearningPath, fetchLearningPaths as fetchLearningPathsFromSupabase, deleteLearningPath } from '@/services/learningPathService';
+import DOMPurify from 'dompurify';
 
 // Learning Path Interfaces
 interface Question {
@@ -106,6 +107,25 @@ const MentorLearningPath: React.FC = () => {
   
   const [units, setUnits] = useState<Unit[]>([]);
   const [finalTest, setFinalTest] = useState<Test | null>(null);
+
+  // Helper function to unescape HTML entities (like &lt; becomes <, &gt; becomes >)
+  const unescapeHtml = (html: string): string => {
+    if (!html) return '';
+    // Unescape HTML entities
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = html;
+    let unescaped = textarea.value;
+    // If still contains escaped entities, do manual replacement
+    if (unescaped.includes('&lt;') || unescaped.includes('&gt;')) {
+      unescaped = unescaped
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+    }
+    return unescaped;
+  };
 
   useEffect(() => {
     initializeData();
@@ -2464,7 +2484,12 @@ const MentorLearningPath: React.FC = () => {
               </div>
               
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{viewingPath.title}</h1>
-              <p className="text-gray-600 text-lg mb-4">{viewingPath.description}</p>
+              <div
+                className="text-gray-600 text-lg mb-4 prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(unescapeHtml(viewingPath.description || ''))
+                }}
+              />
               
               {/* Stats Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -2498,7 +2523,12 @@ const MentorLearningPath: React.FC = () => {
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">
                           Unit {unit.order}: {unit.title}
                         </h3>
-                        <p className="text-gray-600">{unit.description}</p>
+                        <div
+                          className="text-gray-600 prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(unescapeHtml(unit.description || ''))
+                          }}
+                        />
                       </div>
 
                       {/* Modules */}

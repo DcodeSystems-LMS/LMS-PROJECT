@@ -103,13 +103,22 @@ class SupabaseAuthService {
     }
   }
 
+  /**
+   * Sign up new user and send verification email
+   * Verification email will be sent from the SMTP configuration set in Supabase Dashboard
+   * Configure: Authentication → Settings → SMTP Settings
+   * Set SMTP Admin Email to: contact@dcodesys.in
+   * See SETUP_CONTACT_EMAIL.md for detailed configuration steps
+   */
   async signUp(email: string, password: string, name: string, role: 'student' | 'mentor' | 'admin' = 'student'): Promise<{ user: User | null; needsVerification: boolean }> {
     try {
       // Sign up with Supabase Auth
+      // Email verification will be sent from contact@dcodesys.in (configured in Supabase SMTP settings)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             name,
             role,
@@ -125,28 +134,21 @@ class SupabaseAuthService {
         throw new Error('No user returned from registration')
       }
 
-      // For development: Skip email verification temporarily
       // Check if email verification is required
       const needsVerification = !authData.user.email_confirmed_at
 
-      // TEMPORARY: Skip verification for development
+      // If email verification is required, send verification email
       if (needsVerification) {
-        console.log('Email verification required but skipping for development');
-        // Return user as if verified for development
-        const user: User = {
-          id: authData.user.id,
-          email: authData.user.email || email,
-          name: name,
-          role: role,
-          created_at: authData.user.created_at,
-          updated_at: new Date().toISOString(),
+        console.log('Email verification required - verification email sent to:', email);
+        // Don't set current user until email is verified
+        // Return user data but mark as needing verification
+        return { 
+          user: null, 
+          needsVerification: true 
         }
-
-        this.currentUser = user
-        return { user, needsVerification: false }
       }
 
-      // User is already verified
+      // User is already verified or auto-confirmed
       const user: User = {
         id: authData.user.id,
         email: authData.user.email || email,
@@ -305,6 +307,12 @@ class SupabaseAuthService {
     return user !== null
   }
 
+  /**
+   * Send password reset email to user
+   * Email will be sent from the SMTP configuration set in Supabase Dashboard
+   * Configure: Authentication → Settings → SMTP Settings
+   * Set SMTP Admin Email to: contact@dcodesys.in
+   */
   async resetPassword(email: string): Promise<void> {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -340,6 +348,12 @@ class SupabaseAuthService {
   }
 
   // Resend verification email
+  /**
+   * Resend verification email to user
+   * Email will be sent from the SMTP configuration set in Supabase Dashboard
+   * Configure: Authentication → Settings → SMTP Settings
+   * Set SMTP Admin Email to: contact@dcodesys.in
+   */
   async resendVerificationEmail(email: string): Promise<void> {
     try {
       const { error } = await supabase.auth.resend({

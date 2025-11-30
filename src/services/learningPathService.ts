@@ -302,30 +302,47 @@ function transformLearningPath(dbPath: any) {
  */
 export async function deleteLearningPath(learningPathId: string, mentorId: string) {
   try {
-    // Verify ownership
-    const { data: path, error: checkError } = await supabase
-      .from('learning_paths')
-      .select('id')
-      .eq('id', learningPathId)
-      .eq('mentor_id', mentorId)
-      .single();
-
-    if (checkError || !path) {
-      throw new Error('Learning path not found or access denied');
+    // Verify user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      throw new Error('User not authenticated. Please sign in again.');
     }
 
-    // Delete (cascade will handle related records)
-    const { error } = await supabase
+    // Verify mentor_id matches authenticated user
+    if (session.user.id !== mentorId) {
+      throw new Error('Mismatch: mentor_id does not match authenticated user');
+    }
+
+    // Delete directly - RLS policies will ensure only the mentor can delete their own paths
+    // Include mentor_id in the filter to help RLS policies
+    const { data: deletedData, error: deleteError } = await supabase
       .from('learning_paths')
       .delete()
-      .eq('id', learningPathId);
+      .eq('id', learningPathId)
+      .eq('mentor_id', mentorId)
+      .select('id');
 
-    if (error) throw error;
+    if (deleteError) {
+      console.error('Error deleting learning path:', deleteError);
+      
+      // Handle specific error codes
+      if (deleteError.code === 'PGRST116' || deleteError.code === '23503') {
+        throw new Error('Learning path not found or access denied');
+      }
+      
+      throw new Error(deleteError.message || 'Failed to delete learning path');
+    }
+
+    // If no rows were deleted, the path doesn't exist or access is denied
+    if (!deletedData || deletedData.length === 0) {
+      throw new Error('Learning path not found or access denied');
+    }
 
     return { success: true };
   } catch (error: any) {
     console.error('Error deleting learning path:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Failed to delete learning path' };
   }
 }
 

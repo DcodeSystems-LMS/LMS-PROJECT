@@ -99,11 +99,11 @@ const StudentDashboard: React.FC = () => {
                   {/* Left Section - Welcome Text */}
                   <div className="flex-1">
                     <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-black dark:text-white mb-1 lg:mb-2">
-                      Welcome back, {currentUser?.name || 'Student'}!
-                    </h1>
+                  Welcome back, {currentUser?.name || 'Student'}!
+                </h1>
                     <p className="text-xs sm:text-sm lg:text-base opacity-90 text-black dark:text-white">
-                      Ready to continue your coding journey? Let's make today productive!
-                    </p>
+                  Ready to continue your coding journey? Let's make today productive!
+                </p>
                   </div>
 
                   {/* Right Section - Lottie Animation */}

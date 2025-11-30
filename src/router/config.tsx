@@ -12,6 +12,7 @@ const Leaderboard = lazy(() => import('@/pages/leaderboard/page'));
 const SignIn = lazy(() => import('@/pages/auth/signin/page'));
 const SignUp = lazy(() => import('@/pages/auth/signup/page'));
 const ResetPassword = lazy(() => import('@/pages/auth/reset-password/page'));
+const AuthCallback = lazy(() => import('@/pages/auth/callback/page'));
 const CreateAdmin = lazy(() => import('@/pages/auth/create-admin/page'));
 const Verify = lazy(() => import('@/pages/verify/page'));
 const Privacy = lazy(() => import('@/pages/privacy/page'));
@@ -109,6 +110,10 @@ const routes: RouteObject[] = [
   {
     path: '/auth/reset-password',
     element: <SuspenseWrapper><ResetPassword /></SuspenseWrapper>
+  },
+  {
+    path: '/auth/callback',
+    element: <SuspenseWrapper><AuthCallback /></SuspenseWrapper>
   },
   {
     path: '/auth/create-admin',
