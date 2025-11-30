@@ -114,11 +114,21 @@ class SupabaseAuthService {
     try {
       // Sign up with Supabase Auth
       // Email verification will be sent from contact@dcodesys.in (configured in Supabase SMTP settings)
+      // Determine base URL: use dcodesys.in if on production domain, otherwise use env or current origin
+      let baseUrl = window.location.origin;
+      if (window.location.hostname === 'dcodesys.in' || window.location.hostname.includes('dcodesys.in')) {
+        baseUrl = 'https://dcodesys.in';
+      } else if (import.meta.env.VITE_APP_URL) {
+        baseUrl = import.meta.env.VITE_APP_URL;
+      }
+      const redirectUrl = `${baseUrl}/auth/callback`;
+      console.log('📧 Email verification redirect URL:', redirectUrl);
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: redirectUrl,
           data: {
             name,
             role,
@@ -315,8 +325,18 @@ class SupabaseAuthService {
    */
   async resetPassword(email: string): Promise<void> {
     try {
+      // Determine base URL: use dcodesys.in if on production domain, otherwise use env or current origin
+      let baseUrl = window.location.origin;
+      if (window.location.hostname === 'dcodesys.in' || window.location.hostname.includes('dcodesys.in')) {
+        baseUrl = 'https://dcodesys.in';
+      } else if (import.meta.env.VITE_APP_URL) {
+        baseUrl = import.meta.env.VITE_APP_URL;
+      }
+      const redirectUrl = `${baseUrl}/auth/reset-password`;
+      console.log('📧 Password reset redirect URL:', redirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: redirectUrl,
       })
 
       if (error) {
